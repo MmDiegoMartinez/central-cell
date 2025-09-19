@@ -1,0 +1,238 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Body con espacio y fondo suave */
+body {
+    background: #f9f9f9;
+    color: #333;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+/* Contenedor central con max ancho y padding */
+body > h1,
+body > form,
+body > h2,
+body > table {
+    max-width: 600px;
+    margin: 20px auto;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Títulos */
+h1, h2 {
+    text-align: center;
+    color: #222;
+}
+
+/* Formularios */
+form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+form input[type="text"],
+form input[type="date"],
+form input[type="submit"] {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+form input[type="text"]:focus,
+form input[type="date"]:focus {
+    border-color: #007BFF;
+    outline: none;
+}
+
+/* Botón submit */
+form input[type="submit"] {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+form input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+/* Mensajes */
+p {
+    max-width: 600px;
+    margin: 15px auto;
+    padding: 12px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+p:empty {
+    display: none;
+}
+
+/* Tabla */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background-color: #007BFF;
+    color: white;
+}
+
+th, td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+/* Responsive: en móviles tabla con scroll horizontal */
+@media (max-width: 1000px) {
+
+    .ui-autocomplete {
+        font-size: 2rem;       /* Tamaño de letra más grande */
+        max-height: 200px;       /* Altura máxima y scroll si hay muchas opciones */
+        overflow-y: auto;
+        padding: 0;
+        margin-top: 2px;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 1000;           /* Que quede encima de otros elementos */
+    }
+
+    body > h1,
+    body > form,
+    body > h2,
+    body > table {
+        max-width: 750px;
+        margin: 25px auto;
+        padding: 25px 30px;
+
+    }
+    
+    /* Títulos */
+    h1, h2 {
+        
+        text-align: center;
+        color: #222;
+        font-size: 2.5rem;
+    }
+    
+    /* Formularios */
+    form label {
+        display: block;
+        margin-bottom: 15px;
+        font-weight: 600;
+        font-size: 2.3rem; /* más grande */
+    }
+    
+    form input[type="text"],
+    form input[type="date"],
+    form input[type="submit"] {
+        width: 100%;
+        padding: 15px 17px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 2rem;  
+        width: 450px;        /* Más ancho */
+        padding: 25px 0;  
+        display: block;      /* necesario para centrar con margin auto */
+    margin: 20px auto;  
+       
+    }
+    
+ 
+    
+    /* Botón submit */
+    form input[type="submit"] {
+        background-color: #007BFF;
+        color: white;
+        width: 300px;        /* Más ancho */
+        padding: 25px 0;     /* Más alto (15px arriba y abajo, 0 izquierda/derecha) */
+        font-size: 1.8rem;
+        display: block;      /* necesario para centrar con margin auto */
+    margin: 20px auto;  
+       
+
+    }
+    
+  
+    
+    /* Mensajes */
+    p {
+        max-width: 900px;
+        margin: 15px auto;
+        padding: 12px 18px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        
+    }
+    
+  
+    /* Tabla */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+  
+    
+    th, td {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        text-align: left;
+        font-size: 1.7rem;
+    }
+    p.mensaje {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 12px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-align: center;
+        font-size: 1.1rem;
+        border: 1.5px solid transparent;
+    }
+    
+    /* Modificador para éxito */
+    p.mensaje.exito {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        font-size: 2rem;
+    }
+    
+    /* Modificador para info */
+    p.mensaje.info {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+    
+    /* Modificador para error */
+    p.mensaje.error {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    
+}

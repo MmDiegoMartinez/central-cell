@@ -1,0 +1,770 @@
+
+
+* {
+    /*Parametros generales*/
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #FFFDFD;
+    
+}
+/*Aqui van las fuentes*/
+@font-face {
+    font-family: 'Titulo';
+    src: url('../../Fuentes/WatermelonSugar.ttf') format('opentype');
+}
+
+@font-face {
+    font-family: 'Pestanias';
+    src: url('../../Fuentes/Fragmentcore.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'titulos';
+    src: url('../../Fuentes/DACTYLOG.TTF') format('opentype');
+}
+
+/*Apartado para el encabezado*/
+#titulo {
+    font-size: 40px;
+    color: black;
+    font-family: 'Titulo', sans-serif;
+}
+
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    padding: 20px;
+    border-bottom: 0.5px solid #b0b7ad;
+    z-index: 1000;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+}
+
+nav ul li {
+    margin-left: 50px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: black;
+    font-size: 19px;  
+    font-family: 'Pestanias', sans-serif;
+}
+
+.Contact a:hover,
+nav ul li a:hover {
+    text-decoration: underline;
+    transition: color 0.3s ease, text-decoration-color 0.4s ease;
+    color: #007bff;
+    
+    
+}
+/*A*/
+.inicio{
+    place-items: center;
+    padding: 150px;
+    text-align: justify;
+}
+
+.inicio h2 {
+    color: black;
+    font-family: 'Titulos', sans-serif;
+    overflow: hidden; /* Para ocultar el texto excedente */
+    white-space: nowrap; /* Para que el texto no se envuelva */
+    border-right: 0.15em solid black; /* Añade el cursor de tipo máquina de escribir */
+    animation: blinkCursor 0.7s steps(1) infinite normal;
+    height: 1em; 
+    font-size: 30px;
+}
+
+
+
+/* Cursor parpadeante */
+@keyframes blinkCursor {
+    from { border-right-color: black; }
+    to { border-right-color: transparent; }
+}
+b,
+a,
+li,
+p{
+    font-family: 'Pestanias', sans-serif;
+    font-size: 25px;
+}
+h1{
+    font-family: 'Titulos', sans-serif;
+    font-size: 50px;
+    color: #64B5F6;
+}
+h3{
+    font-family: 'Titulos', sans-serif;
+    font-size: 20px;
+    
+}
+h4{
+    font-family: 'Titulos', sans-serif;
+    font-size: 30px;
+    
+}
+h5{
+    font-family: 'Pestanias', sans-serif;
+    font-size: 18px;
+
+}
+
+/*Proyectos*/
+
+.contenedorproject {
+    position: relative;
+    max-width: 90%;
+    margin: auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.project-carousel {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    width: calc(100% * 8); /* Multiplicado por el número total de proyectos */
+}
+
+.project-card {
+
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+
+    min-width: calc(100% / 3); /* Mostrar 3 proyectos a la vez */
+    box-sizing: border-box;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 22px;
+    margin-right: 8px;
+    margin-bottom: 5px;
+}
+/* Añade una clase para el efecto de fade-in */
+.project-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+
+.image-container img {
+    width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+}
+
+.carousel-btn {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    font-size: 1.5rem;
+    background-color: transparent;
+    border-radius: 50%;
+    padding: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    color: black;
+    transform: translate(0,-50%);
+    transition: .5s ease;
+    user-select: none;
+    z-index: 10;
+   
+
+}
+.carousel-btn:hover{
+    background-color: #333333d4;
+  color: #fff;
+}
+
+.prev-btn {
+    left: 10px;
+}
+
+.next-btn {
+    right: 10px;
+}
+
+/*seleccionar boton*/
+/* CSS */
+.cta {
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-decoration: none; /* Remove underline for links */
+    display: inline-flex;
+    align-items: center;
+    
+    
+  }
+  
+  .cta span {
+    padding-bottom: 7px;
+    letter-spacing: 4px;
+    font-size: 14px;
+    padding-right: 15px;
+    text-transform: uppercase;
+    
+  }
+  
+  .cta svg {
+    transform: translateX(-8px);
+    transition: all 0.3s ease;
+    
+  }
+  
+  .cta:hover svg {
+    transform: translateX(0);
+    
+  }
+  
+  .cta:active svg {
+    transform: scale(0.9);
+    
+  }
+  
+  .hover-underline-animation {
+    position: relative;
+    color: #007bff;
+    padding-bottom: 20px;
+  }
+
+  .hover-underline-animation:hover {
+   
+    color: #0056b3 ;
+    
+  }
+  
+  .hover-underline-animation:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #0056b3 ;/*subrayao*/
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+  
+  .cta:hover .hover-underline-animation:after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+    
+  }
+  
+  .cta svg path {
+    fill: #007bff; /* Color azul por defecto */
+    transition: fill 0.3s ease;
+}
+
+.cta:hover svg path {
+    fill: #0056b3 ; 
+    font-weight: bold;
+}
+/*Sobre Mi*/
+.contenedorpartdos{
+    margin: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 60% 40%;
+    
+    place-items: center; /* Centra horizontal y verticalmente */
+
+}
+
+.contenedorpartdosinv{
+    margin: 5px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 40% 60%;
+    
+    place-items: center; /* Centra horizontal y verticalmente */
+
+}
+.imagentres,
+.imagendos {/*Aqui va las sombras*/
+    position: relative;
+    display: inline-block;
+}
+.unoxuno,
+.imagen {/*Aqui va las sombras*/
+    position: relative;
+    display: inline-block;
+}
+.unoxuno::before ,
+.imagen::before {
+    content: ""; 
+    position: absolute;
+    
+    width: 82%;
+    height: 82%;
+    
+    background-color: #64B5F6; 
+    transform: scale(1.2); /* Ajusta el tamaño del fondo */
+    z-index: -1; /* Coloca el fondo detrás de la imagen */
+}
+
+.imagen::before{
+    top: 48px; /* Desfase vertical */
+    left: 60px; /* Desfase horizontal */
+}
+.unoxuno img,
+.imagen img {
+    width: 350px; 
+  
+    
+    border: 3px solid black; 
+    padding: 5px;
+}
+
+/*Contacto*/
+
+
+.Contact a{
+    color: black;
+  }
+  
+/*enlaces de pie de pagina*/
+.barra{
+    
+    padding: 150px;
+    text-align: justify;
+}
+
+.barrados{
+    
+    padding: 150px;
+    text-align: justify;
+}
+
+.centrar {
+    width: 100%; /* Abarca todo el ancho horizontal */
+    height: 260px; /* Altura vertical de 400px */
+    
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+   
+  }
+  .centrardos {
+    
+    
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+   
+  }
+
+  .centrar img{
+    padding: 5px;
+    border: 3px solid black; 
+  }
+  
+
+
+/*Pie de Pagina*/
+
+footer {
+    display: flex;
+    
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    background-color: #64B5F6;
+    
+    color: white ;
+    padding: 20px;
+    height: 45px; /* Ajusta la altura según sea necesario */
+    font-size: 16px;
+  }
+
+  footer p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .pie{
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    background-color: white;
+    font-size: 20px;
+    color: black;
+    padding: 15px;
+    border-top: 0.5px solid #b0b7ad; 
+    font-family: 'Pestanias', sans-serif;
+  }
+
+.pie a{
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+    width: 250px;
+}
+
+.pie a:hover {
+    color: #007bff;
+    text-decoration: underline;
+    transition: color 0.3s ease, text-decoration-color 0.4s ease;
+    
+    
+}
+
+/* Estilos para el ícono de hamburguesa */
+#checkbox2 {
+    display: none;
+}
+
+.toggle2 {
+    position: relative;
+    width: 40px; /* Ajusta el tamaño según tus necesidades */
+    height: 40px;
+    cursor: pointer;
+    display: none; /* Lo hacemos visible solo en pantallas pequeñas */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition-duration: .5s;
+}
+
+.bars {
+    width: 25px;  /* Ajusta el ancho de las barras aquí */
+    height: 3px;  /* Ajusta el grosor de las barras aquí */
+    background-color: rgb(0, 0, 0);
+    border-radius: 4px;  /* Da un ligero redondeo a las esquinas */
+    transition: 0.5s;
+}
+
+#bar5 {
+    transition-duration: .8s;
+}
+
+#bar4, #bar6 {
+    width: 60%;  /* Ajusta el ancho de las barras superior e inferior */
+}
+
+#checkbox2:checked + .toggle2 .bars {
+    position: absolute;
+    transition-duration: .5s;
+}
+
+/* Estado de la "X" cuando el menú está abierto */
+#checkbox2:checked + .toggle2 #bar5 {
+    transform: scaleX(0); /* Oculta la barra del medio para crear la "X" */
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 #bar4 {
+    width: 25px;   /* Ajusta el ancho en la forma de "X" */
+    transform: rotate(45deg);
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 #bar6 {
+    width: 25px;   /* Ajusta el ancho en la forma de "X" */
+    transform: rotate(-45deg);
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 {
+    transition-duration: .5s;
+    transform: rotate(180deg);
+}
+
+
+/* Carrusel SISTEMA FCQ */
+.container-carousel {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    height: 70vh;
+    max-height: 420px;
+    background-color: #e0e0e0;
+    border: 0.5px solid rgb(189, 180, 180); 
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 20px; /* Añadido para separar del botón "Regresar" */
+  }
+  
+  .carruseles {
+    width: 1400%;
+    height: 100%;
+    display: flex;
+  }
+  
+  .slider-section {
+    width: calc(100% / 14);
+    height: 100%;
+  }
+  
+  
+  
+  .slider-section img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+  
+  .btn-left,
+  .btn-right {
+    display: flex;
+    position: absolute;
+    top: 50%;
+    font-size: 2.5rem;
+    background-color: transparent;
+    border-radius: 50%;
+    padding: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    color: black;
+    transform: translate(0,-50%);
+    transition: .5s ease;
+    user-select: none;
+    
+  }
+  
+  .btn-left:hover,
+  .btn-right:hover {
+    background-color: #333333d4;
+    color: #fff;
+  }
+  
+  .btn-left {
+    left: 10px;
+  }
+  
+  .btn-right {
+    right: 10px;
+  }
+  
+
+/* Mostrar el ícono de hamburguesa en pantallas pequeñas */
+@media only screen and (max-width: 768px) {
+    /*ENCABEZADO*/
+    #menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 81px; /* Ajusta según el tamaño de tu nav */
+        right: 2px;
+        background-color: white;
+        width: 200px; 
+        border: 1px solid #b0b7ad;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+
+    #checkbox2:checked ~ #menu {
+        display: flex;
+    }
+
+    nav ul li {
+        margin: 15px 0;
+    }
+
+    .toggle2 {
+        display: flex; /* Se asegura de que el ícono de hamburguesa sea visible */
+    }
+
+    /*Principal*/
+    .inicio {
+        padding: 35px; 
+        text-align:center;
+    }
+    .barrados h1,
+    .barra h1,
+    .Contact h1 {
+        font-size: 2.0em; 
+        margin-top: 100px;
+        text-align:left;
+    }
+    .inicio h1{
+        font-size: 2.0em; 
+        margin-top: 100px;
+
+    }
+
+    h4{
+        font-size: 1.5em; 
+        
+
+    }
+    .inicio h2 {
+        font-size: 17px; 
+    }
+
+    .project-carousel h2 {
+        font-size: 20px; 
+    }
+    
+    a,
+    li,
+    b,
+    p {
+        font-size: 18px; 
+    }
+
+
+    /*Proyectos*/
+    .container-carousel{
+        width: 100%;
+        height: 200px;
+    }
+
+   
+      
+    .contenedorproject {
+        max-width: 80%; 
+        margin-top: 10px;
+        
+    }
+
+    .project-carousel {
+        width: calc(100% * 5); /* Mantiene el cálculo para el ancho total del carrusel */
+       
+    }
+
+    .project-card {
+        min-width: 100%; 
+        padding: 16px;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+
+    .carousel-btn {
+        font-size: 1.2rem;
+        padding: 8px;
+    }
+
+    .prev-btn {
+        left: 5px;
+    }
+
+    .next-btn {
+        right: 5px;
+    }
+    .image-container img {
+        width: 30%;
+        height: auto; /* Asegura que la imagen se adapte al ancho */
+    }
+    /*sobre mi*/
+    .contenedorpartdos{
+        
+        display: grid;
+        grid-template-columns: 100%;
+        
+        place-items: center; /* Centra horizontal y verticalmente */
+    
+    }
+    
+    .contenedorpartdosinv{
+        
+        display: grid;
+        grid-template-columns: 100%;
+        
+        place-items: center; /* Centra horizontal y verticalmente */
+    
+    }
+
+    
+
+.unoxuno::before ,
+.imagen::before {
+   
+    
+    width: 180px;
+    height: 180px;
+   
+}
+
+
+.unoxuno img,
+.imagen img {
+    width: 225px; 
+}
+.Contact img{
+    width: 16px; 
+}
+.imagendos {/*Aqui va las sombras*/
+    margin-bottom: 200px;
+    
+}
+.imagentres {/*Aqui va las sombras*/
+    
+    margin-top: 100px;
+    
+}
+/*Enlaces pie de pagina*/
+.barrados,
+.barra{
+    
+    padding: 40px;
+   
+}
+
+
+
+/*pie de pagina*/
+.pie {
+    margin-top: 33px;
+}
+
+
+
+footer {
+    padding: 10px; /* Reduce el padding para móviles */
+    font-size: 14px;
+    text-align: center; /* Asegura que el texto esté centrado */
+}
+
+footer p {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/*video*/
+
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    margin-top: 60px;
+    
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.cubes {
+    margin-top: 60px;
+  }
+  
+
+}
+    
