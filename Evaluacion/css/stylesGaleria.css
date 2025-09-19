@@ -1,0 +1,385 @@
+
+* {
+    /*Parametros generales*/
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+@font-face {
+    font-family: 'Titulo';
+    src: url('../../Fuentes/WatermelonSugar.ttf') format('opentype');
+}
+
+@font-face {
+    font-family: 'Pestanias';
+    src: url('../../Fuentes/Fragmentcore.otf') format('opentype');
+}
+
+@font-face {
+    font-family: 'titulos';
+    src: url('../../Fuentes/DACTYLOG.TTF') format('opentype');
+}
+/*Apartado para el encabezado*/
+#titulo {
+    font-size: 40px;
+    color: black;
+    font-family: 'Titulo', sans-serif;
+}
+
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    padding: 20px;
+    border-bottom: 0.5px solid #b0b7ad;
+    z-index: 1000;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+}
+
+nav ul li {
+    margin-left: 50px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: black;
+    font-size: 19px;  
+    font-family: 'Pestanias', sans-serif;
+}
+
+.Contact a:hover,
+nav ul li a:hover {
+    text-decoration: underline;
+    transition: color 0.3s ease, text-decoration-color 0.4s ease;
+    color: #007bff;
+    
+    
+}
+/*A*/
+.inicio{
+    place-items: center;
+    padding: 150px;
+    text-align: justify;
+}
+
+.inicio h2 {
+    color: black;
+    font-family: 'Titulos', sans-serif;
+    overflow: hidden; /* Para ocultar el texto excedente */
+    white-space: nowrap; /* Para que el texto no se envuelva */
+    border-right: 0.15em solid black; /* Añade el cursor de tipo máquina de escribir */
+    animation: blinkCursor 0.7s steps(1) infinite normal;
+    height: 1em; 
+    font-size: 30px;
+}
+
+
+/*Emcabezado hambuerguesa*/
+#checkbox2 {
+    display: none;
+}
+
+.toggle2 {
+    position: relative;
+    width: 40px; /* Ajusta el tamaño según tus necesidades */
+    height: 40px;
+    cursor: pointer;
+    display: none; /* Lo hacemos visible solo en pantallas pequeñas */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition-duration: .5s;
+}
+
+.bars {
+    width: 25px;  /* Ajusta el ancho de las barras aquí */
+    height: 3px;  /* Ajusta el grosor de las barras aquí */
+    background-color: rgb(0, 0, 0);
+    border-radius: 4px;  /* Da un ligero redondeo a las esquinas */
+    transition: 0.5s;
+}
+
+#bar5 {
+    transition-duration: .8s;
+}
+
+#bar4, #bar6 {
+    width: 60%;  /* Ajusta el ancho de las barras superior e inferior */
+}
+
+#checkbox2:checked + .toggle2 .bars {
+    position: absolute;
+    transition-duration: .5s;
+}
+
+/* Estado de la "X" cuando el menú está abierto */
+#checkbox2:checked + .toggle2 #bar5 {
+    transform: scaleX(0); /* Oculta la barra del medio para crear la "X" */
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 #bar4 {
+    width: 25px;   /* Ajusta el ancho en la forma de "X" */
+    transform: rotate(45deg);
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 #bar6 {
+    width: 25px;   /* Ajusta el ancho en la forma de "X" */
+    transform: rotate(-45deg);
+    transition-duration: .5s;
+}
+
+#checkbox2:checked + .toggle2 {
+    transition-duration: .5s;
+    transform: rotate(180deg);
+}
+
+
+
+
+
+main {
+    display: flex;
+    min-height: 100vh; /* permite crecer */
+    overflow: auto;    /* agrega scroll si es necesario */
+}
+
+.side-section {
+    width: 20%;
+    background-color: #222222;
+    color: #fff;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.side-section header h1,
+.side-section h1 {
+    color: #049EF4;
+}
+
+.side-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.side-section ul li {
+    margin: 1rem 0;
+}
+
+.side-section ul li a {
+    color: #7B7B7B;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.side-section ul li a:hover {
+    color: #049EF4;
+}
+
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 8rem 2rem 2rem 2rem; /* top right bottom left */
+}
+
+.project-card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 390px;
+    text-align: center;
+    position: relative;
+    perspective: 10000px;
+}
+
+.image-container {
+    width: 100%;
+    height: auto;
+    position: relative;
+}
+
+.image-container img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+.project-content h2 {
+    font-size: 1.5rem;
+    margin: 1rem 0 0.5rem;
+}
+
+.project-content p {
+    padding: 0 1rem;
+    font-size: 1rem;
+    color: #666;
+}
+
+
+.project-link {
+    display: block;
+    background-color: #7B7B7B;
+    color: #fff;
+    text-decoration: none;
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.project-link:hover {
+    background-color: #049EF4;
+}
+
+.project-description {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #7B7B7B;
+   
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.6s, transform 0.6s;
+}
+.project-description p {
+    color: white
+}
+
+.project-description p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.image-container:hover img {
+    transform: rotateY(180deg);
+}
+
+.image-container:hover .project-description {
+    opacity: 1;
+    transform: rotateY(0);
+}
+
+
+
+/* Media Queries */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+    
+    .side-section {
+        width: 100%;
+        height: auto;
+    }
+    
+    .gallery {
+        width: 100%;
+        height: auto;
+    }
+    /*Encabezado*/
+     /*ENCABEZADO*/
+    /*ENCABEZADO*/
+    #menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 81px; /* Ajusta según el tamaño de tu nav */
+        right: 2px;
+        background-color: white;
+        width: 200px; 
+        border: 1px solid #b0b7ad;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+
+    #checkbox2:checked ~ #menu {
+        display: flex;
+    }
+
+    nav ul li {
+        margin: 15px 0;
+    }
+
+    .toggle2 {
+        display: flex; /* Se asegura de que el ícono de hamburguesa sea visible */
+    }
+
+    /*Principal*/
+    .inicio {
+        padding: 35px; 
+        text-align:center;
+    }
+    .barrados h1,
+    .barra h1,
+    .Contact h1 {
+        font-size: 2.0em; 
+        margin-top: 100px;
+        text-align:left;
+    }
+    .inicio h1{
+        font-size: 2.0em; 
+        margin-top: 100px;
+
+    }
+
+    h4{
+        font-size: 1.5em; 
+        
+
+    }
+    .inicio h2 {
+        font-size: 17px; 
+    }
+
+    .project-carousel h2 {
+        font-size: 20px; 
+    }
+    
+    a,
+    li,
+    b,
+    p {
+        font-size: 18px; 
+    }
+
+}
+
+@media (max-width: 480px) {
+    .project-card {
+        max-width: 85%;
+    }
+
+    .side-section ul li {
+        margin: 2rem 0;
+    }
+}

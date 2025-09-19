@@ -1,0 +1,258 @@
+/* -----------------------------
+   Reset y tipografía elegante
+----------------------------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(120deg, #f0f4ff, #ffffff);
+    color: #1f2937;
+    line-height: 1.5;
+    padding: 15px;
+    font-size: 0.95em; /* Ajuste general tamaño de texto */
+}
+
+h1, h2 {
+    color: #111827;
+    margin-bottom: 18px;
+    font-weight: 700;
+}
+
+/* -----------------------------
+   Contenedor principal con sombra elegante
+----------------------------- */
+.container {
+    max-width: 950px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+}
+
+/* -----------------------------
+   Header y navegación con estilo
+----------------------------- */
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+header .logo {
+    font-size: 1.8em; /* tamaño más contenido */
+    font-weight: 700;
+    color: #2563eb; /* azul simple */
+    margin-bottom: 10px;
+    text-shadow: 0 1px 4px rgba(37,99,235,0.3);
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #2563eb; /* azul simple */
+    font-weight: 600;
+    padding: 6px 12px; /* reducido */
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+nav ul li a::after {
+    content: '';
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #2563eb;
+    transition: 0.3s;
+}
+
+nav ul li a:hover::after {
+    width: 100%;
+}
+
+nav ul li a:hover {
+    background-color: rgba(37,99,235,0.1);
+}
+
+/* -----------------------------
+   Formularios
+----------------------------- */
+form {
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #374151;
+}
+
+input[type="text"], input[type="hidden"], textarea, select {
+    width: 50%;
+    padding: 8px 10px; /* más compacto */
+    margin-bottom: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 6px rgba(37,99,235,0.2);
+    outline: none;
+}
+
+button {
+    background-color: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 9px 16px; /* más compacto */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.15);
+}
+
+/* -----------------------------
+   Tablas elegantes
+----------------------------- */
+table {
+    width: 95%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+th, td {
+    padding: 10px 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #2563eb;
+    color: #fff;
+    font-weight: 600;
+}
+
+tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+tr:hover {
+    background-color: #eef2ff;
+}
+
+/* -----------------------------
+   Autocomplete
+----------------------------- */
+.autocomplete-list {
+    border: 1px solid #d1d5db;
+    max-height: 160px; /* un poco más compacto */
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    background: #ffffff;
+    z-index: 1000;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.autocomplete-list li {
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.autocomplete-list li.active,
+.autocomplete-list li:hover {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+/* -----------------------------
+   Mensajes
+----------------------------- */
+p {
+    margin-bottom: 12px;
+    font-size: 0.95em;
+}
+
+p.success {
+    color: #059669;
+    font-weight: 600;
+}
+
+p.error {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+p.warning {
+    color: #d97706;
+    font-weight: 600;
+}
+
+/* -----------------------------
+   Responsivo elegante
+----------------------------- */
+@media (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+
+    table, form input, form select, form textarea, .autocomplete-list, button {
+        width: 100%;
+        font-size: 0.9em;
+    }
+
+    .container {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1, h2 {
+        font-size: 1.4em;
+    }
+
+    th, td {
+        padding: 6px 8px;
+        font-size: 0.85em;
+    }
+
+    button {
+        padding: 8px 12px;
+    }
+}

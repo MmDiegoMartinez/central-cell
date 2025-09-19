@@ -1,0 +1,1869 @@
+/* From Uiverse.io by VashonG */ 
+.macbook {
+    width: 150px;
+    height: 96px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: -85px 0 0 -78px;
+    perspective: 500px;
+  }
+  
+  .shadow {
+    position: absolute;
+    width: 60px;
+    height: 0px;
+    left: 40px;
+    top: 160px;
+    transform: rotateX(80deg) rotateY(0deg) rotateZ(0deg);
+    box-shadow: 0 0 60px 40px rgba(0,0,0,0.3);
+    animation: shadow infinite 7s ease;
+  }
+  
+  .inner {
+    z-index: 20;
+    position: absolute;
+    width: 150px;
+    height: 96px;
+    left: 0;
+    top: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(-20deg) rotateY(0deg) rotateZ(0deg);
+    animation: rotate infinite 7s ease;
+  }
+  
+  .screen {
+    width: 150px;
+    height: 96px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    border-radius: 7px;
+    background: #ddd;
+    transform-style: preserve-3d;
+    transform-origin: 50% 93px;
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    animation: lid-screen infinite 7s ease;
+    background-image: linear-gradient(45deg, rgba(0,0,0,0.34) 0%,rgba(0,0,0,0) 100%);
+    background-position: left bottom;
+    background-size: 300px 300px;
+    box-shadow: inset 0 3px 7px rgba(255,255,255,0.5);
+  }
+  
+  .screen .logo {
+    position: absolute;
+    width: 20px;
+    height: 24px;
+    left: 50%;
+    top: 50%;
+    margin: -12px 0 0 -10px;
+    transform: rotateY(180deg) translateZ(0.1px);
+  }
+  
+  .screen .face-one {
+    width: 150px;
+    height: 96px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    border-radius: 7px;
+    background: #d3d3d3;
+    transform: translateZ(2px);
+    background-image: linear-gradient(45deg,rgba(0,0,0,0.24) 0%,rgba(0,0,0,0) 100%);
+  }
+  
+  .screen .face-one .camera {
+    width: 3px;
+    height: 3px;
+    border-radius: 100%;
+    background: #000;
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    margin-left: -1.5px;
+  }
+  
+  .screen .face-one .display {
+    width: 130px;
+    height: 74px;
+    margin: 10px;
+    background-color: #000;
+    background-size: 100% 100%;
+    border-radius: 1px;
+    position: relative;
+    box-shadow: inset 0 0 2px rgba(0,0,0,1);
+  }
+  
+  .screen .face-one .display .shade {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 130px;
+    height: 74px;
+    background: linear-gradient(-135deg, rgba(255,255,255,0) 0%,rgba(255,255,255,0.1) 47%,rgba(255,255,255,0) 48%);
+    animation: screen-shade infinite 7s ease;
+    background-size: 300px 200px;
+    background-position: 0px 0px;
+  }
+  
+  .screen .face-one span {
+    position: absolute;
+    top: 85px;
+    left: 57px;
+    font-size: 6px;
+    color: #666
+  }
+  
+  .macbody {
+    width: 150px;
+    height: 96px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    border-radius: 7px;
+    background: #cbcbcb;
+    transform-style: preserve-3d;
+    transform-origin: 50% bottom;
+    transform: rotateX(-90deg);
+    animation: lid-macbody infinite 7s ease;
+    background-image: linear-gradient(45deg, rgba(0,0,0,0.24) 0%,rgba(0,0,0,0) 100%);
+  }
+  
+  .macbody .face-one {
+    width: 150px;
+    height: 96px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    border-radius: 7px;
+    transform-style: preserve-3d;
+    background: #dfdfdf;
+    animation: lid-keyboard-area infinite 7s ease;
+    transform: translateZ(-2px);
+    background-image: linear-gradient(30deg, rgba(0,0,0,0.24) 0%,rgba(0,0,0,0) 100%);
+  }
+  
+  .macbody .touchpad {
+    width: 40px;
+    height: 31px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 4px;
+    margin: -44px 0 0 -18px;
+    background: #cdcdcd;
+    background-image: linear-gradient(30deg, rgba(0,0,0,0.24) 0%,rgba(0,0,0,0) 100%);
+    box-shadow: inset 0 0 3px #888;
+  }
+  
+  .macbody .keyboard {
+    width: 130px;
+    height: 45px;
+    position: absolute;
+    left: 7px;
+    top: 41px;
+    border-radius: 4px;
+    transform-style: preserve-3d;
+    background: #cdcdcd;
+    background-image: linear-gradient(30deg, rgba(0,0,0,0.24) 0%,rgba(0,0,0,0) 100%);
+    box-shadow: inset 0 0 3px #777;
+    padding: 0 0 0 2px;
+  }
+  
+  .keyboard .key {
+    width: 6px;
+    height: 6px;
+    background: #444;
+    float: left;
+    margin: 1px;
+    transform: translateZ(-2px);
+    border-radius: 2px;
+    box-shadow: 0 -2px 0 #222;
+    animation: keys infinite 7s ease;
+  }
+  
+  .key.space {
+    width: 45px;
+  }
+  
+  .key.f {
+    height: 3px;
+  }
+  
+  .macbody .pad {
+    width: 5px;
+    height: 5px;
+    background: #333;
+    border-radius: 100%;
+    position: absolute;
+  }
+  
+  .pad.one {
+    left: 20px;
+    top: 20px;
+  }
+  
+  .pad.two {
+    right: 20px;
+    top: 20px;
+  }
+  
+  .pad.three {
+    right: 20px;
+    bottom: 20px;
+  }
+  
+  .pad.four {
+    left: 20px;
+    bottom: 20px;
+  }
+  
+  @keyframes rotate {
+    0% {
+      transform: rotateX(-20deg) rotateY(0deg) rotateZ(0deg);
+    }
+  
+    5% {
+      transform: rotateX(-20deg) rotateY(-20deg) rotateZ(0deg);
+    }
+  
+    20% {
+      transform: rotateX(30deg) rotateY(200deg) rotateZ(0deg);
+    }
+  
+    25% {
+      transform: rotateX(-60deg) rotateY(150deg) rotateZ(0deg);
+    }
+  
+    60% {
+      transform: rotateX(-20deg) rotateY(130deg) rotateZ(0deg);
+    }
+  
+    65% {
+      transform: rotateX(-20deg) rotateY(120deg) rotateZ(0deg);
+    }
+  
+    80% {
+      transform: rotateX(-20deg) rotateY(375deg) rotateZ(0deg);
+    }
+  
+    85% {
+      transform: rotateX(-20deg) rotateY(357deg) rotateZ(0deg);
+    }
+  
+    87% {
+      transform: rotateX(-20deg) rotateY(360deg) rotateZ(0deg);
+    }
+  
+    100% {
+      transform: rotateX(-20deg) rotateY(360deg) rotateZ(0deg);
+    }
+  }
+  
+  @keyframes lid-screen {
+    0% {
+      transform: rotateX(0deg);
+      background-position: left bottom;
+    }
+  
+    5% {
+      transform: rotateX(50deg);
+      background-position: left bottom;
+    }
+  
+    20% {
+      transform: rotateX(-90deg);
+      background-position: -150px top;
+    }
+  
+    25% {
+      transform: rotateX(15deg);
+      background-position: left bottom;
+    }
+  
+    30% {
+      transform: rotateX(-5deg);
+      background-position: right top;
+    }
+  
+    38% {
+      transform: rotateX(5deg);
+      background-position: right top;
+    }
+  
+    48% {
+      transform: rotateX(0deg);
+      background-position: right top;
+    }
+  
+    90% {
+      transform: rotateX(0deg);
+      background-position: right top;
+    }
+  
+    100% {
+      transform: rotateX(0deg);
+      background-position: right center;
+    }
+  }
+  
+  @keyframes lid-macbody {
+    0% {
+      transform: rotateX(-90deg);
+    }
+  
+    50% {
+      transform: rotateX(-90deg);
+    }
+  
+    100% {
+      transform: rotateX(-90deg);
+    }
+  }
+  
+  @keyframes lid-keyboard-area {
+    0% {
+      background-color: #dfdfdf;
+    }
+  
+    50% {
+      background-color: #bbb;
+    }
+  
+    100% {
+      background-color: #dfdfdf;
+    }
+  }
+  
+  @keyframes screen-shade {
+    0% {
+      background-position: -20px 0px;
+    }
+  
+    5% {
+      background-position: -40px 0px;
+    }
+  
+    20% {
+      background-position: 200px 0;
+    }
+  
+    50% {
+      background-position: -200px 0;
+    }
+  
+    80% {
+      background-position: 0px 0px;
+    }
+  
+    85% {
+      background-position: -30px 0;
+    }
+  
+    90% {
+      background-position: -20px 0;
+    }
+  
+    100% {
+      background-position: -20px 0px;
+    }
+  }
+  
+  @keyframes keys {
+    0% {
+      box-shadow: 0 -2px 0 #222;
+    }
+  
+    5% {
+      box-shadow: 1 -1px 0 #222;
+    }
+  
+    20% {
+      box-shadow: -1px 1px 0 #222;
+    }
+  
+    25% {
+      box-shadow: -1px 1px 0 #222;
+    }
+  
+    60% {
+      box-shadow: -1px 1px 0 #222;
+    }
+  
+    80% {
+      box-shadow: 0 -2px 0 #222;
+    }
+  
+    85% {
+      box-shadow: 0 -2px 0 #222;
+    }
+  
+    87% {
+      box-shadow: 0 -2px 0 #222;
+    }
+  
+    100% {
+      box-shadow: 0 -2px 0 #222;
+    }
+  }
+  
+  @keyframes shadow {
+    0% {
+      transform: rotateX(80deg) rotateY(0deg) rotateZ(0deg);
+      box-shadow: 0 0 60px 40px rgba(0,0,0,0.3);
+    }
+  
+    5% {
+      transform: rotateX(80deg) rotateY(10deg) rotateZ(0deg);
+      box-shadow: 0 0 60px 40px rgba(0,0,0,0.3);
+    }
+  
+    20% {
+      transform: rotateX(30deg) rotateY(-20deg) rotateZ(-20deg);
+      box-shadow: 0 0 50px 30px rgba(0,0,0,0.3);
+    }
+  
+    25% {
+      transform: rotateX(80deg) rotateY(-20deg) rotateZ(50deg);
+      box-shadow: 0 0 35px 15px rgba(0,0,0,0.1);
+    }
+  
+    60% {
+      transform: rotateX(80deg) rotateY(0deg) rotateZ(-50deg) translateX(30px);
+      box-shadow: 0 0 60px 40px rgba(0,0,0,0.3);
+    }
+  
+    100% {
+      box-shadow: 0 0 60px 40px rgba(0,0,0,0.3);
+    }
+  }
+
+  /*Laptop2*/
+  /* From Uiverse.io by Spacious74 */
+.laptop {
+  transform: scale(0.7);
+}
+@media only screen and (max-width: 768px){
+  .laptop {
+    transform: scale(0.4);
+  }
+}
+.pantalla {
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 2px #c8cacb, inset 0 0 0 10px #000;
+  height: 318px;
+  width: 518px;
+  margin: 0 auto;
+  padding: 9px 9px 23px 9px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: linear-gradient(
+    15deg,
+    #64b5f6 0%,
+    #73c1f7 13%,
+    #82cef8 25%,
+    #92dbf9 38%,
+    #a1e8fb 50%,
+    #b0f5fc 62%,
+    #bff9fd 75%,
+    #ccfcfe 87%,
+    #e0fefe 100%
+  );
+  transform-style: preserve-3d;
+  transform: perspective(1900px) rotateX(-88.5deg);
+  transform-origin: 50% 100%;
+  animation: open 4s infinite alternate;
+}
+@keyframes open {
+  0% {
+    transform: perspective(1900px) rotateX(-88.5deg);
+  }
+  100% {
+    transform: perspective(1000px) rotateX(0deg);
+  }
+}
+.pantalla::before {
+  content: "";
+  width: 518px;
+  height: 12px;
+  position: absolute;
+  background: linear-gradient(#979899, transparent);
+  top: -3px;
+  transform: rotateX(90deg);
+  border-radius: 5px 5px;
+}
+
+.text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  color: #000000;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px #fff;
+}
+.header {
+  width: 100px;
+  height: 12px;
+  position: absolute;
+  background-color: #000;
+  top: 10px;
+  left: 50%;
+  transform: translate(-50%, -0%);
+  border-radius: 0 0 6px 6px;
+}
+.pantalla::after {
+  background: linear-gradient(to bottom, #272727, #0d0d0d);
+  border-radius: 0 0 20px 20px;
+  bottom: 2px;
+  content: "";
+  height: 24px;
+  left: 2px;
+  position: absolute;
+  width: 514px;
+}
+.teclado {
+  background: radial-gradient(circle at center, #e2e3e4 85%, #a9abac 100%);
+  border: solid #a0a3a7;
+  border-radius: 2px 2px 12px 12px;
+  border-width: 1px 2px 0 2px;
+  box-shadow: inset 0 -2px 8px 0 #6c7074;
+  height: 24px;
+  margin-top: -10px;
+  position: relative;
+  width: 620px;
+  z-index: 9;
+}
+.teclado::after {
+  background: #e2e3e4;
+  border-radius: 0 0 10px 10px;
+  box-shadow: inset 0 0 4px 2px #babdbf;
+  content: "";
+  height: 10px;
+  left: 50%;
+  margin-left: -60px;
+  position: absolute;
+  top: 0;
+  width: 120px;
+}
+.teclado::before {
+  background: 0 0;
+  border-radius: 0 0 3px 3px;
+  bottom: -2px;
+  box-shadow: -270px 0 #272727, 250px 0 #272727;
+  content: "";
+  height: 2px;
+  left: 50%;
+  margin-left: -10px;
+  position: absolute;
+  width: 40px;
+}
+/*animacion carga*/
+/* From Uiverse.io by Juanes200122 */ 
+.loader {
+  --duration: 3s;
+  --primary: #64B5F6;
+  --primary-light: #00a6ff;
+  --primary-rgba: rgba(204, 0, 255, 0.04);
+  width: 200px;
+  height: 320px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+@media (max-width: 480px) {
+  .loader {
+    zoom: 0.44;
+  }
+}
+
+.loader:before, .loader:after {
+  --r: 20.5deg;
+  content: "";
+  width: 320px;
+  height: 140px;
+  position: absolute;
+  right: 32%;
+  bottom: -11px;
+  /* change the back groung color on switching from light to dark mood */
+  background: #e8e8e8;
+  transform: translateZ(200px) rotate(var(--r));
+  -webkit-animation: mask var(--duration) linear forwards infinite;
+  animation: mask var(--duration) linear forwards infinite;
+}
+
+.loader:after {
+  --r: -20.5deg;
+  right: auto;
+  left: 32%;
+}
+
+.loader .ground {
+  position: absolute;
+  left: -50px;
+  bottom: -120px;
+  transform-style: preserve-3d;
+  transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+}
+
+.loader .ground div {
+  transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+  width: 200px;
+  height: 200px;
+  background: var(--primary);
+  background: linear-gradient(45deg, var(--primary) 0%, var(--primary) 50%, var(--primary-light) 50%, var(--primary-light) 100%);
+  transform-style: preserve-3d;
+  -webkit-animation: ground var(--duration) linear forwards infinite;
+  animation: ground var(--duration) linear forwards infinite;
+}
+
+.loader .ground div:before, .loader .ground div:after {
+  --rx: 90deg;
+  --ry: 0deg;
+  --x: 44px;
+  --y: 162px;
+  --z: -50px;
+  content: "";
+  width: 156px;
+  height: 300px;
+  opacity: 0;
+  background: linear-gradient(var(--primary), var(--primary-rgba));
+  position: absolute;
+  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
+  -webkit-animation: ground-shine var(--duration) linear forwards infinite;
+  animation: ground-shine var(--duration) linear forwards infinite;
+}
+
+.loader .ground div:after {
+  --rx: 90deg;
+  --ry: 90deg;
+  --x: 0;
+  --y: 177px;
+  --z: 150px;
+}
+
+.loader .box {
+  --x: 0;
+  --y: 0;
+  position: absolute;
+  -webkit-animation: var(--duration) linear forwards infinite;
+  animation: var(--duration) linear forwards infinite;
+  transform: translate(var(--x), var(--y));
+}
+
+.loader .box div {
+  background-color: var(--primary);
+  width: 48px;
+  height: 48px;
+  position: relative;
+  transform-style: preserve-3d;
+  -webkit-animation: var(--duration) ease forwards infinite;
+  animation: var(--duration) ease forwards infinite;
+  transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+}
+
+.loader .box div:before, .loader .box div:after {
+  --rx: 90deg;
+  --ry: 0deg;
+  --z: 24px;
+  --y: -24px;
+  --x: 0;
+  content: "";
+  position: absolute;
+  background-color: inherit;
+  width: inherit;
+  height: inherit;
+  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
+  filter: brightness(var(--b, 1.2));
+}
+
+.loader .box div:after {
+  --rx: 0deg;
+  --ry: 90deg;
+  --x: 24px;
+  --y: 0;
+  --b: 1.4;
+}
+
+.loader .box.box0 {
+  --x: -220px;
+  --y: -120px;
+  left: 58px;
+  top: 108px;
+}
+
+.loader .box.box1 {
+  --x: -260px;
+  --y: 120px;
+  left: 25px;
+  top: 120px;
+}
+
+.loader .box.box2 {
+  --x: 120px;
+  --y: -190px;
+  left: 58px;
+  top: 64px;
+}
+
+.loader .box.box3 {
+  --x: 280px;
+  --y: -40px;
+  left: 91px;
+  top: 120px;
+}
+
+.loader .box.box4 {
+  --x: 60px;
+  --y: 200px;
+  left: 58px;
+  top: 132px;
+}
+
+.loader .box.box5 {
+  --x: -220px;
+  --y: -120px;
+  left: 25px;
+  top: 76px;
+}
+
+.loader .box.box6 {
+  --x: -260px;
+  --y: 120px;
+  left: 91px;
+  top: 76px;
+}
+
+.loader .box.box7 {
+  --x: -240px;
+  --y: 200px;
+  left: 58px;
+  top: 87px;
+}
+
+.loader .box0 {
+  -webkit-animation-name: box-move0;
+  animation-name: box-move0;
+}
+
+.loader .box0 div {
+  -webkit-animation-name: box-scale0;
+  animation-name: box-scale0;
+}
+
+.loader .box1 {
+  -webkit-animation-name: box-move1;
+  animation-name: box-move1;
+}
+
+.loader .box1 div {
+  -webkit-animation-name: box-scale1;
+  animation-name: box-scale1;
+}
+
+.loader .box2 {
+  -webkit-animation-name: box-move2;
+  animation-name: box-move2;
+}
+
+.loader .box2 div {
+  -webkit-animation-name: box-scale2;
+  animation-name: box-scale2;
+}
+
+.loader .box3 {
+  -webkit-animation-name: box-move3;
+  animation-name: box-move3;
+}
+
+.loader .box3 div {
+  -webkit-animation-name: box-scale3;
+  animation-name: box-scale3;
+}
+
+.loader .box4 {
+  -webkit-animation-name: box-move4;
+  animation-name: box-move4;
+}
+
+.loader .box4 div {
+  -webkit-animation-name: box-scale4;
+  animation-name: box-scale4;
+}
+
+.loader .box5 {
+  -webkit-animation-name: box-move5;
+  animation-name: box-move5;
+}
+
+.loader .box5 div {
+  -webkit-animation-name: box-scale5;
+  animation-name: box-scale5;
+}
+
+.loader .box6 {
+  -webkit-animation-name: box-move6;
+  animation-name: box-move6;
+}
+
+.loader .box6 div {
+  -webkit-animation-name: box-scale6;
+  animation-name: box-scale6;
+}
+
+.loader .box7 {
+  -webkit-animation-name: box-move7;
+  animation-name: box-move7;
+}
+
+.loader .box7 div {
+  -webkit-animation-name: box-scale7;
+  animation-name: box-scale7;
+}
+
+@-webkit-keyframes box-move0 {
+  12% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  25%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move0 {
+  12% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  25%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale0 {
+  6% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  14%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale0 {
+  6% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  14%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move1 {
+  16% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  29%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move1 {
+  16% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  29%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale1 {
+  10% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  18%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale1 {
+  10% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  18%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move2 {
+  20% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  33%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move2 {
+  20% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  33%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale2 {
+  14% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  22%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale2 {
+  14% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  22%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move3 {
+  24% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  37%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move3 {
+  24% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  37%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale3 {
+  18% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  26%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale3 {
+  18% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  26%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move4 {
+  28% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  41%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move4 {
+  28% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  41%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale4 {
+  22% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  30%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale4 {
+  22% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  30%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move5 {
+  32% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  45%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move5 {
+  32% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  45%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale5 {
+  26% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  34%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale5 {
+  26% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  34%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move6 {
+  36% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  49%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move6 {
+  36% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  49%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale6 {
+  30% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  38%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale6 {
+  30% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  38%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes box-move7 {
+  40% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  53%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@keyframes box-move7 {
+  40% {
+    transform: translate(var(--x), var(--y));
+  }
+
+  53%, 52% {
+    transform: translate(0, 0);
+  }
+
+  80% {
+    transform: translate(0, -32px);
+  }
+
+  90%, 100% {
+    transform: translate(0, 188px);
+  }
+}
+
+@-webkit-keyframes box-scale7 {
+  34% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  42%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@keyframes box-scale7 {
+  34% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0);
+  }
+
+  42%, 100% {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1);
+  }
+}
+
+@-webkit-keyframes ground {
+  0%, 65% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+  }
+
+  75%, 90% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
+  }
+
+  100% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+  }
+}
+
+@keyframes ground {
+  0%, 65% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+  }
+
+  75%, 90% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
+  }
+
+  100% {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
+  }
+}
+
+@-webkit-keyframes ground-shine {
+  0%, 70% {
+    opacity: 0;
+  }
+
+  75%, 87% {
+    opacity: 0.2;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ground-shine {
+  0%, 70% {
+    opacity: 0;
+  }
+
+  75%, 87% {
+    opacity: 0.2;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@-webkit-keyframes mask {
+  0%, 65% {
+    opacity: 0;
+  }
+
+  66%, 100% {
+    opacity: 1;
+  }
+}
+
+@keyframes mask {
+  0%, 65% {
+    opacity: 0;
+  }
+
+  66%, 100% {
+    opacity: 1;
+  }
+}
+/*EVA*/
+.modelViewPort {
+  /* The black circle background around the model*/
+  perspective: 1000px;
+  width: 20rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+}
+.eva {
+  --EVA-ROTATION-DURATION: 4s;
+  transform-style: preserve-3d;
+  animation: rotateRight var(--EVA-ROTATION-DURATION) linear infinite alternate;
+}
+.head {
+  position: relative;
+  width: 6rem;
+  height: 4rem;
+  border-radius: 48% 53% 45% 55% / 79% 79% 20% 22%;
+  background: linear-gradient(to right, white 45%, gray);
+}
+.eyeChamber {
+  width: 4.5rem;
+  height: 2.75rem;
+  position: relative;
+  left: 50%;
+  top: 55%;
+  border-radius: 45% 53% 45% 48% / 62% 59% 35% 34%;
+  background-color: #0c203c;
+  box-shadow: 0px 0px 2px 2px white, inset 0px 0px 0px 2px black;
+  transform: translate(-50%, -50%);
+  animation: moveRight var(--EVA-ROTATION-DURATION) linear infinite alternate;
+}
+.eye {
+  width: 1.2rem;
+  height: 1.5rem;
+  position: absolute;
+  border-radius: 50%;
+}
+.eye:first-child {
+  left: 12px;
+  top: 50%;
+  background: repeating-linear-gradient(
+    65deg,
+    #9bdaeb 0px,
+    #9bdaeb 1px,
+    white 2px
+  );
+  box-shadow: inset 0px 0px 5px #04b8d5, 0px 0px 15px 1px #0bdaeb;
+  transform: translate(0, -50%) rotate(-65deg);
+}
+.eye:nth-child(2) {
+  right: 12px;
+  top: 50%;
+  background: repeating-linear-gradient(
+    -65deg,
+    #9bdaeb 0px,
+    #9bdaeb 1px,
+    white 2px
+  );
+  box-shadow: inset 0px 0px 5px #04b8d5, 0px 0px 15px 1px #0bdaeb;
+  transform: translate(0, -50%) rotate(65deg);
+}
+.body {
+  width: 6rem;
+  height: 8rem;
+  position: relative;
+  margin-block-start: 0.25rem;
+  border-radius: 47% 53% 45% 55% / 12% 9% 90% 88%;
+  background: linear-gradient(to right, white 35%, gray);
+}
+.hand {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.75rem;
+  width: 2rem;
+  height: 5.5rem;
+  border-radius: 40%;
+  background: linear-gradient(to left, white 15%, gray);
+  box-shadow: 5px 0px 5px rgba(0, 0, 0, 0.25);
+  transform: rotateY(55deg) rotateZ(10deg);
+}
+.hand:first-child {
+  animation: compensateRotation var(--EVA-ROTATION-DURATION) linear infinite
+    alternate;
+}
+.hand:nth-child(2) {
+  left: 92%;
+  background: linear-gradient(to right, white 15%, gray);
+  transform: rotateY(55deg) rotateZ(-10deg);
+  animation: compensateRotationRight var(--EVA-ROTATION-DURATION) linear
+    infinite alternate;
+}
+.scannerThing {
+  width: 0;
+  height: 0;
+  position: absolute;
+  left: 60%;
+  top: 10%;
+  border-top: 180px solid #9bdaeb;
+  border-left: 250px solid transparent;
+  border-right: 250px solid transparent;
+  transform-origin: top left;
+  mask: linear-gradient(to right, white, transparent 35%);
+  animation: glow 2s cubic-bezier(0.86, 0, 0.07, 1) infinite;
+}
+.scannerOrigin {
+  position: absolute;
+  width: 8px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  left: 60%;
+  top: 10%;
+  background: #9bdaeb;
+  box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.5);
+  animation: moveRight var(--EVA-ROTATION-DURATION) linear infinite;
+}
+@keyframes rotateRight {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(25deg);
+  }
+}
+@keyframes moveRight {
+  from {
+    transform: translate(-50%, -50%);
+  }
+  to {
+    transform: translate(-40%, -50%);
+  }
+}
+@keyframes compensateRotation {
+  from {
+    transform: rotateY(55deg) rotateZ(10deg);
+  }
+  to {
+    transform: rotatey(30deg) rotateZ(10deg);
+  }
+}
+@keyframes compensateRotationRight {
+  from {
+    transform: rotateY(55deg) rotateZ(-10deg);
+  }
+  to {
+    transform: rotateY(70deg) rotateZ(-10deg);
+  }
+}
+@keyframes glow {
+  from {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  45% {
+    transform: rotate(-25deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/*Carga*/
+/* From Uiverse.io by Nishank0744 */ 
+.cubes {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-style: preserve-3d;
+}
+
+.loop {
+  transform: rotateX(-38deg) rotateY(-46deg) translateZ(1.5625em);
+}
+
+@keyframes s {
+  to {
+    transform: scale3d(0.2, 0.2, 0.2);
+  }
+}
+
+.item {
+  margin: -1.5625em;
+  width: 3.125em;
+  height: 3.125em;
+  transform-origin: 50% 50% -1.5625em;
+  box-shadow: 0 0 0.125em currentColor;
+  background: currentColor;
+  animation: s 0.6s cubic-bezier(0.45, 0.03, 0.51, 0.95) infinite alternate;
+}
+
+.item:before,
+.item:after {
+  position: absolute;
+  width: inherit;
+  height: inherit;
+  transform-origin: 0 100%;
+  box-shadow: inherit;
+  background: currentColor;
+  content: "";
+}
+
+.item:before {
+  bottom: 100%;
+  transform: rotateX(90deg);
+}
+
+.item:after {
+  left: 100%;
+  transform: rotateY(90deg);
+}
+
+.item:nth-child(1) {
+  margin-top: 6.25em;
+  color: #64B5F6; /* Azul principal */
+  animation-delay: -1.2s;
+}
+
+.item:nth-child(1):before {
+  color: #64B5F6;
+}
+
+.item:nth-child(1):after {
+  color: #64B5F6;
+}
+
+.item:nth-child(2) {
+  margin-top: 3.125em;
+  color: #4FC3F7; /* Azul claro */
+  animation-delay: -1s;
+}
+
+.item:nth-child(2):before {
+  color: #4FC3F7;
+}
+
+.item:nth-child(2):after {
+  color: #4FC3F7;
+}
+
+.item:nth-child(3) {
+  margin-top: 0em;
+  color: #29B6F6; /* Azul intermedio */
+  animation-delay: -0.8s;
+}
+
+.item:nth-child(3):before {
+  color: #29B6F6;
+}
+
+.item:nth-child(3):after {
+  color: #29B6F6;
+}
+
+.item:nth-child(4) {
+  margin-top: -3.125em;
+  color: #039BE5; /* Azul oscuro */
+  animation-delay: -0.6s;
+}
+
+.item:nth-child(4):before {
+  color: #039BE5;
+}
+
+.item:nth-child(4):after {
+  color: #039BE5;
+}
+
+.item:nth-child(5) {
+  margin-top: -6.25em;
+  color: #0288D1; /* Azul profundo */
+  animation-delay: -0.4s;
+}
+
+.item:nth-child(5):before {
+  color: #0288D1;
+}
+
+.item:nth-child(5):after {
+  color: #0288D1;
+}
+
+.item:nth-child(6) {
+  margin-top: -9.375em;
+  color: #0277BD; /* Azul más oscuro */
+  animation-delay: -0.2s;
+}
+
+.item:nth-child(6):before {
+  color: #0277BD;
+}
+
+.item:nth-child(6):after {
+  color: #0277BD;
+}
+/*consola*/
+@keyframes blinkCursor {
+  50% {
+    border-right-color: transparent;
+  }
+}
+
+@keyframes typeAndDelete {
+  0%,
+  10% {
+    width: 0;
+  }
+  45%,
+  55% {
+    width: 10em;
+  } /* adjust width based on content */
+  90%,
+  100% {
+    width: 0;
+  }
+}
+
+.terminal-loader {
+  border: 0.1em solid #333;
+  background-color: #1a1a1a;
+  color: #0f0;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1em;
+  padding: 1.5em 1em;
+  width: 12em;
+  margin: 100px auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.terminal-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5em;
+  background-color: #333;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 0 0.4em;
+  box-sizing: border-box;
+}
+
+.terminal-controls {
+  float: right;
+}
+
+.control {
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-left: 0.4em;
+  border-radius: 50%;
+  background-color: #777;
+}
+
+.control.close {
+  background-color: #e33;
+}
+
+.control.minimize {
+  background-color: #ee0;
+}
+
+.control.maximize {
+  background-color: #0b0;
+}
+
+.terminal-title {
+  float: left;
+  line-height: 1.5em;
+  color: #eee;
+}
+
+.texto {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 0.2em solid green; /* Cursor */
+  animation: typeAndDelete 4s steps(11) infinite,
+    blinkCursor 0.5s step-end infinite alternate;
+  margin-top: 1.5em;
+}
+/*Boton*/
+/* From Uiverse.io by njesenberger */
+.button {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  border-width: 0;
+  padding: 0 8px 12px;
+  min-width: 10em;
+  box-sizing: border-box;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.button-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 0;
+  padding: 8px 16px;
+  transform: translateY(0);
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 -1px rgba(0, 0, 0, .25);
+  transition-property: transform;
+  transition-duration: .2s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.button:active .button-top {
+  transform: translateY(6px);
+}
+
+.button-top::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  box-sizing: content-box;
+  background-image: radial-gradient(#64B5F6, #2196F3); /* Light to darker blue gradient */
+  text-align: center;
+  color: #fff;
+  box-shadow: inset 0 0 0px 1px rgba(255, 255, 255, .2), 0 1px 2px 1px rgba(255, 255, 255, .2);
+  transition-property: border-radius, padding, width, transform;
+  transition-duration: .2s;
+}
+
+.button:active .button-top::after {
+  border-radius: 6px;
+  padding: 0 2px;
+}
+
+.button-bottom {
+  position: absolute;
+  z-index: -1;
+  bottom: 4px;
+  left: 4px;
+  border-radius: 8px / 16px 16px 8px 8px;
+  padding-top: 6px;
+  width: calc(100% - 8px);
+  height: calc(100% - 10px);
+  box-sizing: content-box;
+  background-color: #1E88E5; /* Medium blue */
+  background-image: radial-gradient(4px 8px at 4px calc(100% - 8px), rgba(255, 255, 255, .25), transparent), radial-gradient(4px 8px at calc(100% - 4px) calc(100% - 8px), rgba(255, 255, 255, .25), transparent), radial-gradient(16px at -4px 0, white, transparent), radial-gradient(16px at calc(100% + 4px) 0, white, transparent);
+  box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.5), inset 0 -1px 3px 3px rgba(0, 0, 0, .4);
+  transition-property: border-radius, padding-top;
+  transition-duration: .2s;
+}
+
+.button:active .button-bottom {
+  border-radius: 10px 10px 8px 8px / 8px;
+  padding-top: 0;
+}
+
+.button-base {
+  position: absolute;
+  z-index: -2;
+  top: 4px;
+  left: 0;
+  border-radius: 12px;
+  width: 100%;
+  height: calc(100% - 4px);
+  background-color: rgba(0, 0, 0, .15);
+  box-shadow: 0 1px 1px 0 rgba(255, 255, 255, .75), inset 0 2px 2px rgba(0, 0, 0, .25);
+}
+/*Git hub*/
+/* From Uiverse.io by kamehame-ha */ 
+.boton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 15px;
+  gap: 15px;
+  background-color: #181717;
+  outline: 3px #181717 solid;
+  outline-offset: -3px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: 400ms;
+}
+
+.boton .textos {
+  color: white;
+  font-weight: 700;
+  font-size: 1em;
+  transition: 400ms;
+}
+
+.boton svg path {
+  transition: 400ms;
+}
+
+.boton:hover {
+  background-color: transparent;
+}
+
+.boton:hover .textos {
+  color: #181717;
+}
+
+.boton:hover svg path {
+  fill: #181717;
+}
