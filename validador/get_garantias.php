@@ -13,7 +13,7 @@ try {
         g.causa,
         g.piezas,
         g.sucursal,
-        c.nombre AS apasionado,   -- Nombre del colaborador, no ID
+        c.nombre AS apasionado,  
         g.fecha,
         g.estatus,
         g.anotaciones_vendedor,
@@ -29,6 +29,7 @@ try {
     FROM garantia g
     LEFT JOIN validador v ON g.id_validador = v.id
     LEFT JOIN colaboradores c ON g.apasionado = c.id
+    WHERE g.anotado = 1
     ORDER BY g.fecha DESC, g.id DESC";
 
     $stmt = $conn->query($sql);
