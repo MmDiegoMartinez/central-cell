@@ -96,6 +96,11 @@ $validador_id = $_SESSION['validador_id'];
         🔗 Compatibilidades
       </a>
     </li>
+     <li>
+      <a href="kpis.php" style="display: flex; align-items: center; gap: 12px;">
+        📈  KPIs
+      </a>
+    </li>
 
     <li>
       <a href="Validadores.php" style="display: flex; align-items: center; gap: 12px;">
