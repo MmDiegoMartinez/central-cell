@@ -1,5 +1,6 @@
 <?php
 session_start();
+include_once '../funciones.php'; 
 
 if (!isset($_SESSION['validador_id'])) {
     header("Location: ../validador/loginvalidador.php");
@@ -36,15 +37,18 @@ if (!isset($_SESSION['validador_id'])) {
   
   </style>
   
+  <link rel="stylesheet" href="estilos.css">
+  
 </head>
 <body>
    <header>
   <nav>
     <ul id="menu">
       <li>
-        <a href="validador.php" class="menu-link">
+        <a href="index.php" class="menu-link">
           <span class="logo-container">
-            <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" />
+            <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
+
           </span>
           Home
         </a>
@@ -53,107 +57,72 @@ if (!isset($_SESSION['validador_id'])) {
   </nav>
 </header>
 
-<style>
-/* Nav general */
-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #B2292E;
-    padding: 20px;
-    border-bottom: 0.5px solid #b0b7ad;
-    z-index: 1000;
-}
 
-/* Menu lista */
-nav ul {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
+<br>
+<div class="container">
 
-/* Cada item de menú */
-nav ul li {
-    margin-left: 50px;
-}
-
-/* Links del menú */
-nav ul li a,
-.menu-link {
-    text-decoration: none;
-    color: rgb(255, 251, 251);
-    font-size: 19px;
-    font-family: 'Pestanias', sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* Hover */
-nav ul li a:hover,
-.Contact a:hover {
-    text-decoration: underline;
-    transition: color 0.3s ease, text-decoration-color 0.4s ease;
-    color: #000000;
-}
-
-/* Contenedor del logo */
-.logo-container {
-    display: inline-flex;
-    width: 40px;
-    height: 40px;
-    background: white;
-    border-radius: 50%;
-    justify-content: center;
-    align-items: center;
-    overflow: visible;
-    position: relative;
-}
-
-/* Logo */
-.logo {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-}
-</style>
-<br><br><br><br><br>
   <h1>📈 Análisis completo — INNOVACION MOVIL</h1>
 
   <div class="controls">
-    <input id="inputFile" type="file" accept=".xlsx,.xls" />
+   <div class="file-upload">
+  <input id="inputFile" type="file" accept=".xlsx,.xls" />
+
+  <button class="boton" id="fileButton" type="button">
+    <div class="contenedorCarpeta">
+      <div class="folder folder_one"></div>
+      <div class="folder folder_two"></div>
+      <div class="folder folder_three"></div>
+      <div class="folder folder_four"></div>
+    </div>
+    <div class="active_line"></div>
+    <span class="text">Seleccionar Archivo</span>
+  </button>
+</div>
+
+<script>
+// Conectamos el botón animado con el input oculto
+document.getElementById("fileButton").addEventListener("click", () => {
+  document.getElementById("inputFile").click();
+});
+</script>
+
     <button id="procesarBtn" class="btn" disabled>Procesar archivo</button>
     <button id="descargarBtn" class="btn" disabled>Descargar .xlsx con resultados</button>
   </div>
+<div class="center-container">
+  <!-- Loader animado mientras se procesa el archivo -->
+  <div id="loader" class="loader-container" style="display:none;">
+    <div class="cloud front">
+      <span class="left-front"></span>
+      <span class="right-front"></span>
+    </div>
+    <span class="sun sunshine"></span>
+    <span class="sun"></span>
+    <div class="cloud back">
+      <span class="left-back"></span>
+      <span class="right-back"></span>
+    </div>
+  </div>
+</div>
 
   <div id="mensajes" class="note"></div>
-  <div id="debugBox" style="display:none"></div>
+  <div id="debugBox" style="display:none;"></div>
 
   <div class="tables">
     <div id="tablaVendedores"></div>
+    
     <div id="tablaTiendas"></div>
   </div>
+</div>
+
+
 
 <script>
 /* Modificado: detección mejorada para evitar elegir SUBTOTAL en vez de TOTAL.
    También imprime una previsualización en consola para comprobar columnas. */
 
-const METAS = {
-  "Central Cell 20 de noviembre": { diaria: 6071.43, limite: 4 },
-  "Central Cell Abastos": { diaria: 2857.14, limite: 3 },
-  "Central Cell Labotienda": { diaria: 7273.71, limite: 5 },
-  "Central Cell Nuño del Mercado": { diaria: 6285.71, limite: 4 },
-  "Central Cell Plaza Bella": { diaria: 20000.47, limite: 7 },
-  "Central Cell Plaza Bonn": { diaria: 4285.71, limite: 3 },
-  "Central Cell Reforma": { diaria: 20802.65, limite: 8 },
-  "Central Cell Revistería": { diaria: 3000.00, limite: 3 },
-  "Central Cell Violetas": { diaria: 10916.16, limite: 4 }
-};
+
+const METAS = <?php echo json_encode(obtenerMetasTiendas(), JSON_PRETTY_PRINT); ?>;
 
 const DIA_LABELS = ["Sábado","Domingo","Lunes","Martes","Miércoles","Jueves","Viernes"];
 
@@ -184,8 +153,9 @@ procesarBtn.addEventListener('click', () => {
 descargarBtn.addEventListener('click', descargaResultados);
 
 function leerExcel(file) {
-  mensajes.innerText = 'Leyendo archivo...';
-  const reader = new FileReader();
+mensajes.innerText = 'Leyendo archivo...';
+document.getElementById('loader').style.display = 'flex';
+const reader = new FileReader();
   reader.onload = (e) => {
     const data = new Uint8Array(e.target.result);
     const wb = XLSX.read(data, { type: 'array' });
@@ -239,6 +209,8 @@ function leerExcel(file) {
     registros = dataObjs.filter(r => String(r.N1).trim() === "INNOVACION MOVIL");
     mensajes.innerText = `Filtradas ${registros.length} filas con N1="INNOVACION MOVIL". Procesando datos...`;
     procesarRegistros();
+    document.getElementById('loader').style.display = 'none'; 
+
   };
   reader.readAsArrayBuffer(file);
 }

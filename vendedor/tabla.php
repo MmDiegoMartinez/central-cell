@@ -4,11 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Tabla de Garantías y Mermas</title>
-     <link rel="stylesheet" href="../csstabla.css">
+     <link rel="stylesheet" href="../csstabla.css?v=<?php echo time(); ?>">
+
 </head>
 <body>
     
-     <nav style="background:#B2292E; padding:10px;">
+     <nav style="background:#0F5476; padding:10px;">
         <ul id="menu">
             <li>
   <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
@@ -37,11 +38,11 @@
 </li>
 
 <li>
-  <a href="Tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../image.png" alt="Logo Central Cell" 
+      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
-             width: 40px; 
+             widthttps://garantiasinnovacionmovil.rf.gd/vendedor/garantias.php?i=1h: 40px; 
              height: 40Px; 
              object-fit: contain;
              position: relative;

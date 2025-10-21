@@ -20,7 +20,7 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
 </head>
 <body>
     
-     <nav style="background:#B2292E; padding:10px;">
+     <nav style="background:#1D6C90; padding:10px;">
         <ul id="menu">
             <li>
   <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
@@ -28,7 +28,7 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
       display: inline-flex;
       width: 40px; 
       height: 40px; 
-      background: white; 
+      background: w#1D6C90hite; 
       border-radius: 50%; 
       justify-content: center; 
       align-items: center; 
@@ -51,7 +51,7 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
 <li>
   <a href="Tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../image.png" alt="Logo Central Cell" 
+      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
