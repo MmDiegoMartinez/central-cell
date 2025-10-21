@@ -18,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="../css.css">
+    <link rel="stylesheet" href="../css.css?v=<?php echo time(); ?>">
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
@@ -106,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <li>
   <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../image.png" alt="Logo Central Cell" 
+      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
@@ -129,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php if ($mensaje): ?>
                 <p><?= htmlspecialchars($mensaje) ?></p>
-            <?php endif; ?>
+            <?php endif; ?><br>
 
             <form method="POST">
                 <label for="plows">PLOWS:</label>
@@ -166,18 +167,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="piezas">Piezas:</label>
                 <input type="number" name="piezas" min="1" required><br><br>
 
+               <?php
+                $sucursales = obtenerSucursales();
+                ?>
                 <label for="sucursal">Sucursal:</label>
                 <select name="sucursal" required>
                     <option value="">Seleccione una sucursal</option>
-                    <option>Reforma</option>
-                    <option>Labo</option>
-                    <option>Abastos</option>
-                    <option>Revis</option>
-                    <option>Bella</option>
-                    <option>Violetas</option>
-                    <option>Bonn</option>
-                    <option>Nuño</option>
-                    <option>20 de Noviembre</option>
+
+                    <?php if (!empty($sucursales)): ?>
+                        <?php foreach ($sucursales as $sucursal): ?>
+                            <option value="<?= htmlspecialchars($sucursal['id']) ?>">
+                                <?= htmlspecialchars($sucursal['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option disabled>No hay sucursales disponibles</option>
+                    <?php endif; ?>
                 </select><br><br>
 
                 <input type="hidden" id="apasionado_id" name="apasionado_id">

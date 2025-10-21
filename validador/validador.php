@@ -34,7 +34,7 @@ $validador_id = $_SESSION['validador_id'];
 <body>
     
 
-<nav style="background:#B2292E; padding:10px;">
+<nav style="background:#1D6C90; padding:10px;">
   <ul id="menu">
     
     <li>
@@ -80,11 +80,7 @@ $validador_id = $_SESSION['validador_id'];
         📌 Mermas sin reg.
       </a>
     </li>
-    <li>
-      <a href="../capacitados/capa.php" style="display: flex; align-items: center; gap: 12px;">
-        📅 Fechas Capacit.
-      </a>
-    </li>
+    
 
     <li>
       <a href="../Evaluacion/lista_colaboradores.php" style="display: flex; align-items: center; gap: 12px;">
@@ -97,10 +93,16 @@ $validador_id = $_SESSION['validador_id'];
       </a>
     </li>
      <li>
-      <a href="kpis.php" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../kpis/index.php" style="display: flex; align-items: center; gap: 12px;">
         📈  KPIs
       </a>
     </li>
+    <li>
+      <a href="sucursales.php" style="display: flex; align-items: center; gap: 12px;">
+        🏬 Sucursales
+      </a>
+    </li>
+
 
     <li>
       <a href="Validadores.php" style="display: flex; align-items: center; gap: 12px;">

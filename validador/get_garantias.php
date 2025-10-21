@@ -1,7 +1,7 @@
 <?php
 // get_garantias.php
 header('Content-Type: application/json');
-require_once '../funciones.php'; // Ajusta la ruta si es necesario
+require_once '../funciones.php'; 
 
 try {
     $conn = conectarBD();
@@ -12,7 +12,7 @@ try {
         g.tipo,
         g.causa,
         g.piezas,
-        g.sucursal,
+        s.nombre AS sucursal,  
         c.nombre AS apasionado,  
         g.fecha,
         g.estatus,
@@ -27,6 +27,7 @@ try {
         v.nombre AS validador_nombre,
         v.apellido AS validador_apellido
     FROM garantia g
+    LEFT JOIN sucursales s ON g.sucursal = s.id  
     LEFT JOIN validador v ON g.id_validador = v.id
     LEFT JOIN colaboradores c ON g.apasionado = c.id
     WHERE g.anotado = 1

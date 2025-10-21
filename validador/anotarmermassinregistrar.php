@@ -41,7 +41,7 @@ unset($_SESSION['mensaje']);
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
     <script>
-        function validarPlows(input) {
+        function validarPlows(inpu../image.pngt) {
             const valor = input.value.toUpperCase();
             input.value = valor;
 
@@ -123,7 +123,7 @@ unset($_SESSION['mensaje']);
 <li>
   <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../image.png" alt="Logo Central Cell" 
+      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
@@ -183,18 +183,22 @@ unset($_SESSION['mensaje']);
                 <label for="piezas">Piezas:</label>
                 <input type="number" name="piezas" min="1" required><br><br>
 
+                <?php
+                $sucursales = obtenerSucursales();
+                ?>
                 <label for="sucursal">Sucursal:</label>
                 <select name="sucursal" required>
                     <option value="">Seleccione una sucursal</option>
-                    <option>Reforma</option>
-                    <option>Labo</option>
-                    <option>Abastos</option>
-                    <option>Revis</option>
-                    <option>Bella</option>
-                    <option>Violetas</option>
-                    <option>Bonn</option>
-                    <option>Nuño</option>
-                    <option>20 de Noviembre</option>
+
+                    <?php if (!empty($sucursales)): ?>
+                        <?php foreach ($sucursales as $sucursal): ?>
+                            <option value="<?= htmlspecialchars($sucursal['id']) ?>">
+                                <?= htmlspecialchars($sucursal['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option disabled>No hay sucursales disponibles</option>
+                    <?php endif; ?>
                 </select><br><br>
 
                 <input type="hidden" id="apasionado_id" name="apasionado_id">
