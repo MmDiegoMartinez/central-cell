@@ -125,7 +125,7 @@ document.getElementById("myButton").addEventListener("click", function() {
 <p>Cuando un protector tiene un pequeño detalle visual pero sigue funcionando bien, recuerda:</p><br><br>
 <p>
   <ul style="list-style-type: disc; padding-left: 20px; margin: 0;">
-    <li>Puedes ofrecer al cliente un <b>descuento del 25% al 30%</b>.</li>
+    <li>Consulta en el grupo de Fuerzas de Venta qué <b>porcentaje de descuento</b> se le puede ofrecer al cliente.</li>
     <li>Así evitas perder la venta y el cliente se va contento.</li>
   </ul>
 </p><br><br>

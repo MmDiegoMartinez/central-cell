@@ -1,12 +1,3 @@
-<?php
-session_start();
-include_once '../funciones.php'; 
-
-if (!isset($_SESSION['validador_id'])) {
-    header("Location: ../validador/loginvalidador.php");
-    exit;
-}
-?>
 <!doctype html>
 <html lang="es">
 <head>
