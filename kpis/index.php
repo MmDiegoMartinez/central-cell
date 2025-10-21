@@ -12,6 +12,7 @@
             <li><a href="#">Inicio</a></li>
             <li><a href="../compatibilidades/consultar.php">Compatibilidades</a></li>
             <li><a href="../Evaluacion/lista_colaboradores.php">Capacitaciones</a></li>
+            <li><a href="../validador/validador.php">Validar Mermas</a></li>
         </ul>
     </nav>
 
@@ -60,6 +61,11 @@
                 <div class="card-title">Top Ticket</div>
                  <img src="../recursos/img/ticket.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Visualiza el ticket más grande de un tiempo determinado.</div>
+            </a>
+            <a href="hidrogel-polimero.php" class="card">
+                <div class="card-title">Hidrogel y polimero</div>
+                 <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Visualiza la cantidad de micas Hidrogel, Protection Pro  vendidas por sucursal.</div>
             </a>
 
             
