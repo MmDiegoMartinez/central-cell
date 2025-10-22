@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $resultado = crearValidador($datos);
 
     if ($resultado === true) {
-        header('Location: validadores.php?creado=1');
+        header('Location: Validadores.php?creado=1');
         exit;
     } else {
         die($resultado);
