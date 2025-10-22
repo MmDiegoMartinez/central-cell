@@ -1,3 +1,6 @@
+<?php
+include_once '../funciones.php'; 
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -166,9 +169,7 @@ let dataFiltradaOriginal = [];
 let resultados = [];
 let totalesPorMarca = [];
 
-inputFile.addEventListener("change", () => {
-  procesarBtn.disabled = !inputFile.files.length;
-});
+inputFile.addEventListener('change', ()=>{ procesarBtn.disabled = !inputFile.files.length; mensajes.innerText = inputFile.files.length ? `Archivo listo: ${inputFile.files[0].name}` : ""; });
 
 procesarBtn.addEventListener("click", () => {
   if (inputFile.files.length) leerExcel(inputFile.files[0]);

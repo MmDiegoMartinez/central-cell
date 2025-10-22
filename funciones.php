@@ -981,4 +981,44 @@ function eliminarSucursalDefinitivamente(int $id): bool {
     }
 }
 
+/**
+ * Devuelve las garantías filtradas por fechaInicio, fechaFin y tipo.
+ * Retorna array de filas con campos: tipo, causa, piezas, sucursal, fecha
+ *
+ * @param string $fechaInicio YYYY-MM-DD
+ * @param string $fechaFin YYYY-MM-DD
+ * @param string $tipo 'Hidrogel' o 'Protection Pro'
+ * @return array
+ */
+function consultarGarantias(string $fechaInicio, string $fechaFin, string $tipo): array {
+    try {
+        $conn = conectarBD();
+
+        $sql = "SELECT 
+                    g.tipo,
+                    g.causa,
+                    COALESCE(g.piezas, 0) AS piezas,
+                    s.nombre AS sucursal,
+                    g.fecha
+                FROM garantia g
+                LEFT JOIN sucursales s ON g.sucursal = s.id
+                WHERE g.fecha BETWEEN :fechaInicio AND :fechaFin
+                  AND g.estatus = 'Ajuste Realizado'
+                  AND g.tipo = :tipo
+                ORDER BY s.nombre ASC, g.fecha ASC";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue(':fechaInicio', $fechaInicio);
+        $stmt->bindValue(':fechaFin', $fechaFin);
+        $stmt->bindValue(':tipo', $tipo);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Error al consultar garantías: " . $e->getMessage());
+        return [];
+    }
+}
+
+
 ?>
