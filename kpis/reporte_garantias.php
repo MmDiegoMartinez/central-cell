@@ -57,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
     </ul>
   </nav>
 </header>
+<div class="center-container">
 <h1>📊 Mermas / ventas %</h1>
 
 <form id="mainForm" onsubmit="return false;">
@@ -116,7 +117,7 @@ document.getElementById("fileButton").addEventListener("click", () => {
 
 <div id="mensajes" class="note"></div>
 <div id="vistaPrev" class="note"></div>
-
+</div>
 <script>
 // Variables globales
 const inputFile = document.getElementById('inputFile');
@@ -336,7 +337,7 @@ function procesarUnion(ventasMap, garantias) {
 // ---------- VISTA PREVIA ----------
 function mostrarResumenPequeno() {
     let html = '<strong>Resumen:</strong><br>';
-    html += '<table><thead><tr><th>Sucursal</th><th>Ventas</th><th>Mermas</th><th>Porc.</th></tr></thead><tbody>';
+    html += '<div class="center-table"><table><thead><tr><th>Sucursal</th><th>Ventas</th><th>Mermas</th><th>Porc.</th></tr></thead><tbody>';
     Object.entries(resumenPorSucursal).forEach(([suc, info]) => {
         const ventas = Number(info.ventas || 0);
         const mermas = Number(info.totalMermas || 0);
@@ -344,7 +345,7 @@ function mostrarResumenPequeno() {
         const pctStr = (Number(ratio.toFixed(4)) * 100).toFixed(2) + '%';
         html += `<tr><td>${escapeHtml(suc)}</td><td>${ventas}</td><td>${mermas}</td><td>${pctStr}</td></tr>`;
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     vistaPrev.innerHTML = html;
 }
 

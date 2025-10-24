@@ -49,6 +49,7 @@ if (isset($_GET['eliminar'])) {
     <ul>
       <li><a href="sucursales.php" class="primary-cta">Sucursales</a></li>
       <li><a href="sucursales_eliminadas.php">Eliminadas</a></li>
+       <li><a href="validador.php">Validar Mermas</a></li>
     </ul>
   </div>
 </nav>
@@ -73,7 +74,7 @@ if (isset($_GET['eliminar'])) {
 
   <h2 style="margin-top:30px;">Sucursales activas</h2>
   
-    <table border="0" cellpadding="8" cellspacing="0" width="100%">
+    <table border="0" <li><a href="../validador/validador.php">Validar Mermas</a></li> cellpadding="8" cellspacing="0" width="100%">
       <thead>
         <tr style="text-align:left;">
           <th>ID</th>

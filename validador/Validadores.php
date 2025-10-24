@@ -15,37 +15,50 @@ $validadores = obtenerValidadores();
 <head>
     <meta charset="UTF-8" />
     <title>Lista de Validadores</title>
-    <link rel="stylesheet" href="../css.css">
+    <link rel="stylesheet" href="../csstabla.css">
 </head>
 <body>
 
 
-<nav style="background:#B2292E; padding:10px;">
-        <ul id="menu">
-            <li>
-  <a href="crear_validador.php" style="display: flex; align-items: center; gap: 12px;  ">
+<nav style="background:#1D6C90; padding:10px;">
+  <ul id="menu">
     
-     
-    </span>
-     ➕ Nuevo Validador
-  </a>
-</li>
+    <li>
+      <a href="validador.php" style="display: flex; align-items: center; gap: 12px;">
+        <span style="
+          display: inline-flex;
+          width: 40px; 
+          height: 40px; 
+          background: white; 
+          border-radius: 50%; 
+          justify-content: center; 
+          align-items: center; 
+          overflow: visible;
+          position: relative;
+        ">
+          <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+               style="
+                 width: 30px; 
+                 height: 30px; 
+                 object-fit: contain;
+                 position: relative;
+                 top: 0; left: 0;
+               " />
+        </span>
+        Home
+      </a>
+    </li>
 
-<li>
-  <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-     
-    </span>
-     ⬅️ Atras
-  </a>
-</li>
+    <li>
+      <a href="crear_validador.php" style="display: flex; align-items: center; gap: 12px;">
+         ➕ Nuevo Validador
+      </a>
+    </li>
+  </ul>
+</nav>
 
-            
-        </ul>
-    </nav>
-
-   
-   
+   <br><br>
+   <div class="center-container">
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>
             <tr>
@@ -72,6 +85,7 @@ $validadores = obtenerValidadores();
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     
 </body>
 </html>

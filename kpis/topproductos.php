@@ -41,6 +41,7 @@ caption{text-align:left;font-weight:600;padding:8px;}
     </ul>
   </nav>
 </header>
+<div class="center-container">
 <div class="container">
 <h1>📊 Productos Más Vendidos — INNOVACION MOVIL</h1>
 
@@ -69,6 +70,7 @@ document.getElementById("fileButton").addEventListener("click", () => {
     <button id="procesarBtn" class="btn" disabled>Procesar archivo</button>
     <button id="descargarBtn" class="btn" disabled>Descargar Excel</button>
 </div>
+</div>
 <!-- Loader animado mientras se procesa el archivo -->
   <div id="loader" class="loader-container" style="display:none;">
     <div class="cloud front">
@@ -84,11 +86,12 @@ document.getElementById("fileButton").addEventListener("click", () => {
   </div>
 </div>
 <div id="mensajes" class="note"></div>
-
+<div class="center-container">
 <div class="filter-container">
     <label>Almacén: <select id="filterAlmacen"><option value="">Todos</option></select></label>
     <label>Categoría: <select id="filterCategoria"><option value="">Todos</option></select></label>
     <label>Tipo de producto: <select id="filterTipo"><option value="">Todos</option></select></label>
+</div>
 </div>
 
 <div id="tablesContainer"></div>
@@ -190,7 +193,7 @@ function generarTabla(){
     // Ordenar de mayor a menor por cantidad
     const resumenArr = Object.values(resumen).sort((a,b)=>b.cantidad - a.cantidad);
 
-    let html=`<table><thead><tr>
+    let html=`<div class="center-table"><table><thead><tr>
         <th>Producto</th>
         <th>Categoría</th>
         <th>Tipo de producto</th>
@@ -206,7 +209,7 @@ function generarTabla(){
             <td>${r.totalVenta.toFixed(2)}</td>
         </tr>`;
     });
-    html+="</tbody></table>";
+    html+="</tbody></table></div>";
     tablesContainer.innerHTML=html;
 }
 

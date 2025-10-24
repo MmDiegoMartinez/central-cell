@@ -48,7 +48,7 @@
       <div class="folder folder_one"></div>
       <div class="folder folder_two"></div>
       <div class="folder folder_three"></div>
-      <div class="folder folder_four"></div>
+      <div claAlmacess="folder folder_four"></div>
     </div>
     <div class="active_line"></div>
     <span class="text">Seleccionar Archivo</span>
@@ -311,7 +311,7 @@ function renderResultado(data, key1, key2){
   }
   storeNames.forEach(alm => {
     const rows = data[alm];
-    let html = `<table><caption>${escapeHtml(alm)} — Comparativo ${label1} vs ${label2}</caption>`;
+    let html = `<div class="center-table"><table><caption>${escapeHtml(alm)} — Comparativo ${label1} vs ${label2}</caption>`;
     html += `<thead><tr><th>Categoría</th><th>${label1} (Suma S)</th><th>${label2} (Suma S)</th><th>Diferencia (${label2}-${label1})</th><th>% Diferencia</th></tr></thead><tbody>`;
     rows.forEach(r=>{
       const pctText = (r.porcentaje === null) ? 'N/A' : (r.porcentaje.toFixed(2) + '%');
@@ -332,7 +332,7 @@ function renderResultado(data, key1, key2){
     html += `<tr style="font-weight:700; background:#eee;">
       <td>Total</td><td>${total1.toFixed(2)}</td><td>${total2.toFixed(2)}</td><td>${totalDiff.toFixed(2)}</td><td>${totalPctText}</td>
     </tr>`;
-    html += `</tbody></table>`;
+    html += `</tbody></table></div>`;
     resultadoDiv.innerHTML += html;
   });
 }
