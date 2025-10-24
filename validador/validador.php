@@ -513,37 +513,37 @@ async function descargarExcel() {
     const wb = XLSX.utils.book_new();
 
     // 1. Hoja "Tabla Completa"
- const encabezados = [
-    "PLOWS", "Tipo", "Causa", "Piezas", "Sucursal", "Colaborador", "Fecha de Registro", 
-    "Estatus", "Validador", "Piezas Validadas", "Número de Ajuste", "Anotación del Validador", 
-    "Hora de Validación", "Fecha de Validación", "Anotación del Vendedor"
-];
+    const encabezados = [
+        "PLOWS", "Tipo", "Causa", "Piezas", "Sucursal", "Colaborador", "Fecha de Registro", 
+        "Estatus", "Validador", "Piezas Validadas", "Número de Ajuste", "Anotación del Validador", 
+        "Hora de Validación", "Fecha de Validación", "Anotación del Vendedor"
+    ];
     const datosTablaCompleta = [encabezados];
 
     filasVisibles.forEach(row => {
-    datosTablaCompleta.push([
-        row.dataset.plows,
-        row.dataset.tipo,
-        row.dataset.causa,
-        row.dataset.piezas,
-        row.dataset.sucursal,
-        row.dataset.colaborador,
-        row.dataset.fecha,
-        row.dataset.estatus,
-        row.dataset.validador,
-        row.querySelector('input[name^="piezas_validadas"]').value,
-        row.querySelector('input[name^="numero_ajuste"]').value,
-        row.querySelector('input[name^="anotaciones_validador"]').value,
-        row.querySelector('td:nth-last-child(2)').textContent.trim(), // Hora validación
-        row.querySelector('td:nth-last-child(1)').textContent.trim(), // Fecha validación
-        row.querySelector('td:nth-child(9)').textContent.trim() // Anotación vendedor
-    ]);
-});
+        datosTablaCompleta.push([
+            row.dataset.plows,
+            row.dataset.tipo,
+            row.dataset.causa,
+            row.dataset.piezas,
+            row.dataset.sucursal,
+            row.dataset.colaborador,
+            row.dataset.fecha,
+            row.dataset.estatus,
+            row.dataset.validador,
+            row.querySelector('input[name^="piezas_validadas"]').value,
+            row.querySelector('input[name^="numero_ajuste"]').value,
+            row.querySelector('input[name^="anotaciones_validador"]').value,
+            row.querySelector('td:nth-last-child(2)').textContent.trim(), // Hora validación
+            row.querySelector('td:nth-last-child(1)').textContent.trim(), // Fecha validación
+            row.querySelector('td:nth-child(9)').textContent.trim() // Anotación vendedor
+        ]);
+    });
 
     const ws1 = XLSX.utils.aoa_to_sheet(datosTablaCompleta);
     XLSX.utils.book_append_sheet(wb, ws1, 'Tabla Completa');
 
-    // Agrupar sucursales y causas
+    // 2. Agrupar sucursales y causas
     const sucursales = Array.from(new Set(filasVisibles.map(r => r.dataset.sucursal))).sort();
     const causas = Array.from(new Set(filasVisibles.map(r => r.dataset.causa))).sort();
 
@@ -575,7 +575,7 @@ async function descargarExcel() {
         XLSX.utils.book_append_sheet(wb, ws, sucursal.substring(0, 30));
     });
 
-    // Hoja resumen total (todas las sucursales)
+    // 3. Hoja resumen total (todas las sucursales)
     const datosResumen = [["Causa de Merma", "Total Piezas"]];
     causas.forEach(causa => {
         const suma = filasVisibles
@@ -591,36 +591,10 @@ async function descargarExcel() {
     const wsResumen = XLSX.utils.aoa_to_sheet(datosResumen);
     XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen Total');
 
-    // 2. ¿Descargar directo o ingresar ventas?
-    const confirmar = confirm("¿Deseas descargar el archivo directamente?\n\nAceptar = descarga directa\nCancelar = ingresar ventas por sucursal");
-    let ventasPorSucursal = {};
-
-    if (!confirmar) {
-        for (const suc of sucursales) {
-            let entrada;
-            do {
-                entrada = prompt(`Ingrese unidades vendidas para la sucursal "${suc}":`, "0");
-                if (entrada === null) return; // cancelado
-            } while (isNaN(entrada) || parseInt(entrada) < 0);
-            ventasPorSucursal[suc] = parseInt(entrada);
-        }
-
-        // 3. Hoja adicional: resumen por sucursal con % merma
-        const resumenVentas = [["Sucursal", "Unidades Vendidas", "Total de Mermas", "% de Mermas"]];
-        sucursales.forEach(suc => {
-            const vendidas = ventasPorSucursal[suc] || 0;
-            const mermas = totalMermasPorSucursal[suc] || 0;
-            const porcentaje = vendidas > 0 ? ((mermas / vendidas) * 100).toFixed(2) + "%" : "0%";
-            resumenVentas.push([suc, vendidas, mermas, porcentaje]);
-        });
-
-        const wsVentas = XLSX.utils.aoa_to_sheet(resumenVentas);
-        XLSX.utils.book_append_sheet(wb, wsVentas, "Resumen por Sucursal");
-    }
-
-    // Descargar
+    // 4. Descargar directamente el archivo
     XLSX.writeFile(wb, 'garantias_filtradas.xlsx');
 }
+
 //
 async function cargarDatos() {
     try {
