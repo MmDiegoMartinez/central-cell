@@ -981,15 +981,7 @@ function eliminarSucursalDefinitivamente(int $id): bool {
     }
 }
 
-/**
- * Devuelve las garantías filtradas por fechaInicio, fechaFin y tipo.
- * Retorna array de filas con campos: tipo, causa, piezas, sucursal, fecha
- *
- * @param string $fechaInicio YYYY-MM-DD
- * @param string $fechaFin YYYY-MM-DD
- * @param string $tipo 'Hidrogel' o 'Protection Pro'
- * @return array
- */
+
 function consultarGarantias(string $fechaInicio, string $fechaFin, string $tipo): array {
     try {
         $conn = conectarBD();
@@ -1016,6 +1008,121 @@ function consultarGarantias(string $fechaInicio, string $fechaFin, string $tipo)
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         error_log("Error al consultar garantías: " . $e->getMessage());
+        return [];
+    }
+}
+
+function guardarproductosnegados($datos) {
+    // Conectar
+    $conn = conectarBD();
+
+    // Forzar modo de errores a excepciones (por si conectarBD no lo hace)
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    try {
+        // Comenzamos transacción por seguridad
+        $conn->beginTransaction();
+
+        // 1) Buscar colaborador por nombre (trim y case-insensitive)
+        $sql = "SELECT id FROM colaboradores WHERE TRIM(nombre) = :nombre LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':nombre' => trim($datos['apasionado'])]);
+        $colaborador = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($colaborador) {
+            $idColaborador = (int)$colaborador['id'];
+        } else {
+            // Insertar nuevo colaborador
+            $sqlInsert = "INSERT INTO colaboradores (nombre) VALUES (:nombre)";
+            $stmtInsert = $conn->prepare($sqlInsert);
+            $stmtInsert->execute([':nombre' => trim($datos['apasionado'])]);
+            $idColaborador = (int)$conn->lastInsertId();
+
+            if ($idColaborador == 0) {
+                throw new Exception("No se pudo insertar el colaborador.");
+            }
+        }
+
+        // 2) Validar sucursal (activa)
+        $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
+        $stmtSucursal = $conn->prepare($sqlSucursal);
+        $stmtSucursal->execute([':id' => $datos['sucursal']]);
+        $sucursalValida = $stmtSucursal->fetch(PDO::FETCH_ASSOC);
+
+        if (!$sucursalValida) {
+            throw new Exception("Sucursal inválida o inactiva.");
+        }
+
+        // 3) Insertar en bitacora
+        $sqlGarantia = "INSERT INTO bitacora
+            (Marca_Modelo, producto, sucursal, Estatus, nombre, Anotaciones, indicador)
+            VALUES
+            (:marca, :producto, :sucursal, :estatus, :nombre, :anotaciones, :indicador)";
+
+        $stmtGarantia = $conn->prepare($sqlGarantia);
+        $stmtGarantia->execute([
+            ':marca' => strtoupper($datos['marca_modelo']),
+            ':producto' => $datos['producto'],
+            ':sucursal' => (int)$datos['sucursal'],
+            ':estatus' => $datos['estatus'],
+            ':nombre' => $idColaborador,
+            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
+            ':indicador' => 1
+        ]);
+
+        // Comprobamos que se inserto al menos 1 fila
+        if ($stmtGarantia->rowCount() === 0) {
+            // Puede pasar en drivers que rowCount() no sea fiable en INSERT, así que hacemos otra verificación
+            $lastId = (int)$conn->lastInsertId();
+            if ($lastId === 0) {
+                throw new Exception("La inserción en bitacora no afectó filas (rowCount=0 y lastInsertId=0).");
+            }
+        } else {
+            $lastId = (int)$conn->lastInsertId();
+        }
+
+        // Commit
+        $conn->commit();
+
+        // Retornar id insertado para confirmación
+        return $lastId;
+
+    } catch (Exception $e) {
+        // Rollback por si hubo beginTransaction
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        // Re-lanzar para que el front capture y muestre el mensaje de error
+        throw new Exception("Error al guardar Producto en bitacora: " . $e->getMessage());
+    }
+}
+
+function obtenerBitacora(): array {
+    try {
+        $conexion = conectarBD();
+
+        $sql = "SELECT 
+            b.id,
+            b.Marca_Modelo,
+            b.producto,
+            s.nombre AS sucursal,
+            c.nombre AS nombre_colaborador,
+            b.Estatus,
+            b.Anotaciones,
+            b.fecha,
+            b.indicador
+        FROM bitacora b
+        LEFT JOIN sucursales s ON b.sucursal = s.id
+        LEFT JOIN colaboradores c ON b.nombre = c.id
+        ORDER BY b.fecha DESC, b.id DESC";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (PDOException $e) {
+        error_log("Error al consultar la bitácora: " . $e->getMessage());
         return [];
     }
 }

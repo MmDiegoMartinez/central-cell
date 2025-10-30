@@ -102,6 +102,11 @@ $validador_id = $_SESSION['validador_id'];
         🏬 Sucursales
       </a>
     </li>
+    <li>
+      <a href="../bitacora/Auxiliares" style="display: flex; align-items: center; gap: 12px;">
+        🏬 Bitacora
+      </a>
+    </li>
 
 
     <li>
