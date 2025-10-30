@@ -11,7 +11,7 @@
         <ul>
             <li><a href="#">Inicio</a></li>
             <li><a href="../compatibilidades/consultar.php">Compatibilidades</a></li>
-            <li><a href="../capacitados/lista_colaboradores.php">Capacitaciones</a></li>
+            <li><a href="../capacitados/capa.php">Capacitaciones</a></li>
             <li><a href="../validador/validador.php">Validar Mermas</a></li>
         </ul>
     </nav>

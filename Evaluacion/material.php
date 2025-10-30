@@ -43,7 +43,7 @@
                 </div>
             </div>
             <h2>Presentación</h2>
-            <a href="https://www.canva.com/design/DAGwNQeWeMQ/__Qu_jr4P-mRCFcENMRTJg/edit?utm_content=DAGwNQeWeMQ&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton"
+            <a href="https://www.canva.com/design/DAG3LqqOBRw/rLLFR6yY511e5UAWKZTBwA/edit?utm_content=DAG3LqqOBRw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton"
                 target="_blank" class="project-link">VER MÁS</a>
         </div>
 
@@ -80,8 +80,8 @@
                     <p>Descubre por qué esta mica, avalada por la NASA, es una de las más resistentes del mercado.</p>
                 </div>
             </div>
-            <h2>Protection Pro Presentación</h2>
-            <a href="https://drive.google.com/file/d/1-mkxw69_vLD_06FdnTqKvubKA4ct5yqU/view?usp=drivesdk"
+            <h2>Protection Pro</h2>
+            <a href="https://drive.google.com/drive/folders/1E-7xEvG9JUDyIhJGAl1dNOavYDS479oB?usp=sharing"
                 target="_blank" class="project-link">VER MÁS</a>
         </div>
 
@@ -184,17 +184,6 @@
             <a href="mermas.php" target="_blank" class="project-link">VER MÁS</a>
         </div>
 
-        <!-- Políticas de Anticipos -->
-        <div class="project-card">
-            <div class="image-container">
-                <img src="img/politicas.jpg" alt="imagen no disponible">
-                <div class="project-description">
-                    <p>💰 Los anticipos aseguran la venta y generan confianza; conocer nuestras políticas permite un seguimiento profesional.</p>
-                </div>
-            </div>
-            <h2>Políticas de Anticipos</h2>
-            <a href="politicas.php" target="_blank" class="project-link">VER MÁS</a>
-        </div>
 
         <!-- Lista de productos negados -->
         <div class="project-card">
