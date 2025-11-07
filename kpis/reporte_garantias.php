@@ -318,7 +318,7 @@ function procesarUnion(ventasMap, garantias) {
 
     // Hoja Resumen
     const resumenRows = [];
-    resumenRows.push(['Sucursal', 'VentasProducto', 'CantidadMermas', 'PorcentajeMermaDecimal']);
+    resumenRows.push(['Sucursal', 'VentasProducto', 'CantidadMermas', 'PorcentajeMerma']);
     let totalVentasGlobal = 0, totalMermasGlobal = 0;
     Object.entries(resumenPorSucursal).forEach(([suc, info]) => {
         const ventas = Number(info.ventas || 0);
@@ -332,6 +332,30 @@ function procesarUnion(ventasMap, garantias) {
     resumenRows.push([]);
     resumenRows.push(['TOTAL GENERAL', totalVentasGlobal, totalMermasGlobal, Number(totalRatio.toFixed(6))]);
     hojasWorkbook.sheets['Resumen'] = resumenRows;
+    // ======== HOJA GENERAL (por causa global) ========
+const globalCausas = {};
+let totalMermasGlobal2 = 0;
+
+// Sumar todas las mermas por causa (de todas las sucursales)
+Object.values(resumenPorSucursal).forEach(info => {
+  Object.entries(info.mermasPorCausa).forEach(([causa, cant]) => {
+    globalCausas[causa] = (globalCausas[causa] || 0) + Number(cant || 0);
+    totalMermasGlobal2 += Number(cant || 0);
+  });
+});
+
+const generalRows = [];
+generalRows.push(['Causa', 'CantidadTotal', 'Porcentaje']);
+Object.entries(globalCausas)
+  .sort((a,b)=>a[0].localeCompare(b[0],'es'))
+  .forEach(([causa, cant]) => {
+    const pct = totalMermasGlobal2 > 0 ? (cant / totalMermasGlobal2) : 0; // ← decimal
+    generalRows.push([causa, cant, Number(pct.toFixed(6))]);
+});
+
+generalRows.push([]);
+generalRows.push(['TOTAL GENERAL', totalMermasGlobal2, '1.000000']); // el 100% en decimal
+hojasWorkbook.sheets['GENERAL'] = generalRows;
 }
 
 // ---------- VISTA PREVIA ----------

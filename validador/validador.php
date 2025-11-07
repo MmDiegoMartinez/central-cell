@@ -14,8 +14,6 @@ $conn = conectarBD();
 // Se ejecutará máximo una vez al día
 $actualizadas = actualizarGarantiasDiario($conn);
 
-
-
 $garantias = verTablavalidador();
 
 $nombre = $_SESSION['validador_nombre'] ?? '';

@@ -28,6 +28,12 @@
                 <div class="card-desc">Aquí se mostrará el análisis de la semana de ventas de Innovación Móvil por sucursal y vendedor.</div>
             </a>
 
+            <a href="analisis_general.php" class="card">
+                <div class="card-title">Analizador Multisemana</div>
+                <img src="../recursos/img/ventasemanas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
+                <div class="card-desc">Muestra el desempeño semana a semana por sucursal y vendedor, calculando automáticamente el porcentaje de cumplimiento con indicadores visuales.</div>
+            </a>
+
             <a href="protectores.php" class="card">
                 <div class="card-title">Ventas de Micas</div>
                  <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
@@ -63,9 +69,15 @@
                 <div class="card-desc">Visualiza el ticket más grande de un tiempo determinado.</div>
             </a>
             <a href="reporte_garantias.php" class="card">
-                <div class="card-title">% Mermas / Garantias</div>
+                <div class="card-title">% Mermas Vs Ventas</div>
                  <img src="../recursos/img/mermas.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Visualice el porcentaje de mermas por sucursal en relación con las ventas correspondientes, incluyendo los detalles específicos de cada caso.</div>
+            </a>
+
+            <a href="analisis_mermas.php" class="card">
+                <div class="card-title">Top Mermas</div>
+                 <img src="../recursos/img/topmermas.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza qué productos presentan más mermas dentro de un rango de fechas, mostrando los resultados ordenados de mayor a menor frecuencia y agrupados por tipo.</div>
             </a>
             <a href="hidrogel-polimero.php" class="card">
                 <div class="card-title">Hidrogel y polimero</div>

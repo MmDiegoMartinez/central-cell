@@ -314,7 +314,8 @@ function renderResultado(data, key1, key2){
     let html = `<div class="center-table"><table><caption>${escapeHtml(alm)} — Comparativo ${label1} vs ${label2}</caption>`;
     html += `<thead><tr><th>Categoría</th><th>${label1} (Suma S)</th><th>${label2} (Suma S)</th><th>Diferencia (${label2}-${label1})</th><th>% Diferencia</th></tr></thead><tbody>`;
     rows.forEach(r=>{
-      const pctText = (r.porcentaje === null) ? 'N/A' : (r.porcentaje.toFixed(2) + '%');
+      const pctText = (r.porcentaje === null) ? 'N/A' : (r.porcentaje.toFixed(2) + '%'); 
+      r.porcentajeDecimal = (r.porcentaje === null) ? null : (r.porcentaje / 100);
       html += `<tr>
         <td>${escapeHtml(r.categoria)}</td>
         <td>${Number(r.mes1).toFixed(2)}</td>
@@ -343,29 +344,65 @@ function handleExport(){
   if (!data) { alert('No hay datos para exportar.'); return; }
   const { resultadoPorTienda, mes1, mes2 } = data;
   const wb = XLSX.utils.book_new();
+
+  // ===== HOJA GENERAL =====
+  const global = {}; // categoria -> {m1:sum,m2:sum}
+  Object.values(resultadoPorTienda).forEach(rows=>{
+    rows.forEach(r=>{
+      const c = r.categoria;
+      if(!global[c]) global[c] = { m1:0, m2:0 };
+      global[c].m1 += Number(r.mes1);
+      global[c].m2 += Number(r.mes2);
+    });
+  });
+
+  const headerG = ["Categoría", `Ventas ${getLabel(mes1)}`, `Ventas ${getLabel(mes2)}`, "Diferencia", "% Diferencia"];
+  const aoaGlobal = [ [ `GENERAL — Comparativo ${getLabel(mes1)} vs ${getLabel(mes2)}` ], headerG ];
+
+  Object.keys(global).sort((a,b)=>a.localeCompare(b,'es')).forEach(cat=>{
+    const m1v = global[cat].m1;
+    const m2v = global[cat].m2;
+    const diff = m2v - m1v;
+    const pct = m1v === 0 ? "" : (diff / m1v); // 👈 decimal puro
+    aoaGlobal.push([cat, m1v, m2v, diff, pct]);
+  });
+
+  const total1g = Object.values(global).reduce((s,x)=>s + x.m1, 0);
+  const total2g = Object.values(global).reduce((s,x)=>s + x.m2, 0);
+  const totalDiffg = total2g - total1g;
+  const totalPctg = total1g === 0 ? "" : (totalDiffg / total1g); // 👈 decimal puro
+  aoaGlobal.push([]);
+  aoaGlobal.push(["Total", total1g, total2g, totalDiffg, totalPctg]);
+
+  const wsGlobal = XLSX.utils.aoa_to_sheet(aoaGlobal);
+  XLSX.utils.book_append_sheet(wb, wsGlobal, "GENERAL");
+
+  // ===== HOJAS POR SUCURSAL =====
   Object.keys(resultadoPorTienda).forEach(alm => {
     const rows = resultadoPorTienda[alm];
     const header = ["Categoría", `Ventas ${getLabel(mes1)}`, `Ventas ${getLabel(mes2)}`, "Diferencia", "% Diferencia"];
     const aoa = [ [ `${alm} — Comparativo ${getLabel(mes1)} vs ${getLabel(mes2)}` ], header ];
     rows.forEach(r=>{
-      const pct = (r.porcentaje === null) ? "" : r.porcentaje;
+      const pct = (r.porcentajeDecimal === null) ? "" : r.porcentajeDecimal; // 👈 decimal
       aoa.push([ r.categoria, r.mes1, r.mes2, r.diferencia, pct ]);
     });
     // totales
     const total1 = rows.reduce((s,x)=>s + Number(x.mes1), 0);
     const total2 = rows.reduce((s,x)=>s + Number(x.mes2), 0);
     const totalDiff = total2 - total1;
-    const totalPct = total1 === 0 ? "" : (totalDiff / total1) * 100;
+    const totalPct = total1 === 0 ? "" : (totalDiff / total1); // 👈 decimal puro
     aoa.push([]);
     aoa.push(["Total", total1, total2, totalDiff, totalPct]);
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    // sheet name max 31 chars
     const sheetName = (alm.substring(0, 31) || 'Tienda').replace(/[\\/?*[\]:]/g,' ');
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
+
+  // ===== GUARDAR ARCHIVO =====
   const fname = `Comparativo_${mes1.replace('-','')}_vs_${mes2.replace('-','')}.xlsx`;
   XLSX.writeFile(wb, fname);
 }
+
 
 /* helpers */
 function getLabel(key){

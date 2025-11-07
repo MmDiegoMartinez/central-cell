@@ -166,15 +166,7 @@ const reader = new FileReader();
     const headerRow = rows[0].map(h => String(h || "").trim());
     const idx = detectarIndices(headerRow);
 
-    // Debug visual y consola para confirmar qué columna se tomó como Total
-    debugBox.style.display = 'block';
-    debugBox.innerHTML = `<b>Encabezados detectados:</b><br>
-      Almacén -> ${headerRow[idx.almacen] || "(col A)"}<br>
-      N1 -> ${headerRow[idx.n1] || "(col B)"}<br>
-      Fecha -> ${headerRow[idx.fecha] || "(col H)"}<br>
-      Vendedor -> ${headerRow[idx.vendedor] || "(col J)"}<br>
-      Total detectado -> ${headerRow[idx.total] || "col S (fallback)"} (índice ${idx.total})<br>
-    `;
+    
 
     // Previsualización en consola (muestra total en idx.total vs valor en Q (índice 16) para comparar)
     const preview = rows.slice(1,6).map((r, i) => ({
@@ -498,12 +490,33 @@ function descargaResultados() {
     return;
   }
   const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.json_to_sheet(vendedoresResumen);
-  XLSX.utils.book_append_sheet(wb, ws1, "Metas por Vendedor");
-  const ws2 = XLSX.utils.json_to_sheet(tiendasResumen);
-  XLSX.utils.book_append_sheet(wb, ws2, "Analisis Semanal por Tienda");
-  const filename = 'Resultados_Analisis_Ventas.xlsx';
-  XLSX.writeFile(wb, filename);
+
+// Copia con porcentaje en decimal (ej. 0.85)
+const vendedoresExcel = vendedoresResumen.map(v => ({
+  ...v,
+  PorcentajeCumplimiento: (v.PorcentajeCumplimiento / 100)
+}));
+
+// En tiendas también todos los campos que terminen en "%", convertirlos:
+const tiendasExcel = tiendasResumen.map(t => {
+  const nuevo = {};
+  for (const [k, val] of Object.entries(t)) {
+    if (typeof val === 'number' && k.includes('%')) {
+      nuevo[k] = val / 100;
+    } else {
+      nuevo[k] = val;
+    }
+  }
+  return nuevo;
+});
+
+const ws1 = XLSX.utils.json_to_sheet(vendedoresExcel);
+XLSX.utils.book_append_sheet(wb, ws1, "Metas por Vendedor");
+const ws2 = XLSX.utils.json_to_sheet(tiendasExcel);
+XLSX.utils.book_append_sheet(wb, ws2, "Analisis Semanal por Tienda");
+
+const filename = 'Resultados_Analisis_Ventas.xlsx';
+XLSX.writeFile(wb, filename);
 }
 
 window.addEventListener("dragover", (e)=>e.preventDefault());
