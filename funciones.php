@@ -25,6 +25,10 @@ function conectarBD(): PDO {
 function guardarGarantia($datos) {
     $conn = conectarBD();
 
+    // Configurar zona horaria de México
+    date_default_timezone_set('America/Mexico_City');
+    $hora_actual = date('Y-m-d H:i:s');
+
     // Buscar colaborador (exacto o case-insensitive)
     $sql = "SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1";
     $stmt = $conn->prepare($sql);
@@ -41,7 +45,7 @@ function guardarGarantia($datos) {
         $idColaborador = $conn->lastInsertId();
     }
 
-    // Validar sucursal (debe existir y estar activa)
+    // Validar sucursal
     $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
     $stmtSucursal = $conn->prepare($sqlSucursal);
     $stmtSucursal->execute([':id' => $datos['sucursal']]);
@@ -54,9 +58,9 @@ function guardarGarantia($datos) {
     // Guardar garantía
     try {
         $sqlGarantia = "INSERT INTO garantia 
-            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado) 
+            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado, created_at, updated_at) 
             VALUES 
-            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 1)";
+            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 1, :created_at, :updated_at)";
 
         $stmtGarantia = $conn->prepare($sqlGarantia);
         $stmtGarantia->execute([
@@ -64,10 +68,12 @@ function guardarGarantia($datos) {
             ':tipo' => $datos['tipo'],
             ':causa' => $datos['causa'],
             ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'], // ID de la sucursal
-            ':apasionado' => $idColaborador,   // ID del colaborador
+            ':sucursal' => $datos['sucursal'], 
+            ':apasionado' => $idColaborador,   
             ':fecha' => $datos['fecha'],
-            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null
+            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
+            ':created_at' => $hora_actual,
+            ':updated_at' => $hora_actual
         ]);
     } catch (PDOException $e) {
         throw new Exception("Error al guardar garantía: " . $e->getMessage());
@@ -75,11 +81,14 @@ function guardarGarantia($datos) {
 
     return true;
 }
-
 //guardar garantia de vendedores que no lo anotaron 
 function guardarGarantiasinguardar($datos) {
     $conn = conectarBD();
 
+    // Configurar zona horaria de México
+    date_default_timezone_set('America/Mexico_City');
+    $hora_actual = date('Y-m-d H:i:s');
+
     // Buscar colaborador (exacto o case-insensitive)
     $sql = "SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1";
     $stmt = $conn->prepare($sql);
@@ -96,7 +105,7 @@ function guardarGarantiasinguardar($datos) {
         $idColaborador = $conn->lastInsertId();
     }
 
-    // Validar sucursal (debe existir y estar activa)
+    // Validar sucursal
     $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
     $stmtSucursal = $conn->prepare($sqlSucursal);
     $stmtSucursal->execute([':id' => $datos['sucursal']]);
@@ -109,9 +118,9 @@ function guardarGarantiasinguardar($datos) {
     // Guardar garantía
     try {
         $sqlGarantia = "INSERT INTO garantia 
-            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado) 
+            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado, created_at, updated_at) 
             VALUES 
-            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 2)";
+            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 2, :created_at, :updated_at)";
 
         $stmtGarantia = $conn->prepare($sqlGarantia);
         $stmtGarantia->execute([
@@ -119,10 +128,12 @@ function guardarGarantiasinguardar($datos) {
             ':tipo' => $datos['tipo'],
             ':causa' => $datos['causa'],
             ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'], // ID de la sucursal
-            ':apasionado' => $idColaborador,   // ID del colaborador
+            ':sucursal' => $datos['sucursal'], 
+            ':apasionado' => $idColaborador,   
             ':fecha' => $datos['fecha'],
-            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null
+            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
+            ':created_at' => $hora_actual,
+            ':updated_at' => $hora_actual
         ]);
     } catch (PDOException $e) {
         throw new Exception("Error al guardar garantía: " . $e->getMessage());
@@ -130,6 +141,7 @@ function guardarGarantiasinguardar($datos) {
 
     return true;
 }
+
 
 function verTabla(): array {
     try {
@@ -645,15 +657,15 @@ function obtenerModelosPorMarca(string $marca): array {
     }
 }
 
-function actualizarGarantiasDiario(PDO $conn, $rutaArchivo = __DIR__ . "/last_update.txt") {
+function actualizarGarantiasDiario(PDO $conn) {
     $hoy = date("Y-m-d");
 
     // Revisar si ya se ejecutó hoy
-    if (file_exists($rutaArchivo)) {
-        $ultimaEjecucion = trim(file_get_contents($rutaArchivo));
-        if ($ultimaEjecucion === $hoy) {
-            return 0; // Ya se ejecutó hoy
-        }
+    $sqlCheck = "SELECT id FROM actualizaciones_diarias WHERE fecha = :fecha";
+    $stmtCheck = $conn->prepare($sqlCheck);
+    $stmtCheck->execute([':fecha' => $hoy]);
+    if ($stmtCheck->fetch()) {
+        return 0; // Ya se ejecutó hoy
     }
 
     // Consulta de actualización
@@ -666,15 +678,13 @@ function actualizarGarantiasDiario(PDO $conn, $rutaArchivo = __DIR__ . "/last_up
     try {
         $stmt = $conn->prepare($sql);
         $stmt->execute();
-
-        // Número de filas afectadas
         $afectados = $stmt->rowCount();
-
-        // Liberar statement
         $stmt = null;
 
-        // Guardar la fecha de ejecución
-        file_put_contents($rutaArchivo, $hoy);
+        // Registrar la fecha de ejecución en la BD
+        $sqlInsert = "INSERT INTO actualizaciones_diarias (fecha) VALUES (:fecha)";
+        $stmtInsert = $conn->prepare($sqlInsert);
+        $stmtInsert->execute([':fecha' => $hoy]);
 
         return $afectados;
 
@@ -683,6 +693,8 @@ function actualizarGarantiasDiario(PDO $conn, $rutaArchivo = __DIR__ . "/last_up
         return 0;
     }
 }
+
+
 // ==================================================
 // CRUD MODELOS
 // ==================================================
@@ -831,6 +843,30 @@ function obtenerSucursales(): array
         $query = "SELECT id, nombre 
                   FROM sucursales 
                   WHERE estatus = 1 
+                  ORDER BY nombre ASC";
+
+        $stmt = $conn->prepare($query);
+        $stmt->execute();
+
+        $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $sucursales ?: [];
+    } catch (PDOException $e) {
+        error_log(sprintf('[%s] Error en obtenerSucursales: %s', date('Y-m-d H:i:s'), $e->getMessage()));
+        return [];
+    } finally {
+        $conn = null; // cerrar conexión
+    }
+}
+//Opbtiene sucursales y call center
+function obtenerSucursalesdos(): array
+{
+    try {
+        $conn = conectarBD();
+
+        // Solo sucursales activas (estatus = 1)
+        $query = "SELECT id, nombre 
+                  FROM sucursales 
+                  WHERE estatus = 1 or estatus = 3
                   ORDER BY nombre ASC";
 
         $stmt = $conn->prepare($query);
@@ -1044,7 +1080,7 @@ function guardarproductosnegados($datos) {
         }
 
         // 2) Validar sucursal (activa)
-        $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
+        $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 OR estatus = 3 LIMIT 1";
         $stmtSucursal = $conn->prepare($sqlSucursal);
         $stmtSucursal->execute([':id' => $datos['sucursal']]);
         $sucursalValida = $stmtSucursal->fetch(PDO::FETCH_ASSOC);
@@ -1127,5 +1163,63 @@ function obtenerBitacora(): array {
     }
 }
 
+function obtenerMermasFrecuentes(string $fechaInicio, string $fechaFin): array
+{
+    try {
+        $pdo = conectarBD();
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $sql = "
+            SELECT 
+                tipo, 
+                plows, 
+                SUM(piezas) AS total_mermas
+            FROM 
+                garantia
+            WHERE 
+                fecha BETWEEN :inicio AND :fin
+            GROUP BY 
+                tipo, plows
+            ORDER BY 
+                total_mermas DESC
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':inicio', $fechaInicio, PDO::PARAM_STR);
+        $stmt->bindParam(':fin', $fechaFin, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $resultados ?: [];
+
+    } catch (PDOException $e) {
+        error_log('Error en obtenerMermasFrecuentes: ' . $e->getMessage());
+        return [];
+    } finally {
+        $pdo = null; // Cerrar conexión explícitamente
+    }
+}
+
+//  Eliminar registro de bitácora por ID
+function eliminarBitacoraPorId(int $id): bool {
+    try {
+        $conn = conectarBD();
+        $sql = "DELETE FROM bitacora WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    } catch (Exception $e) {
+        error_log("Error al eliminar registro: " . $e->getMessage());
+        return false;
+    }
+}
+
+// 🔹 Endpoint AJAX (para borrar registro)
+if (isset($_POST['accion']) && $_POST['accion'] === 'eliminar_bitacora') {
+    $id = intval($_POST['id']);
+    $resultado = eliminarBitacoraPorId($id);
+    echo json_encode(['success' => $resultado]);
+    exit;
+}
 
 ?>

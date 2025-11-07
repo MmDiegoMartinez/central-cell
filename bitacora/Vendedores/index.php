@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="text" name="estatus" required><br><br>
 
                 <?php
-                $sucursales = obtenerSucursales();
+                $sucursales = obtenerSucursalesdos();
                 ?>
                 <label for="sucursal">Sucursal:</label>
                 <select name="sucursal" required>

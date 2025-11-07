@@ -1,32 +1,15 @@
-<?php
-session_start();
-
-if (!isset($_SESSION['validador_id'])) {
-    header('Location: loginvalidador.php');
-    exit;
-}
-
-$validador_id = $_SESSION['validador_id'];
-
+<?php 
 include_once '../funciones.php';   
 $mensaje = "";  
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {     
     try {         
         guardarGarantiasinguardar($_POST);         
-        $_SESSION['mensaje'] = "✅ Garantía registrada correctamente.";     
+        $mensaje = "✅ Producto registrado correctamente.";     
     } catch (Exception $e) {         
-        $_SESSION['mensaje'] = "❌ Error al guardar: " . $e->getMessage();     
-    }
-
-    // Redirigir a la misma página después de guardar
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit;
-}
-
-// Mostrar mensaje si existe
-$mensaje = $_SESSION['mensaje'] ?? "";
-unset($_SESSION['mensaje']);
+        $mensaje = "❌ Error al guardar: " . $e->getMessage();     
+    } 
+} 
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -35,13 +18,14 @@ unset($_SESSION['mensaje']);
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="../css.css">
+    <link rel="stylesheet" href="../css.css?v=<?php echo time(); ?>">
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
     <script>
-        function validarPlows(inpu../image.pngt) {
+        function validarPlows(input) {
             const valor = input.value.toUpperCase();
             input.value = valor;
 
@@ -92,7 +76,7 @@ unset($_SESSION['mensaje']);
 </head>
 <body>
     <nav>
-        <h1 id="nombre">⚠️ Registrar mermas pendientes</h1>
+        <h1 id="nombre">Garantiasinguardarguardar</h1>
         <ul id="menu">
             <li>
   <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
@@ -132,7 +116,7 @@ unset($_SESSION['mensaje']);
              top: 0; left: 0;
            " />
     </span>
-     Mermas sin registrar
+     Mermas pendientes
   </a>
 </li>
 
@@ -142,11 +126,11 @@ unset($_SESSION['mensaje']);
 
     <div class="contenedor">
         <div class="formulario">
-            <h1>⚠️ Registrar mermas pendientes</h1>
+            <h1>⚠️ Registrar mermas pendientes</h1><br>
 
             <?php if ($mensaje): ?>
                 <p><?= htmlspecialchars($mensaje) ?></p>
-            <?php endif; ?>
+            <?php endif; ?><br>
 
             <form method="POST">
                 <label for="plows">PLOWS:</label>
@@ -183,7 +167,7 @@ unset($_SESSION['mensaje']);
                 <label for="piezas">Piezas:</label>
                 <input type="number" name="piezas" min="1" required><br><br>
 
-                <?php
+               <?php
                 $sucursales = obtenerSucursales();
                 ?>
                 <label for="sucursal">Sucursal:</label>

@@ -108,6 +108,7 @@ $bitacora = obtenerBitacora();
                     <th>Estatus</th>
                     <th>Anotaciones</th>
                     <th>Fecha</th>
+                    <th>Eliminar</th>
                 </tr>
             </thead>
             <tbody id="table-body">
@@ -127,6 +128,11 @@ $bitacora = obtenerBitacora();
                         <td><?= htmlspecialchars($b['Estatus']) ?></td>
                         <td><?= htmlspecialchars($b['Anotaciones']) ?></td>
                         <td><?= htmlspecialchars($b['fecha']) ?></td>
+                        <td style="text-align:center;">
+                            <button class="btn-eliminar" data-id="<?= $b['id'] ?>" title="Eliminar registro" style="cursor:pointer; background:none; border:none; font-size:18px;">
+                                🗑️
+                            </button>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -226,6 +232,54 @@ function clearAllFilters() {
     document.getElementById('filter-fecha-hasta').value = '';
     filteredRows = [...allRows];
     renderTable();
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    initializeData();
+    agregarEventosEliminar();
+});
+
+function agregarEventosEliminar() {
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const fila = btn.closest('tr');
+            const id = btn.dataset.id;
+            const indicador = fila.dataset.indicador; // 1=Anotado, 2=Visto, etc.
+
+            // Solo permitir eliminar si el indicador es 1 o 2
+            if (indicador !== '1' && indicador !== '2') {
+                alert('❌ Solo se pueden eliminar registros con estatus "Anotado" o "Visto".');
+                return;
+            }
+
+            if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
+
+            try {
+                const response = await fetch('../../funciones.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        accion: 'eliminar_bitacora',
+                        id: id
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Registro eliminado correctamente');
+                    fila.remove();
+                    allRows = Array.from(document.querySelectorAll('#table-body tr'));
+                    filteredRows = [...allRows];
+                    renderTable();
+                } else {
+                    alert('⚠️ Error al eliminar el registro.');
+                }
+            } catch (error) {
+                alert('❌ Error en la solicitud: ' + error.message);
+            }
+        });
+    });
 }
 </script>
 </body>

@@ -422,7 +422,14 @@ function descargaResultados(){
       const headers = ["Vendedor","MetaAsignada","Sábado","Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","TotalSemana","Diferencia","%Cumplimiento"];
       wsData.push(headers);
       weekObj.rows.forEach(r => {
-        const row = [ r.Vendedor, Number(r.MetaAsignada).toFixed(2), ...r.Dias.map(d => Number(d).toFixed(2)), Number(r.TotalSemana).toFixed(2), Number(r.Diferencia).toFixed(2), Number(r.Porcentaje).toFixed(2) ];
+        const row = [ 
+        r.Vendedor, 
+        Number(r.MetaAsignada).toFixed(2), 
+        ...r.Dias.map(d => Number(d).toFixed(2)), 
+        Number(r.TotalSemana).toFixed(2), 
+        Number(r.Diferencia).toFixed(2), 
+        (r.MetaAsignada ? (r.TotalSemana / r.MetaAsignada) : 0).toFixed(4) // porcentaje decimal
+      ];
         wsData.push(row);
       });
       // totales
@@ -433,8 +440,8 @@ function descargaResultados(){
         totalSemana += r.TotalSemana;
       });
       const metaTotal = weekObj.metaDiaria * 7;
-      const pctCumpl = metaTotal ? (totalSemana/metaTotal)*100 : 0;
-      wsData.push(["Total","", ...totals.map(t=>Number(t).toFixed(2)), Number(totalSemana).toFixed(2), Number(totalSemana - metaTotal).toFixed(2), Number(pctCumpl).toFixed(2)]);
+      const pctCumpl = metaTotal ? (totalSemana/metaTotal) : 0; 
+      wsData.push(["Total","", ...totals.map(t=>Number(t).toFixed(2)), Number(totalSemana).toFixed(2), Number(totalSemana - metaTotal).toFixed(2), pctCumpl.toFixed(4)]);
       wsData.push([]); // fila en blanco entre semanas
     });
     const ws = XLSX.utils.aoa_to_sheet(wsData);
