@@ -485,3 +485,104 @@ tr:hover {
     overflow-x: auto;
   }
 }
+
+.modaldos {
+  background: #ffffff;
+  padding: 25px 30px;
+  border-radius: 14px;
+  width: 420px;
+  max-width: 90%;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  font-family: "Segoe UI", Roboto, sans-serif;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Título */
+.modaldos h3 {
+  margin-bottom: 18px;
+  font-size: 1.4rem;
+  color: #1D6C90;
+  text-align: center;
+  border-bottom: 2px solid #E5E9EC;
+  padding-bottom: 8px;
+}
+
+/* Etiquetas */
+.modaldos label {
+  display: block;
+  font-weight: 600;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+/* Inputs y textarea */
+.modaldos input,
+.modaldos textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.modaldos input:focus,
+.modaldos textarea:focus {
+  border-color: #1D6C90;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(29, 108, 144, 0.15);
+}
+
+/* Contenedor de botones */
+.modaldos .modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Botones */
+.modaldos button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.modaldos button[type="button"] {
+  background: #f3f3f3;
+  color: #444;
+}
+
+.modaldos button[type="button"]:hover {
+  background: #e4e4e4;
+}
+
+.modaldos button[type="submit"] {
+  background: #1D6C90;
+  color: #fff;
+}
+
+.modaldos button[type="submit"]:hover {
+  background: #15546E;
+  transform: translateY(-1px);
+}
+
+/* Animación */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
