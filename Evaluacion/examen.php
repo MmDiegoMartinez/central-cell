@@ -158,14 +158,25 @@ function seedPreguntas(PDO $conn): void {
 }
 
 function obtenerColaboradorId(PDO $conn, string $nombre): int {
+    date_default_timezone_set('America/Mexico_City');
+    $fechaHoy = date('Y-m-d');
     $nombreNorm = normalizarNombre($nombre);
+
+    // Verificar si ya existe el colaborador
     $stmt = $conn->prepare("SELECT id FROM colaboradores WHERE LOWER(nombre) = :n LIMIT 1");
     $stmt->execute([':n' => $nombreNorm]);
     $row = $stmt->fetch();
-    if ($row) return (int)$row['id'];
 
-    $stmt = $conn->prepare("INSERT INTO colaboradores (nombre) VALUES (:n)");
-    $stmt->execute([':n' => $nombreNorm]);
+    if ($row) {
+        // Actualizar la fecha de capacitación si ya existe
+        $stmt = $conn->prepare("UPDATE colaboradores SET fecha_capacitacion = :f WHERE id = :id");
+        $stmt->execute([':f' => $fechaHoy, ':id' => $row['id']]);
+        return (int)$row['id'];
+    }
+
+    // Insertar nuevo colaborador con fecha actual
+    $stmt = $conn->prepare("INSERT INTO colaboradores (nombre, fecha_capacitacion) VALUES (:n, :f)");
+    $stmt->execute([':n' => $nombreNorm, ':f' => $fechaHoy]);
     return (int)$conn->lastInsertId();
 }
 
@@ -228,6 +239,15 @@ function guardarRespuestas(PDO $conn, int $colabId, array $post): array {
 // ----------------------------------------------
 try {
     $conn = conectarBD();
+    try {
+    $colCheck = $conn->query("SHOW COLUMNS FROM colaboradores LIKE 'fecha_capacitacion'");
+    if ($colCheck->rowCount() === 0) {
+        $conn->exec("ALTER TABLE colaboradores ADD COLUMN fecha_capacitacion DATE DEFAULT NULL");
+        echo "✅ Se agregó la columna 'fecha_capacitacion' en la tabla 'colaboradores'.<br>";
+    }
+} catch (Exception $e) {
+    echo "⚠️ Error al verificar o modificar la tabla colaboradores: " . $e->getMessage() . "<br>";
+}
     ensureSchema($conn);
     seedPreguntas($conn);
 } catch (Exception $e) {

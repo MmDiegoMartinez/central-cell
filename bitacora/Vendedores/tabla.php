@@ -148,6 +148,7 @@ let filteredRows = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeData();
+    agregarEventosEliminar();
 });
 
 function initializeData() {
@@ -160,12 +161,15 @@ function initializeData() {
 }
 
 function initializeFilters() {
-    const sucursalValues = [...new Set(allRows.map(row => row.dataset.sucursal))].filter(v => v).sort();
-    const colaboradorValues = [...new Set(allRows.map(row => row.dataset.colaborador))].filter(v => v).sort();
+   
+    const sucursalValues = [...new Set(allRows.map(row => row.dataset.sucursal))].filter(v => v && v.trim() !== '').sort();
+    const colaboradorValues = [...new Set(allRows.map(row => row.dataset.colaborador))].filter(v => v && v.trim() !== '').sort();
 
+   
     populateSelect('filter-sucursal', sucursalValues);
     populateSelect('filter-colaborador', colaboradorValues);
 
+    
     document.getElementById('filter-sucursal').addEventListener('change', applyFilters);
     document.getElementById('filter-colaborador').addEventListener('change', applyFilters);
     document.getElementById('filter-indicador').addEventListener('change', applyFilters);
@@ -173,9 +177,18 @@ function initializeFilters() {
     document.getElementById('filter-fecha-hasta').addEventListener('change', applyFilters);
 }
 
+// Evita duplicar valores en los selects
 function populateSelect(selectId, values) {
     const select = document.getElementById(selectId);
-    values.forEach(v => {
+
+    // Guarda la primera opción (Todos/Todas)
+    const firstOption = select.options[0];
+    select.innerHTML = '';
+    select.appendChild(firstOption);
+
+    // Agrega solo valores únicos
+    const uniqueValues = [...new Set(values.filter(v => v && v.trim() !== ''))];
+    uniqueValues.forEach(v => {
         const option = document.createElement('option');
         option.value = v;
         option.textContent = v;
@@ -209,14 +222,13 @@ function renderTable() {
     filteredRows.forEach(row => {
         row.style.display = '';
 
-        // Aplicar color según indicador
         const indicador = row.dataset.indicador;
         switch (indicador) {
             case '1': row.style.backgroundColor = 'transparent'; row.style.color = '#000'; break;
             case '2': row.style.backgroundColor = '#42A5F5'; row.style.color = '#fff'; break;
             case '3': row.style.backgroundColor = '#FFEB3B'; row.style.color = '#000'; break;
             case '4': row.style.backgroundColor = '#66BB6A'; row.style.color = '#fff'; break;
-            case '5': row.style.backgroundColor = '#E53935'; row.style.color = '#fff'; break; // Tiene en tienda
+            case '5': row.style.backgroundColor = '#E53935'; row.style.color = '#fff'; break;
             default: row.style.backgroundColor = 'transparent'; row.style.color = '#000';
         }
     });
@@ -233,21 +245,15 @@ function clearAllFilters() {
     filteredRows = [...allRows];
     renderTable();
 }
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    initializeData();
-    agregarEventosEliminar();
-});
 
+// --- Eliminar registros ---
 function agregarEventosEliminar() {
     document.querySelectorAll('.btn-eliminar').forEach(btn => {
         btn.addEventListener('click', async () => {
             const fila = btn.closest('tr');
             const id = btn.dataset.id;
-            const indicador = fila.dataset.indicador; // 1=Anotado, 2=Visto, etc.
+            const indicador = fila.dataset.indicador;
 
-            // Solo permitir eliminar si el indicador es 1 o 2
             if (indicador !== '1' && indicador !== '2') {
                 alert('❌ Solo se pueden eliminar registros con estatus "Anotado" o "Visto".');
                 return;
@@ -259,10 +265,7 @@ function agregarEventosEliminar() {
                 const response = await fetch('../../funciones.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: new URLSearchParams({
-                        accion: 'eliminar_bitacora',
-                        id: id
-                    })
+                    body: new URLSearchParams({ accion: 'eliminar_bitacora', id })
                 });
                 const result = await response.json();
 
@@ -282,5 +285,6 @@ function agregarEventosEliminar() {
     });
 }
 </script>
+
 </body>
 </html>

@@ -27,6 +27,13 @@ $validador_id = $_SESSION['validador_id'];
     <meta charset="UTF-8">
     <title>Panel del Validador</title>
    <link rel="stylesheet" href="../csstabla.css">
+  <style>
+  .btn-edit {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+</style>
 </head>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <body>
@@ -289,7 +296,16 @@ $validador_id = $_SESSION['validador_id'];
                 <td><?= htmlspecialchars($g['estatus']) ?></td>
 
                 <td class="action-links">
-                    <a href="editar.php?id=<?= $g["id"] ?>">✏️ Editar</a> |
+                    <button type="button" onclick="openEditModal(this)" 
+                    data-id="<?= $g['id'] ?>"
+                    data-plows="<?= htmlspecialchars($g['plows']) ?>"
+                    data-tipo="<?= htmlspecialchars($g['tipo']) ?>"
+                    data-causa="<?= htmlspecialchars($g['causa']) ?>"
+                    data-piezas="<?= htmlspecialchars($g['piezas']) ?>"
+                    data-sucursal="<?= htmlspecialchars($g['sucursal']) ?>"
+                    data-colaborador="<?= htmlspecialchars($g['apasionado']) ?>"
+                    class="btn-edit">✏️ Editar</button>
+                    |
                     <a href="eliminar.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️ Eliminar</a>
                 </td>
 
@@ -323,8 +339,41 @@ $validador_id = $_SESSION['validador_id'];
         <?php endforeach; ?>
     </tbody>
 </table>
-
             </form>
+            <div id="editModal" class="modal" style="
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+">
+  <div  class="modaldos">
+    <h3>Editar Registro</h3>
+    <form id="editForm">
+      <input type="hidden" id="edit-id" name="id">
+
+      <label>PLOWS:</label>
+      <input type="text" id="edit-plows" name="plows" required><br>
+
+      <label>Piezas Validadas:</label>
+      <input type="number" id="edit-piezas-validadas" name="piezas_validadas"><br>
+
+      <label>Número de Ajuste:</label>
+      <input type="text" id="edit-numero-ajuste" name="numero_ajuste"><br>
+
+      <label>Anotaciones del Validador:</label>
+      <textarea id="edit-anotaciones-validador" name="anotaciones_validador" rows="3"></textarea><br>
+
+      <div style="margin-top:15px;display:flex;justify-content:space-between;">
+        <button type="button" onclick="closeModal()">Cancelar</button>
+        <button type="submit" style="background:#1D6C90;color:white;">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
         </div>
     </div>
 
@@ -635,9 +684,20 @@ async function cargarDatos() {
                 <td>${g.fecha}</td>
                 <td>${g.estatus}</td>
                 
-                <td class="action-links">
-                    
-                    <a href="eliminar.php?id=${g.id}" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️ Eliminar</a>
+               <td class="action-links">
+                <button type="button" onclick="openEditModal(this)" 
+                    data-id="${g.id}"
+                    data-plows="${g.plows || ''}"
+                    data-piezas_validadas="${g.piezas_validadas || ''}"
+                    data-numero_ajuste="${g.numero_ajuste || ''}"
+                    data-anotaciones_validador="${g.anotaciones_validador || ''}"
+                    class="btn-edit">✏️</button>
+                |
+                <button 
+                onclick="if(confirm('¿Seguro que quieres eliminar esta garantía?')) location.href='eliminar.php?id=${g.id}'" 
+                class="btn-eliminar">
+                🗑️
+                </button>
                 </td>
                 <td>${g.validador_nombre ? g.validador_nombre + ' ' + g.validador_apellido : 'No validado'}</td>
                 <td><input type="number" name="piezas_validadas[${g.id}]" value="${g.piezas_validadas}" ${readonly} style="width: 80px; padding: 4px; border: 1px solid #ccc; border-radius: 4px;"></td>
@@ -718,6 +778,46 @@ document.querySelectorAll('#garantias-table td').forEach(td => {
 
 
     </script>
+
+  <script>
+function openEditModal(button) {
+  document.getElementById('edit-id').value = button.dataset.id;
+  document.getElementById('edit-plows').value = button.dataset.plows || '';
+  document.getElementById('edit-piezas-validadas').value = button.dataset.piezas_validadas || '';
+  document.getElementById('edit-numero-ajuste').value = button.dataset.numero_ajuste || '';
+  document.getElementById('edit-anotaciones-validador').value = button.dataset.anotaciones_validador || '';
+
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+document.getElementById('editForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  try {
+    const resp = await fetch('editar_garantia.php', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      alert('Registro actualizado correctamente');
+      location.reload();
+    } else {
+      alert('Error al actualizar: ' + data.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error de conexión con el servidor.');
+  }
+});
+</script>
+
     <br>
     <footer style="text-align: center; padding: 10px; font-size: 0.85rem; color: #777; margin-top: 50px;">
   <p>&copy; <span id="year"></span> Diego Fernando Martínez Santiago</p>

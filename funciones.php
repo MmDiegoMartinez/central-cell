@@ -25,9 +25,15 @@ function conectarBD(): PDO {
 function guardarGarantia($datos) {
     $conn = conectarBD();
 
-    // Configurar zona horaria de México
+    // Forzar configuración de zona horaria en InfinityFree
+    ini_set('date.timezone', 'America/Mexico_City');
     date_default_timezone_set('America/Mexico_City');
+
+    // Generar fecha actual en formato compatible con MySQL
     $hora_actual = date('Y-m-d H:i:s');
+
+    // Confirmar que se generó correctamente (solo para pruebas)
+    // echo "Fecha actual: $hora_actual";
 
     // Buscar colaborador (exacto o case-insensitive)
     $sql = "SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1";
@@ -38,7 +44,6 @@ function guardarGarantia($datos) {
     if ($colaborador) {
         $idColaborador = $colaborador['id'];
     } else {
-        // Insertar nuevo colaborador
         $sqlInsert = "INSERT INTO colaboradores (nombre) VALUES (:nombre)";
         $stmtInsert = $conn->prepare($sqlInsert);
         $stmtInsert->execute([':nombre' => $datos['apasionado']]);
@@ -68,8 +73,8 @@ function guardarGarantia($datos) {
             ':tipo' => $datos['tipo'],
             ':causa' => $datos['causa'],
             ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'], 
-            ':apasionado' => $idColaborador,   
+            ':sucursal' => $datos['sucursal'],
+            ':apasionado' => $idColaborador,
             ':fecha' => $datos['fecha'],
             ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
             ':created_at' => $hora_actual,
@@ -82,11 +87,15 @@ function guardarGarantia($datos) {
     return true;
 }
 //guardar garantia de vendedores que no lo anotaron 
+// Guardar garantía de vendedores que no lo anotaron 
 function guardarGarantiasinguardar($datos) {
     $conn = conectarBD();
 
-    // Configurar zona horaria de México
+    // Forzar configuración de zona horaria para InfinityFree
+    ini_set('date.timezone', 'America/Mexico_City');
     date_default_timezone_set('America/Mexico_City');
+
+    //  Generar fecha y hora actual (formato compatible con MySQL)
     $hora_actual = date('Y-m-d H:i:s');
 
     // Buscar colaborador (exacto o case-insensitive)
@@ -141,7 +150,6 @@ function guardarGarantiasinguardar($datos) {
 
     return true;
 }
-
 
 function verTabla(): array {
     try {
@@ -319,76 +327,7 @@ function obtenerGarantiaPorId($id): ?array {
     }
 }
 
-function actualizarGarantia(int $id, array $datos): bool {
-    if ($id <= 0) {
-        return false; // ❗ ID inválido
-    }
 
-    try {
-        $conexion = conectarBD();
-
-        // Validación mínima de campos requeridos
-        $camposObligatorios = ['plows', 'tipo', 'causa', 'piezas', 'sucursal', 'fecha', 'estatus'];
-        foreach ($camposObligatorios as $campo) {
-            if (!isset($datos[$campo])) {
-                return false;
-            }
-        }
-
-        // Obtener o insertar colaborador
-        if (!empty($datos['apasionado_id']) && is_numeric($datos['apasionado_id'])) {
-            $idColaborador = $datos['apasionado_id'];
-        } else {
-            $stmt = $conexion->prepare("SELECT id FROM colaboradores WHERE nombre LIKE :nombre LIMIT 1");
-            $stmt->execute([':nombre' => '%' . $datos['apasionado'] . '%']);
-            $colaborador = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($colaborador) {
-                $idColaborador = $colaborador['id'];
-            } else {
-                $stmtInsert = $conexion->prepare("INSERT INTO colaboradores (nombre) VALUES (:nombre)");
-                $stmtInsert->execute([':nombre' => $datos['apasionado']]);
-                $idColaborador = $conexion->lastInsertId();
-            }
-        }
-
-        // Actualizar garantía
-        $stmtUpdate = $conexion->prepare("UPDATE garantia SET
-            plows = :plows,
-            tipo = :tipo,
-            causa = :causa,
-            piezas = :piezas,
-            sucursal = :sucursal,
-            apasionado = :apasionado,
-            fecha = :fecha,
-            estatus = :estatus,
-            anotaciones_vendedor = :anotaciones
-        WHERE id = :id");
-
-        $stmtUpdate->execute([
-            ':plows' => strtoupper($datos['plows']),
-            ':tipo' => $datos['tipo'],
-            ':causa' => $datos['causa'],
-            ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'],
-            ':apasionado' => $idColaborador,
-            ':fecha' => $datos['fecha'],
-            ':estatus' => $datos['estatus'],
-            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
-            ':id' => $id
-        ]);
-
-        // Liberar recursos
-        $stmtUpdate = null;
-        $conexion = null;
-
-        return true;
-
-    } catch (PDOException $e) {
-        error_log("Error al actualizar garantía ID $id: " . $e->getMessage());
-        return false;
-    }
-}
 
 function validarLoginValidador(string $usuario, string $password): array|false {
     if (empty($usuario) || empty($password)) {
@@ -1222,4 +1161,21 @@ if (isset($_POST['accion']) && $_POST['accion'] === 'eliminar_bitacora') {
     exit;
 }
 
+function actualizarValidacionGarantia(PDO $conn, $id, $plows, $piezas_validadas, $numero_ajuste, $anotaciones_validador) {
+    $sql = "UPDATE garantia 
+            SET plows = :plows,
+                piezas_validadas = :piezas_validadas,
+                numero_ajuste = :numero_ajuste,
+                anotaciones_validador = :anotaciones_validador
+            WHERE id = :id";
+
+    $stmt = $conn->prepare($sql);
+    return $stmt->execute([
+        ':id' => $id,
+        ':plows' => $plows,
+        ':piezas_validadas' => $piezas_validadas,
+        ':numero_ajuste' => $numero_ajuste,
+        ':anotaciones_validador' => $anotaciones_validador
+    ]);
+}
 ?>

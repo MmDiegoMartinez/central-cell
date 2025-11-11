@@ -62,12 +62,7 @@ $bitacora = obtenerBitacora();
                 Home
             </a>
         </li>
-        <li>
-            <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;">
-                <img src="../../recursos/img/merma.png" alt="Producto" style="width: 40px; height: 40px; object-fit: contain;" />
-                Producto
-            </a>
-        </li>
+       
     <li>
       <a href="../../compatibilidades/consultar.php" style="display: flex; align-items: center; gap: 12px;">
         🔗 Compatibilidades
@@ -218,7 +213,14 @@ function initializeFilters() {
 
 function populateSelect(selectId, values) {
     const select = document.getElementById(selectId);
-    values.forEach(v => {
+   
+    const firstOption = select.options[0];
+    select.innerHTML = '';
+    select.appendChild(firstOption);
+
+  
+    const uniqueValues = [...new Set(values.filter(v => v && v.trim() !== ''))];
+    uniqueValues.forEach(v => {
         const option = document.createElement('option');
         option.value = v;
         option.textContent = v;

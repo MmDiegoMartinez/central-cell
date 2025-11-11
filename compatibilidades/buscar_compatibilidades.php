@@ -13,21 +13,25 @@ if (!$modelo_id) {
 try {
     $conn = conectarBD();
 
-    // 1️⃣ Buscar modelos principales donde el modelo ingresado es compatible
-    $stmt = $conn->prepare("
-        SELECT DISTINCT modelo_id 
-        FROM compatibilidades 
-        WHERE compatible_id = :modelo_id
-    ");
-    $stmt->execute([':modelo_id' => $modelo_id]);
+    //  Buscar modelos principales donde el modelo ingresado es compatible (y opcionalmente del tipo elegido)
+    $sql_principales = "SELECT DISTINCT modelo_id FROM compatibilidades WHERE compatible_id = ?";
+    $params_principales = [$modelo_id];
+
+    if ($tipo_filtro) {
+        $sql_principales .= " AND tipo = ?";
+        $params_principales[] = $tipo_filtro;
+    }
+
+    $stmt = $conn->prepare($sql_principales);
+    $stmt->execute($params_principales);
     $modelos_principales = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-    // Siempre incluimos el mismo modelo como principal también
+    // Agregamos el mismo modelo también
     $modelos_principales[] = $modelo_id;
 
     $placeholders = implode(',', array_fill(0, count($modelos_principales), '?'));
 
-    // 2️⃣ Traer todas las compatibilidades de esos modelos principales
+    //  Traer compatibilidades del tipo seleccionado únicamente
     $sql = "
         SELECT c.tipo, m2.marca, m2.modelo,
                GROUP_CONCAT(DISTINCT c.nota SEPARATOR '. ') AS nota
@@ -50,7 +54,7 @@ try {
     $stmt->execute($params);
     $results = $stmt->fetchAll();
 
-    // 3️⃣ Además buscamos si el modelo ingresado es compatible en otros registros
+    // Buscar si el modelo ingresado es compatible en otros registros del mismo tipo
     $sql2 = "
         SELECT c.tipo, m1.marca, m1.modelo,
                GROUP_CONCAT(DISTINCT c.nota SEPARATOR '. ') AS nota
@@ -69,9 +73,9 @@ try {
     $stmt2->execute($params2);
     $results2 = $stmt2->fetchAll();
 
+    //  Combinar resultados y eliminar duplicados
     $all_results = array_merge($results, $results2);
 
-    // Evitar duplicados por modelo+tipo y concatenar notas si es necesario
     $final = [];
     foreach ($all_results as $row) {
         $key = $row['tipo'] . '|' . $row['marca'] . '|' . $row['modelo'];
@@ -92,7 +96,7 @@ try {
         }
     }
 
-    // Ordenar por tipo y modelo
+    //  Ordenar resultados
     usort($final, function($a, $b){
         return $a['tipo'] <=> $b['tipo'] ?: strcmp($a['modelo'], $b['modelo']);
     });

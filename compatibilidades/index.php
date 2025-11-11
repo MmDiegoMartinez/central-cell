@@ -26,6 +26,7 @@ if (!isset($_SESSION['validador_id'])) {
             <li><a href="consultar.php">Consultar</a></li>
             <li><a href="crudcompatibilidades.php">Tabla Compatibilidades</a></li>
             <li><a href="ingresar.php">Ingresar Compatibilidades</a></li>
+             <li><a href="tabla_compatibilidades.php">Descargar Compatibilidades</a></li>
         </ul>
     </nav>
 </header>
