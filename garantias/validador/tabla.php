@@ -1,30 +1,41 @@
-<?php include_once '../funciones.php'; $garantias = verTabla(); ?>
+<?php session_start();
+
+if (!isset($_SESSION['validador_id'])) {
+    header('Location: loginvalidador.php');
+    exit;
+}
+
+
+$validador_id = $_SESSION['validador_id'];
+
+
+
+include_once '../../funciones.php'; $garantias = verTablanoguardados(); ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Tabla de Garantías y Mermas</title>
-    <link rel="stylesheet" href="../csstabla.css?v=<?php echo time(); ?>">
-
+     <link rel="stylesheet" href="../../csstabla.css">
 </head>
 <body>
     
-     <nav style="background:#0F5476; padding:10px;">
+     <nav style="background:#1D6C90; padding:10px;">
         <ul id="menu">
             <li>
-  <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
     <span style="
       display: inline-flex;
       width: 40px; 
       height: 40px; 
-      background: white; 
+      background: w#1D6C90hite; 
       border-radius: 50%; 
       justify-content: center; 
       align-items: center; 
       overflow: visible;
       position: relative;
     ">
-      <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
            style="
              width: 30px; 
              height: 30Px; 
@@ -38,9 +49,9 @@
 </li>
 
 <li>
-  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="Tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
@@ -59,7 +70,7 @@
     <hr>
     
     <div class="container">
-        <h2>Historial de Garantías y Mermas</h2>
+        <h2>Historial de Garantías y Mermas No Registradas</h2>
         
         <div class="filters-container">
             <h3>Filtros por Columna</h3>
@@ -135,15 +146,10 @@
                         <th>Sucursal</th>
                         <th>Colaborador</th>
                         <th>Fecha de Registro</th>
-                        <th>Estatus</th>
-                        
-                        <th></th>
-                        <th>Validador</th>
-                        <th>Piezas Validadas</th>
-                        <th>Hora de Validación</th>
-                        <th>Fecha de Validación</th>
-                        <th>Número de Ajuste</th>
-                        <th>Anotación del Validador</th>
+                       
+                        <th>Eliminar</th>
+                        <th>A garant. reg.</th>
+    
                         <th>Anotación del Vendedor</th>
                     </tr>
                 </thead>
@@ -157,7 +163,7 @@
                             data-sucursal="<?= htmlspecialchars($g['sucursal']) ?>"
                             data-colaborador="<?= htmlspecialchars($g['apasionado']) ?>"
                             data-fecha="<?= htmlspecialchars($g['fecha']) ?>"
-                            data-estatus="<?= htmlspecialchars($g['estatus']) ?>"
+                            
                             data-validador="<?= $g['validador_nombre'] ? htmlspecialchars($g['validador_nombre'] . ' ' . $g['validador_apellido']) : 'No validado' ?>">
                             <td><?= htmlspecialchars($g['plows']) ?></td>
                             <td><?= htmlspecialchars($g['tipo']) ?></td>
@@ -166,30 +172,25 @@
                             <td><?= htmlspecialchars($g['sucursal']) ?></td>
                             <td><?= htmlspecialchars($g['apasionado']) ?></td>
                             <td><?= htmlspecialchars($g['fecha']) ?></td>
-                            <td><?= htmlspecialchars($g['estatus']) ?></td>
+                           
                            
                             <td class="action-links">
                                 <?php if (!$g["validador_nombre"]): ?>
                                     
-                                    <a href="eliminar.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️</a>
+                                    <a href="../vendedor/eliminar.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️</a>
                                 <?php else: ?>
                                     <span class="validated">(Validado)</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <?php
-                                    if ($g['validador_nombre']) {
-                                        echo htmlspecialchars($g['validador_nombre'] . ' ' . $g['validador_apellido']);
-                                    } else {
-                                        echo 'No validado';
-                                    }
-                                ?>
+                             <td class="action-links">
+                                <?php if (!$g["validador_nombre"]): ?>
+                                    
+                                    <a href="Mover.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres mover esta garantía?')">🔄</a>
+                                <?php else: ?>
+                                    <span class="validated">(Validado)</span>
+                                <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars($g['piezas_validadas']) ?></td>
-                            <td><?= htmlspecialchars($g['hora']) ?></td>
-                            <td><?= htmlspecialchars($g['fecha_validacion']) ?></td>
-                            <td><?= htmlspecialchars($g['numero_ajuste']) ?></td>
-                            <td><?= htmlspecialchars($g['anotaciones_validador']) ?></td>
+                           
                              <td><?= htmlspecialchars($g['anotaciones_vendedor']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -338,10 +339,22 @@
             updateResultsCount();
         }
 
-        function updateResultsCount() {
-            const resultsCount = document.getElementById('results-count');
-            resultsCount.textContent = `Mostrando ${filteredRows.length} de ${allRows.length} registros`;
-        }
+       function updateResultsCount() {
+    const resultsCount = document.getElementById('results-count');
+    resultsCount.textContent = `Mostrando ${filteredRows.length} de ${allRows.length} registros`;
+
+    // Crear o actualizar el párrafo informativo
+    let infoText = document.getElementById('info-text');
+    if (!infoText) {
+        infoText = document.createElement('p');   // Crear elemento <p>
+        infoText.id = 'info-text';
+        infoText.style.fontSize = '0.9em';
+        infoText.style.color = '#555';
+        resultsCount.parentNode.insertBefore(infoText, resultsCount.nextSibling); // Insertar después del conteo
+    }
+
+    infoText.textContent = "Estos datos corresponden a mermas que los vendedores no registraron. Se manejan por separado de las mermas que sí fueron registradas y no son visibles para los vendedores. Se mantienen aquí únicamente para llevar un control de este tipo de mermas no registradas.";
+}
 
         function clearAllFilters() {
             document.getElementById('filter-plows').value = '';
@@ -365,76 +378,6 @@
     </script>
     <script>
 let currentHash = "";
-
-/*async function checkForNewGarantias() {
-    try {
-        const response = await fetch('ver_garantias_json.php');
-        const data = await response.json();
-
-        // Obtener IDs ya existentes en la tabla
-        const existingIds = Array.from(document.querySelectorAll('#table-body tr'))
-                                 .map(row => row.dataset.id);
-
-        let nuevos = 0;
-
-        data.forEach(g => {
-            if (!existingIds.includes(g.id)) {
-                // Crear nueva fila solo si no existe
-                const row = document.createElement('tr');
-                row.setAttribute('data-id', g.id);
-                row.setAttribute('data-plows', g.plows);
-                row.setAttribute('data-tipo', g.tipo);
-                row.setAttribute('data-causa', g.causa);
-                row.setAttribute('data-piezas', g.piezas);
-                row.setAttribute('data-sucursal', g.sucursal);
-                row.setAttribute('data-colaborador', g.apasionado);
-                row.setAttribute('data-fecha', g.fecha);
-                row.setAttribute('data-estatus', g.estatus);
-                row.setAttribute('data-validador', g.validador_nombre ? g.validador_nombre + ' ' + g.validador_apellido : 'No validado');
-
-                // Generar HTML de la fila (idéntico a tu PHP)
-                row.innerHTML = `
-                    <td>${g.plows}</td>
-                    <td>${g.tipo}</td>
-                    <td>${g.causa}</td>
-                    <td>${g.piezas}</td>
-                    <td>${g.sucursal}</td>
-                    <td>${g.apasionado}</td>
-                    <td>${g.fecha}</td>
-                    <td>${g.estatus}</td>
-                    <td>${g.anotaciones_vendedor}</td>
-                    <td class="action-links">
-                        ${g.validador_nombre ? '<span class="validated">(Validado)</span>' : 
-                        `<a href="editar.php?id=${g.id}">✏️ Editar</a> |
-                         <a href="eliminar.php?id=${g.id}" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️ Eliminar</a>`}
-                    </td>
-                    <td>${g.validador_nombre ? g.validador_nombre + ' ' + g.validador_apellido : 'No validado'}</td>
-                    <td>${g.piezas_validadas}</td>
-                    <td>${g.hora}</td>
-                    <td>${g.fecha_validacion}</td>
-                    <td>${g.numero_ajuste}</td>
-                    <td>${g.anotaciones_validador}</td>
-                `;
-
-                document.querySelector('#table-body').prepend(row);  // Insertar al inicio
-
-                nuevos++;
-            }
-        });
-
-        if (nuevos > 0) {
-            // Reactualizar los arrays para filtros
-            allRows = Array.from(document.querySelectorAll('#table-body tr'));
-            applyFilters();  // Respetar filtros activos
-            updateResultsCount();
-        }
-    } catch (error) {
-        console.error("Error al verificar nuevas garantías:", error);
-    }
-}
-
-// Ejecutar cada 30 segundos
-setInterval(checkForNewGarantias, 30000);*/
 
 
 function resaltarCeldasValidadas() {

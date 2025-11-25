@@ -8,7 +8,7 @@ if (!isset($_SESSION['validador_id'])) {
     exit;
 }
 
-include_once '../funciones.php';
+include_once '../../funciones.php';
 $conn = conectarBD();
 
 // Se ejecutará máximo una vez al día
@@ -26,7 +26,7 @@ $validador_id = $_SESSION['validador_id'];
 <head>
     <meta charset="UTF-8">
     <title>Panel del Validador</title>
-   <link rel="stylesheet" href="../csstabla.css">
+   <link rel="stylesheet" href="../../csstabla.css">
   <style>
   .btn-edit {
     display: inline-block !important;
@@ -55,7 +55,7 @@ $validador_id = $_SESSION['validador_id'];
           overflow: visible;
           position: relative;
         ">
-          <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+          <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
                style="
                  width: 30px; 
                  height: 30px; 
@@ -88,17 +88,17 @@ $validador_id = $_SESSION['validador_id'];
     
 
     <li>
-      <a href="../Evaluacion/lista_colaboradores.php" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../../Evaluacion/lista_colaboradores.php" style="display: flex; align-items: center; gap: 12px;">
         📘 Capacit.
       </a>
     </li>
     <li>
-      <a href="../compatibilidades/index.php" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../../compatibilidades/index.php" style="display: flex; align-items: center; gap: 12px;">
         🔗 Compatibilidades
       </a>
     </li>
      <li>
-      <a href="../kpis/index.php" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../../kpis/index.php" style="display: flex; align-items: center; gap: 12px;">
         📈  KPIs
       </a>
     </li>
@@ -108,7 +108,7 @@ $validador_id = $_SESSION['validador_id'];
       </a>
     </li>
     <li>
-      <a href="../bitacora/Auxiliares" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../../bitacora/Auxiliares" style="display: flex; align-items: center; gap: 12px;">
         🏬 Bitacora
       </a>
     </li>

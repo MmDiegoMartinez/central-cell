@@ -1,5 +1,5 @@
 <?php
-include_once '../funciones.php';
+include_once '../../funciones.php';
 $sucursales = obtenerSucursalesActivas();
 $mensaje = "";
 
@@ -40,7 +40,7 @@ if (isset($_GET['eliminar'])) {
 <head>
   <meta charset="UTF-8">
   <title>Sucursales | Administración</title>
-  <link rel="stylesheet" href="../kpis/estilos.css">
+  <link rel="stylesheet" href="../../kpis/estilos.css">
 </head>
 <body>
 <nav>
@@ -74,7 +74,7 @@ if (isset($_GET['eliminar'])) {
 
   <h2 style="margin-top:30px;">Sucursales activas</h2>
   
-    <table border="0" <li><a href="../validador/validador.php">Validar Mermas</a></li> cellpadding="8" cellspacing="0" width="100%">
+    <table border="0" cellpadding="8" cellspacing="0" width="100%">
       <thead>
         <tr style="text-align:left;">
           <th>ID</th>

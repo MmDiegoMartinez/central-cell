@@ -455,6 +455,9 @@ tr:hover {
 .Btn:active {
   transform: translate(2px, 2px);
 }
+.Btn, .Btn * {
+  cursor: pointer;
+}
 .center-container {
   display: flex;
  

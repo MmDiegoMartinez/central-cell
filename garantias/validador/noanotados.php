@@ -12,7 +12,7 @@ $validador_id = $_SESSION['validador_id'];
 
 
 
-include_once '../funciones.php'; 
+include_once '../../funciones.php'; 
 
 $mostrarMensajeNoEncontrado = false;
 $mensaje = "";
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="../css.css">
+    <link rel="stylesheet" href="../../css.css">
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $("#apasionado").autocomplete({
         source: function(request, response) {
             $.ajax({
-                url: "buscar_colaborador.php",
+                url: "../vendedor/buscar_colaborador.php",
                 dataType: "json",
                 data: { term: request.term },
                 success: function(data) {
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       overflow: visible;
       position: relative;
     ">
-      <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+      <img src="../../recursos/imgCentral-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
            style="
              width: 30px; 
              height: 30Px; 
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <li>
   <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../image.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/image.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
@@ -236,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Hacer AJAX para validar si existe el colaborador
         $.ajax({
-            url: 'validar_colaborador.php',
+            url: '../vendedor/verificar_colaborador.php.php',
             method: 'GET',
             data: { nombre: nombreColaborador },
             success: function(response) {

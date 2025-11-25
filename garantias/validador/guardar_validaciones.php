@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once '../funciones.php';
+include_once '../../funciones.php';
 
 if (!isset($_SESSION['validador_id'])) {
     header('Location: loginvalidador.php');

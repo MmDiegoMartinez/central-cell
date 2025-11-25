@@ -1,5 +1,5 @@
 <?php
-include_once '../funciones.php';  // Ajusta la ruta si es necesario
+include_once '../../funciones.php';  // Ajusta la ruta si es necesario
 $conn = conectarBD();
 
 $nombre = $_GET['nombre'] ?? '';

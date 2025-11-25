@@ -1,5 +1,5 @@
 <?php 
-include_once '../funciones.php';   
+include_once '../../funciones.php';   
 $mensaje = "";  
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {     
@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="../css.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../../css.css?v=<?php echo time(); ?>">
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       overflow: visible;
       position: relative;
     ">
-      <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
            style="
              width: 30px; 
              height: 30Px; 
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <li>
   <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 

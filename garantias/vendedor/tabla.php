@@ -1,41 +1,30 @@
-<?php session_start();
-
-if (!isset($_SESSION['validador_id'])) {
-    header('Location: loginvalidador.php');
-    exit;
-}
-
-
-$validador_id = $_SESSION['validador_id'];
-
-
-
-include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
+<?php include_once '../../funciones.php'; $garantias = verTabla(); ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Tabla de Garantías y Mermas</title>
-     <link rel="stylesheet" href="../csstabla.css">
+     <link rel="stylesheet" href="../../csstabla.css?v=<?php echo time(); ?>">
+
 </head>
 <body>
     
-     <nav style="background:#1D6C90; padding:10px;">
+     <nav style="background:#0F5476; padding:10px;">
         <ul id="menu">
             <li>
-  <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
     <span style="
       display: inline-flex;
       width: 40px; 
       height: 40px; 
-      background: w#1D6C90hite; 
+      background: white; 
       border-radius: 50%; 
       justify-content: center; 
       align-items: center; 
       overflow: visible;
       position: relative;
     ">
-      <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
            style="
              width: 30px; 
              height: 30Px; 
@@ -49,11 +38,11 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
 </li>
 
 <li>
-  <a href="Tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../recursos/img/merma.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
-             width: 40px; 
+             widthttps://garantiasinnovacionmovil.rf.gd/vendedor/garantias.php?i=1h: 40px; 
              height: 40Px; 
              object-fit: contain;
              position: relative;
@@ -70,7 +59,7 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
     <hr>
     
     <div class="container">
-        <h2>Historial de Garantías y Mermas No Registradas</h2>
+        <h2>Historial de Garantías y Mermas</h2>
         
         <div class="filters-container">
             <h3>Filtros por Columna</h3>
@@ -146,10 +135,15 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
                         <th>Sucursal</th>
                         <th>Colaborador</th>
                         <th>Fecha de Registro</th>
-                       
-                        <th>Eliminar</th>
-                        <th>A garant. reg.</th>
-    
+                        <th>Estatus</th>
+                        
+                        <th></th>
+                        <th>Validador</th>
+                        <th>Piezas Validadas</th>
+                        <th>Hora de Validación</th>
+                        <th>Fecha de Validación</th>
+                        <th>Número de Ajuste</th>
+                        <th>Anotación del Validador</th>
                         <th>Anotación del Vendedor</th>
                     </tr>
                 </thead>
@@ -163,7 +157,7 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
                             data-sucursal="<?= htmlspecialchars($g['sucursal']) ?>"
                             data-colaborador="<?= htmlspecialchars($g['apasionado']) ?>"
                             data-fecha="<?= htmlspecialchars($g['fecha']) ?>"
-                            
+                            data-estatus="<?= htmlspecialchars($g['estatus']) ?>"
                             data-validador="<?= $g['validador_nombre'] ? htmlspecialchars($g['validador_nombre'] . ' ' . $g['validador_apellido']) : 'No validado' ?>">
                             <td><?= htmlspecialchars($g['plows']) ?></td>
                             <td><?= htmlspecialchars($g['tipo']) ?></td>
@@ -172,25 +166,30 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
                             <td><?= htmlspecialchars($g['sucursal']) ?></td>
                             <td><?= htmlspecialchars($g['apasionado']) ?></td>
                             <td><?= htmlspecialchars($g['fecha']) ?></td>
-                           
+                            <td><?= htmlspecialchars($g['estatus']) ?></td>
                            
                             <td class="action-links">
                                 <?php if (!$g["validador_nombre"]): ?>
                                     
-                                    <a href="../vendedor/eliminar.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️</a>
+                                    <a href="eliminar.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres eliminar esta garantía?')">🗑️</a>
                                 <?php else: ?>
                                     <span class="validated">(Validado)</span>
                                 <?php endif; ?>
                             </td>
-                             <td class="action-links">
-                                <?php if (!$g["validador_nombre"]): ?>
-                                    
-                                    <a href="Mover.php?id=<?= $g["id"] ?>" onclick="return confirm('¿Seguro que quieres mover esta garantía?')">🔄</a>
-                                <?php else: ?>
-                                    <span class="validated">(Validado)</span>
-                                <?php endif; ?>
+                            <td>
+                                <?php
+                                    if ($g['validador_nombre']) {
+                                        echo htmlspecialchars($g['validador_nombre'] . ' ' . $g['validador_apellido']);
+                                    } else {
+                                        echo 'No validado';
+                                    }
+                                ?>
                             </td>
-                           
+                            <td><?= htmlspecialchars($g['piezas_validadas']) ?></td>
+                            <td><?= htmlspecialchars($g['hora']) ?></td>
+                            <td><?= htmlspecialchars($g['fecha_validacion']) ?></td>
+                            <td><?= htmlspecialchars($g['numero_ajuste']) ?></td>
+                            <td><?= htmlspecialchars($g['anotaciones_validador']) ?></td>
                              <td><?= htmlspecialchars($g['anotaciones_vendedor']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -339,22 +338,10 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
             updateResultsCount();
         }
 
-       function updateResultsCount() {
-    const resultsCount = document.getElementById('results-count');
-    resultsCount.textContent = `Mostrando ${filteredRows.length} de ${allRows.length} registros`;
-
-    // Crear o actualizar el párrafo informativo
-    let infoText = document.getElementById('info-text');
-    if (!infoText) {
-        infoText = document.createElement('p');   // Crear elemento <p>
-        infoText.id = 'info-text';
-        infoText.style.fontSize = '0.9em';
-        infoText.style.color = '#555';
-        resultsCount.parentNode.insertBefore(infoText, resultsCount.nextSibling); // Insertar después del conteo
-    }
-
-    infoText.textContent = "Estos datos corresponden a mermas que los vendedores no registraron. Se manejan por separado de las mermas que sí fueron registradas y no son visibles para los vendedores. Se mantienen aquí únicamente para llevar un control de este tipo de mermas no registradas.";
-}
+        function updateResultsCount() {
+            const resultsCount = document.getElementById('results-count');
+            resultsCount.textContent = `Mostrando ${filteredRows.length} de ${allRows.length} registros`;
+        }
 
         function clearAllFilters() {
             document.getElementById('filter-plows').value = '';
@@ -378,6 +365,8 @@ include_once '../funciones.php'; $garantias = verTablanoguardados(); ?>
     </script>
     <script>
 let currentHash = "";
+
+
 
 
 function resaltarCeldasValidadas() {
