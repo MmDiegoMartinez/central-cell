@@ -1,7 +1,7 @@
 <?php
 // get_garantias.php
 header('Content-Type: application/json');
-require_once '../funciones.php'; 
+require_once '../../funciones.php'; 
 
 try {
     $conn = conectarBD();

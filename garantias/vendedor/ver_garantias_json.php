@@ -1,5 +1,5 @@
 <?php
-include_once '../funciones.php';
+include_once '../../funciones.php';
 header('Content-Type: application/json');
 
 $garantias = verTabla(); // Devuelve un array

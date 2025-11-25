@@ -27,7 +27,7 @@ require_once '../funciones.php';
     overflow: hidden;
      border: 0.2px solid black;
   ">
-    <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
          style="width: 30px; height: 30px; object-fit: contain;" />
   </span>  
 Consultar Compatibilidades
@@ -41,9 +41,8 @@ Consultar Compatibilidades
 <ul id="lista_buscar" class="autocomplete-list"></ul>
 <br><br>
 
-<label for="tipo_filtro">Tipo (opcional):</label>
+<label for="tipo_filtro">Tipo:</label>
 <select id="tipo_filtro">
-    <option value="">Todos</option>
     <option value="glass">Glass</option>
     <option value="funda">Funda</option>
 </select>

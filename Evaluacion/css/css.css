@@ -14,17 +14,17 @@ body {
 /*Aqui van las fuentes*/
 @font-face {
     font-family: 'Titulo';
-    src: url('../../Fuentes/WatermelonSugar.ttf') format('opentype');
+    src: url('../../recursos/Fuentes/WatermelonSugar.ttf') format('opentype');
 }
 
 @font-face {
     font-family: 'Pestanias';
-    src: url('../../Fuentes/Fragmentcore.otf') format('opentype');
+    src: url('../../recursos/Fuentes/Fragmentcore.otf') format('opentype');
 }
 
 @font-face {
     font-family: 'titulos';
-    src: url('../../Fuentes/DACTYLOG.TTF') format('opentype');
+    src: url('../../recursos/Fuentes/DACTYLOG.TTF') format('opentype');
 }
 
 /*Apartado para el encabezado*/

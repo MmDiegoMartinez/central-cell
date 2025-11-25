@@ -1,5 +1,5 @@
 <?php
-require_once("../funciones.php");
+require_once("../../funciones.php");
 
 $id_colaborador = intval($_GET['id_colaborador'] ?? 0);
 

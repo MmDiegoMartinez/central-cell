@@ -86,7 +86,7 @@
 </button>
 <script>
 document.getElementById("myButton").addEventListener("click", function() {
-  window.open("../vendedor/garantias.php", "_blank");
+  window.open("../garantias/vendedor/garantias.php", "_blank");
 });
 </script><br><br>
 

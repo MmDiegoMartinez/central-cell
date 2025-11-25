@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once '../funciones.php';
+include_once '../../funciones.php';
 
 $mensaje = "";
 
@@ -27,7 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Login Validador</title>
-    <link rel="stylesheet" href="../">
     <style>
         :root {
   --bg: #f5f7fa;
@@ -178,7 +177,7 @@ input:-webkit-autofill:active {
 
 <body>
     <div class="container">
-         <img class="logo" src="../central-cell-logo.png" alt="Central Cell Logo" />
+         <img class="logo" src="../../recursos/img/central-cell-logo.png" alt="Central Cell Logo" />
         
         <?php if ($mensaje): ?>
             <p class="error"><?= htmlspecialchars($mensaje) ?></p>

@@ -1,5 +1,5 @@
 <?php
-include_once '../funciones.php';
+include_once '../../funciones.php';
 $eliminadas = obtenerSucursalesEliminadas();
 $mensaje = "";
 
@@ -18,7 +18,7 @@ if (isset($_GET['borrar'])) {
 <head>
   <meta charset="UTF-8">
   <title>Sucursales Eliminadas</title>
-  <link rel="stylesheet" href="../kpis/estilos.css">
+  <link rel="stylesheet" href="../../kpis/estilos.css">
 </head>
 <body>
 <nav>

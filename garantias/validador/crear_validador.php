@@ -1,38 +1,32 @@
 <?php
-include_once '../funciones.php';
 session_start();
+include_once '../../funciones.php';
 
 if (!isset($_SESSION['validador_id'])) {
     header('Location: loginvalidador.php');
     exit;
 }
 
-if (!isset($_GET['id'])) {
-    die("ID de validador no especificado.");
-}
-
-$id = intval($_GET['id']);
-$validador = obtenerValidadorPorId($id);
-
-if (!$validador) {
-    die("Validador no encontrado.");
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = $_POST['nombre'] ?? '';
-    $apellido = $_POST['apellido'] ?? '';
-    $usuario = $_POST['usuario'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $datos = [
+        'nombre' => trim($_POST['nombre'] ?? ''),
+        'apellido' => trim($_POST['apellido'] ?? ''),
+        'usuario' => trim($_POST['usuario'] ?? ''),
+        'password' => $_POST['password'] ?? '',
+    ];
 
-    if ($password !== '') {
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        actualizarValidadorConPassword($id, $nombre, $apellido, $usuario, $password_hash);
-    } else {
-        actualizarValidador($id, $nombre, $apellido, $usuario);
+    if (in_array('', $datos, true)) {
+        die("Por favor completa todos los campos.");
     }
 
-    header("Location: Validadores.php");
-    exit;
+    $resultado = crearValidador($datos);
+
+    if ($resultado === true) {
+        header('Location: Validadores.php?creado=1');
+        exit;
+    } else {
+        die($resultado);
+    }
 }
 ?>
 
@@ -40,12 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title>Editar Validador</title>
-    <link rel="stylesheet" href="../css.css">
+    <title>Crear Validador</title>
+    <link rel="stylesheet" href="../../css.css">
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         const titulo = document.getElementById("titulo");
-        const texto = "Editar Validador";
+        const texto = "Crear Nuevo Validador";
         let i = 0;
         let borrando = false;
 
@@ -79,33 +73,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
+
 <nav>
-    <h1 id="nombre">Editar Validador</h1>
+    <h1 id="nombre">Crear Nuevo Validador</h1>
     <ul id="menu">
         <li><a href="validador.php">🏠 Home</a></li>
-        <li><a href="Validadores.php">⬅️ Atrás</a></li>
+       
+        <li><a href="Validadores.php">⬅️ Atras</a></li>
     </ul>
 </nav>
 
 <div class="contenedor">
     <div class="formulario">
-        <h1>Editar Validador</h1>
+        <h1 >Crear Nuevo Validador</h1><br>
 
         <form method="POST">
             <label for="nombre">Nombre:</label><br>
-            <input type="text" id="nombre2" name="nombre" value="<?= htmlspecialchars($validador['nombre']) ?>" required><br><br>
+            <input type="text" id="nombre1" name="nombre" required><br><br>
 
             <label for="apellido">Apellido:</label><br>
-            <input type="text" id="apellido" name="apellido" value="<?= htmlspecialchars($validador['apellido']) ?>" required><br><br>
+            <input type="text" id="apellido" name="apellido" required><br><br>
 
             <label for="usuario">Usuario:</label><br>
-            <input type="text" id="usuario" name="usuario" value="<?= htmlspecialchars($validador['usuario']) ?>" required><br><br>
+            <input type="text" id="usuario" name="usuario" required><br><br>
 
-            <label for="password">Contraseña (dejar vacío para no cambiar):</label><br>
-            <input type="password" id="password" name="password"><br><br>
+            <label for="password">Contraseña:</label><br>
+            <input type="password" id="password" name="password" required><br><br>
 
-            <input type="submit" value="Actualizar">
+            <input type="submit" value="Crear Validador">
         </form>
+
+       
     </div>
 </div>
 

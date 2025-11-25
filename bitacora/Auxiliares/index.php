@@ -57,7 +57,7 @@ $bitacora = obtenerBitacora();
         <li>
             <a href="index.php" style="display: flex; align-items: center; gap: 12px;">
                 <span style="display: inline-flex; width: 40px; height: 40px; background: white; border-radius: 50%; justify-content: center; align-items: center;">
-                    <img src="../../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain;" />
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain;" />
                 </span>
                 Home
             </a>
@@ -74,6 +74,10 @@ $bitacora = obtenerBitacora();
       </a>
     </li>
     <li>
+      <a href="../Vendedores/index.php" style="display: flex; align-items: center; gap: 12px;">
+        📝  Anotar Productos negados
+      </a>
+    </li>
     </ul>
 </nav>
 

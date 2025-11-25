@@ -65,7 +65,7 @@ try {
             <div id="bar6" class="bars"></div>
         </label>
         <ul id="menu">
-            <li><a href="../validador/validador.php">Atras</a></li>
+            <li><a href="../garantias/validador/validador.php">Atras</a></li>
             <li><a href="index.php">Inicio Capacitados</a></li>
             <li><a href="material.php" >Material</a></li>
             <li><a href="examen.php">Cuestionario</a></li>

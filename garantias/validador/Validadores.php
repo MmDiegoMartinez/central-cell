@@ -1,5 +1,5 @@
 <?php
-include_once '../funciones.php';
+include_once '../../funciones.php';
 session_start();
 if (!isset($_SESSION['validador_id'])) {
     header('Location: loginvalidador.php');
@@ -15,7 +15,7 @@ $validadores = obtenerValidadores();
 <head>
     <meta charset="UTF-8" />
     <title>Lista de Validadores</title>
-    <link rel="stylesheet" href="../csstabla.css">
+    <link rel="stylesheet" href="../../csstabla.css">
 </head>
 <body>
 
@@ -36,7 +36,7 @@ $validadores = obtenerValidadores();
           overflow: visible;
           position: relative;
         ">
-          <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+          <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
                style="
                  width: 30px; 
                  height: 30px; 

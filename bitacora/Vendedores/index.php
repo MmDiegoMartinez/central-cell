@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $("#apasionado").autocomplete({
             source: function(request, response) {
                 $.ajax({
-                    url: "../../vendedor/buscar_colaborador.php",
+                    url: "../../garantias/vendedor/buscar_colaborador.php",
                     dataType: "json",
                     data: { term: request.term },
                     success: function(data) {
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <li>
                 <a href="index.php" style="display:flex;align-items:center;gap:12px;">
                     <span style="display:inline-flex;width:40px;height:40px;background:white;border-radius:50%;justify-content:center;align-items:center;overflow:visible;position:relative;">
-                        <img src="../../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" style="width:30px;height:30px;object-fit:contain;"/>
+                        <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" style="width:30px;height:30px;object-fit:contain;"/>
                     </span>
                     Home
                 </a>
