@@ -1,6 +1,5 @@
 <?php 
-include_once '../../funciones.php'; 
-$bitacora = obtenerBitacora(); 
+// tabla.php
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -9,13 +8,7 @@ $bitacora = obtenerBitacora();
     <title>Bitácora de Vendedores</title>
     <link rel="stylesheet" href="../../csstabla.css?v=<?php echo time(); ?>">
     <style>
-        /* Colores según indicador */
-        .indicador-1 { background-color: transparent; }
-        .indicador-2 { background-color: #42A5F5; color: #fff; }  /* Visto */
-        .indicador-3 { background-color: #FFEB3B; color: #000; }  /* En pedido */
-        .indicador-4 { background-color: #66BB6A; color: #fff; }  /* Surtido */
-        .indicador-5 { background-color: #E53935; color: #fff; }  /* Tiene en tienda */
-
+        /* Colores exactos según indicador */
         .legend {
             display: flex; gap: 10px; margin-bottom: 15px;
             flex-wrap: wrap;
@@ -27,7 +20,8 @@ $bitacora = obtenerBitacora();
         .legend .en-pedido { background-color: #FFEB3B; color: #000; }
         .legend .surtido { background-color: #66BB6A; color: #fff; }
         .legend .tiene-en-tienda { background-color: #E53935; color: #fff; }
-        .legend .anotado { border: 1px solid #000000ff; }
+        .legend .anotado { background-color: #FFFFFF; color: #000; border:1px solid #000; }
+        .legend .otro { background-color: #FB8C00; color: #fff; }
     </style>
 </head>
 <body>
@@ -68,11 +62,12 @@ $bitacora = obtenerBitacora();
                 <label>Indicador:</label>
                 <select id="filter-indicador">
                     <option value="">Todos</option>
-                    <option value="1">Anotado</option>
-                    <option value="2">Visto</option>
-                    <option value="3">En pedido</option>
-                    <option value="4">Surtido</option>
-                    <option value="5">Tiene en tienda</option>
+                    <option value="Anotado">Anotado</option>
+                    <option value="Visto">Visto</option>
+                    <option value="En pedido">En pedido</option>
+                    <option value="Surtido">Surtido</option>
+                    <option value="Tiene en tienda">Tiene en tienda</option>
+                    <option value="Otro (Anotaciones)">Otro (Anotaciones)</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -94,7 +89,13 @@ $bitacora = obtenerBitacora();
             <div class="surtido">Surtido</div>
             <div class="tiene-en-tienda">Tiene en tienda</div>
             <div class="anotado">Anotado</div>
+            <div class="otro">Otro (Anotaciones)</div>
         </div>
+    </div>
+
+    <!-- Mensaje de cargando -->
+    <div id="loading" style="font-weight:bold; margin:10px 0; display:none;">
+        Cargando<span id="dots"></span>
     </div>
 
     <div class="table-container">
@@ -107,34 +108,12 @@ $bitacora = obtenerBitacora();
                     <th>Colaborador</th>
                     <th>Estatus</th>
                     <th>Anotaciones</th>
+                    <th>AnotacionAlmacen</th>
                     <th>Fecha</th>
-                    <th>Eliminar</th>
                 </tr>
             </thead>
             <tbody id="table-body">
-                <?php foreach ($bitacora as $b): ?>
-                    <tr 
-                        data-id="<?= $b['id'] ?>"
-                        data-sucursal="<?= htmlspecialchars($b['sucursal']) ?>"
-                        data-colaborador="<?= htmlspecialchars($b['nombre_colaborador']) ?>"
-                        data-fecha="<?= htmlspecialchars($b['fecha']) ?>"
-                        data-indicador="<?= htmlspecialchars($b['indicador']) ?>"
-                        class="indicador-<?= $b['indicador'] ?>"
-                    >
-                        <td><?= htmlspecialchars($b['Marca_Modelo']) ?></td>
-                        <td><?= htmlspecialchars($b['producto']) ?></td>
-                        <td><?= htmlspecialchars($b['sucursal']) ?></td>
-                        <td><?= htmlspecialchars($b['nombre_colaborador']) ?></td>
-                        <td><?= htmlspecialchars($b['Estatus']) ?></td>
-                        <td><?= htmlspecialchars($b['Anotaciones']) ?></td>
-                        <td><?= htmlspecialchars($b['fecha']) ?></td>
-                        <td style="text-align:center;">
-                            <button class="btn-eliminar" data-id="<?= $b['id'] ?>" title="Eliminar registro" style="cursor:pointer; background:none; border:none; font-size:18px;">
-                                🗑️
-                            </button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+                <!-- Datos se cargarán vía JS -->
             </tbody>
         </table>
     </div>
@@ -143,33 +122,64 @@ $bitacora = obtenerBitacora();
 </div>
 
 <script>
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0vakEWFxjgzKoeoanwOrqxG5rlAbpiK7jQqiKdL6e5B4Ddvomnltu436epFHsAUG_/exec";
+
 let allRows = [];
 let filteredRows = [];
+let dotsInterval;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initializeData();
-    agregarEventosEliminar();
-});
+function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+    let dots = '';
+    dotsInterval = setInterval(() => {
+        dots = dots.length < 3 ? dots + '.' : '';
+        document.getElementById('dots').textContent = dots;
+    }, 500);
+}
 
-function initializeData() {
-    const tableRows = document.querySelectorAll('#table-body tr');
-    allRows = Array.from(tableRows);
-    filteredRows = [...allRows];
+function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+    clearInterval(dotsInterval);
+}
 
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadData();
     initializeFilters();
     renderTable();
+});
+
+async function loadData() {
+    showLoading();
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL);
+        const result = await response.json();
+        if (result.ok) {
+            allRows = result.data.map((row, index) => ({
+                ...row,
+                id: index + 1
+            }));
+            
+            // Ordenar del más reciente al más antiguo
+            allRows.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+            filteredRows = [...allRows];
+        } else {
+            alert("Error al obtener datos: " + result.error);
+        }
+    } catch (err) {
+        alert("Error de conexión con Google Sheets: " + err.message);
+    } finally {
+        hideLoading();
+    }
 }
 
 function initializeFilters() {
-   
-    const sucursalValues = [...new Set(allRows.map(row => row.dataset.sucursal))].filter(v => v && v.trim() !== '').sort();
-    const colaboradorValues = [...new Set(allRows.map(row => row.dataset.colaborador))].filter(v => v && v.trim() !== '').sort();
+    const sucursalValues = [...new Set(allRows.map(r => r.sucursal).filter(v => v))].sort();
+    const colaboradorValues = [...new Set(allRows.map(r => r.colaborador).filter(v => v))].sort();
 
-   
     populateSelect('filter-sucursal', sucursalValues);
     populateSelect('filter-colaborador', colaboradorValues);
 
-    
     document.getElementById('filter-sucursal').addEventListener('change', applyFilters);
     document.getElementById('filter-colaborador').addEventListener('change', applyFilters);
     document.getElementById('filter-indicador').addEventListener('change', applyFilters);
@@ -177,22 +187,16 @@ function initializeFilters() {
     document.getElementById('filter-fecha-hasta').addEventListener('change', applyFilters);
 }
 
-// Evita duplicar valores en los selects
 function populateSelect(selectId, values) {
     const select = document.getElementById(selectId);
-
-    // Guarda la primera opción (Todos/Todas)
     const firstOption = select.options[0];
     select.innerHTML = '';
     select.appendChild(firstOption);
-
-    // Agrega solo valores únicos
-    const uniqueValues = [...new Set(values.filter(v => v && v.trim() !== ''))];
-    uniqueValues.forEach(v => {
-        const option = document.createElement('option');
-        option.value = v;
-        option.textContent = v;
-        select.appendChild(option);
+    values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
     });
 }
 
@@ -205,12 +209,12 @@ function applyFilters() {
         fechaHasta: document.getElementById('filter-fecha-hasta').value
     };
 
-    filteredRows = allRows.filter(row => {
-        if (filters.sucursal && row.dataset.sucursal !== filters.sucursal) return false;
-        if (filters.colaborador && row.dataset.colaborador !== filters.colaborador) return false;
-        if (filters.indicador && row.dataset.indicador !== filters.indicador) return false;
-        if (filters.fechaDesde && row.dataset.fecha < filters.fechaDesde) return false;
-        if (filters.fechaHasta && row.dataset.fecha > filters.fechaHasta) return false;
+    filteredRows = allRows.filter(r => {
+        if (filters.sucursal && r.sucursal !== filters.sucursal) return false;
+        if (filters.colaborador && r.colaborador !== filters.colaborador) return false;
+        if (filters.indicador && r.indicador !== filters.indicador) return false;
+        if (filters.fechaDesde && new Date(r.fecha) < new Date(filters.fechaDesde)) return false;
+        if (filters.fechaHasta && new Date(r.fecha) > new Date(filters.fechaHasta)) return false;
         return true;
     });
 
@@ -218,19 +222,34 @@ function applyFilters() {
 }
 
 function renderTable() {
-    allRows.forEach(row => row.style.display = 'none');
-    filteredRows.forEach(row => {
-        row.style.display = '';
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
 
-        const indicador = row.dataset.indicador;
-        switch (indicador) {
-            case '1': row.style.backgroundColor = 'transparent'; row.style.color = '#000'; break;
-            case '2': row.style.backgroundColor = '#42A5F5'; row.style.color = '#fff'; break;
-            case '3': row.style.backgroundColor = '#FFEB3B'; row.style.color = '#000'; break;
-            case '4': row.style.backgroundColor = '#66BB6A'; row.style.color = '#fff'; break;
-            case '5': row.style.backgroundColor = '#E53935'; row.style.color = '#fff'; break;
-            default: row.style.backgroundColor = 'transparent'; row.style.color = '#000';
+    filteredRows.forEach(row => {
+        const tr = document.createElement('tr');
+
+        // Colores según indicador
+        switch(row.indicador){
+            case "Anotado": tr.style.background="#FFFFFF"; tr.style.color="#000"; break;
+            case "Visto": tr.style.background="#42A5F5"; tr.style.color="#fff"; break;
+            case "En pedido": tr.style.background="#FFEB3B"; tr.style.color="#000"; break;
+            case "Surtido": tr.style.background="#66BB6A"; tr.style.color="#fff"; break;
+            case "Tiene en tienda": tr.style.background="#E53935"; tr.style.color="#fff"; break;
+            case "Otro (Anotaciones)": tr.style.background="#FB8C00"; tr.style.color="#fff"; break;
+            default: tr.style.background="#FFFFFF"; tr.style.color="#000";
         }
+
+        tr.innerHTML = `
+            <td>${row.marca_modelo}</td>
+            <td>${row.producto}</td>
+            <td>${row.sucursal}</td>
+            <td>${row.colaborador}</td>
+            <td>${row.estatus}</td>
+            <td>${row.anotaciones}</td>
+            <td>${row.anotacionAlmacen}</td>
+            <td>${new Date(row.fecha).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
     });
 
     document.getElementById('results-count').textContent = `Mostrando ${filteredRows.length} de ${allRows.length} registros`;
@@ -245,46 +264,6 @@ function clearAllFilters() {
     filteredRows = [...allRows];
     renderTable();
 }
-
-// --- Eliminar registros ---
-function agregarEventosEliminar() {
-    document.querySelectorAll('.btn-eliminar').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const fila = btn.closest('tr');
-            const id = btn.dataset.id;
-            const indicador = fila.dataset.indicador;
-
-            if (indicador !== '1' && indicador !== '2') {
-                alert('❌ Solo se pueden eliminar registros con estatus "Anotado" o "Visto".');
-                return;
-            }
-
-            if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
-
-            try {
-                const response = await fetch('../../funciones.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: new URLSearchParams({ accion: 'eliminar_bitacora', id })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('✅ Registro eliminado correctamente');
-                    fila.remove();
-                    allRows = Array.from(document.querySelectorAll('#table-body tr'));
-                    filteredRows = [...allRows];
-                    renderTable();
-                } else {
-                    alert('⚠️ Error al eliminar el registro.');
-                }
-            } catch (error) {
-                alert('❌ Error en la solicitud: ' + error.message);
-            }
-        });
-    });
-}
 </script>
-
 </body>
 </html>
