@@ -19,7 +19,6 @@
     <div class="container">
         <h1>Bienvenido al Panel de Ventas</h1>
         <p>Visualiza los análisis de ventas por categoría, sucursal y vendedor de manera clara y sencilla.</p>
-; 
         <div class="grid-sections">
 
             <a href="semanaventas.php" class="card">
@@ -84,6 +83,13 @@
                  <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Visualiza la cantidad de micas Hidrogel, Protection Pro  vendidas por sucursal.</div>
             </a>
+            
+           <a href="descuentos/" class="card">
+                <div class="card-title">Promociones</div>
+                 <img src="../recursos/img/descuento.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Este apartado es ideal para épocas de descuentos, donde se aplican códigos promocionales y se pueden visualizar claramente las ventas reales y los descuentos aplicados.</div>
+            </a>
+            
 
             
 
