@@ -259,4 +259,43 @@ input[type="submit"]:active {
   transform: translateY(2px);
   box-shadow: none;
 }
+/*efecto navidad*/
+/* Capa del efecto (NO interfiere con la página) */
+.navidad-overlay {
+position: fixed;
+inset: 0;
+pointer-events: none; /* no estorba clics */
+overflow: hidden;
+z-index: 9999;
+}
+
+
+.snowflake {
+position: absolute;
+top: -20px;
+color: #C7D2E0;
+font-size: 16px;
+opacity: 0.9;
+animation: caer linear forwards;
+user-select: none;
+}
+
+
+@keyframes caer {
+from {
+transform: translateY(0) rotate(0deg);
+opacity: 1;
+}
+to {
+transform: translateY(110vh) rotate(360deg);
+opacity: 0;
+}
+}
+
+
+.contenido {
+padding: 40px;
+}nido {
+padding: 40px;
+}
 

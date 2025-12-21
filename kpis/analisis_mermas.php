@@ -62,7 +62,7 @@ tr:hover { background: #f1f1f1; }
       <li>
         <a href="index.php" class="menu-link">
           <span class="logo-container">
-            <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
 
           </span>
           Home

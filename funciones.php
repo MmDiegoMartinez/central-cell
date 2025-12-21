@@ -1178,4 +1178,346 @@ function actualizarValidacionGarantia(PDO $conn, $id, $plows, $piezas_validadas,
         ':anotaciones_validador' => $anotaciones_validador
     ]);
 }
+// Elimina todos los registros de la tabla existencias
+
+function eliminarExistencias(): bool {
+    try {
+        $conn = conectarBD();
+        $conn->exec("DELETE FROM existencias");
+        return true;
+    } catch (Exception $e) {
+        error_log("Error al eliminar existencias: " . $e->getMessage());
+        return false;
+    }
+}
+
+//Reinicia el AUTO_INCREMENT de la tabla existencias a 1
+function reiniciarIDsExistencias(): bool {
+    try {
+        $conn = conectarBD();
+        $conn->exec("ALTER TABLE existencias AUTO_INCREMENT = 1");
+        return true;
+    } catch (Exception $e) {
+        error_log("Error al reiniciar IDs: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Obtiene el ID de una sucursal por su nombre
+
+function obtenerIDSucursal(string $nombreSucursal): ?int {
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->prepare("SELECT id FROM sucursales WHERE nombre = :nombre");
+        $stmt->execute(['nombre' => $nombreSucursal]);
+        $resultado = $stmt->fetch();
+        
+        return $resultado ? (int)$resultado['id'] : null;
+    } catch (Exception $e) {
+        error_log("Error al buscar sucursal: " . $e->getMessage());
+        return null;
+    }
+}
+
+//Inserta un registro en la tabla existencias
+function insertarExistencia(int $almacen, string $descripcion, int $existencia, string $barcodeId, float $publicoGeneral): bool {
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->prepare("
+            INSERT INTO existencias (almacen, descripcion, existencia, BarcodeId, publico_general)
+            VALUES (:almacen, :descripcion, :existencia, :barcodeId, :publicoGeneral)
+        ");
+
+        
+        return $stmt->execute([
+            'almacen' => $almacen,
+            'descripcion' => $descripcion,
+            'existencia' => $existencia,
+            'barcodeId' => $barcodeId,
+            'publicoGeneral' => $publicoGeneral
+        ]);
+    } catch (Exception $e) {
+        error_log("Error al insertar existencia: " . $e->getMessage());
+        return false;
+    }
+}
+
+//Convierte la referencia de columna (A, B, AA, etc.) a índice numérico
+function columnaAIndice(string $columna): int {
+    $columna = strtoupper($columna);
+    $indice = 0;
+    $longitud = strlen($columna);
+    
+    for ($i = 0; $i < $longitud; $i++) {
+        $indice = $indice * 26 + (ord($columna[$i]) - ord('A') + 1);
+    }
+    
+    return $indice - 1; // Restar 1 porque los arrays empiezan en 0
+}
+
+//Procesa el archivo Excel y carga los datos en la tabla existencias
+function procesarArchivoExcel(string $rutaArchivo): array {
+    $resultado = [
+        'exito' => false,
+        'registros_insertados' => 0,
+        'registros_omitidos' => [],
+        'mensaje' => ''
+    ];
+
+    try {
+        if (!eliminarExistencias()) {
+            $resultado['mensaje'] = 'Error al eliminar registros existentes';
+            return $resultado;
+        }
+        if (!reiniciarIDsExistencias()) {
+            $resultado['mensaje'] = 'Error al reiniciar IDs';
+            return $resultado;
+        }
+
+        // Abrir el archivo .xlsx como ZIP
+        $zip = new ZipArchive();
+        if ($zip->open($rutaArchivo) === true) {
+            // Leer sheet1
+            $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+            $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+
+            // Procesar sharedStrings
+            $sharedStrings = [];
+            if ($sharedStringsXml) {
+                $xml = new SimpleXMLElement($sharedStringsXml);
+                foreach ($xml->si as $si) {
+                    $sharedStrings[] = (string)$si->t;
+                }
+            }
+
+            // Procesar filas
+            $xml = new SimpleXMLElement($sheetXml);
+            $contadorInsertados = 0;
+            $primeraFila = true;
+
+            foreach ($xml->sheetData->row as $row) {
+                if ($primeraFila) { 
+                    $primeraFila = false; 
+                    continue; 
+                }
+
+                // Crear array asociativo con las columnas usando la referencia de celda
+                $celdas = [];
+                foreach ($row->c as $c) {
+                    $ref = (string)$c['r']; // Ej: "A2", "M2", "Q2"
+                    preg_match('/^([A-Z]+)(\d+)$/', $ref, $matches);
+                    $columna = $matches[1];
+                    
+                    $v = isset($c->v) ? (string)$c->v : '';
+                    
+                    // Si es un string compartido
+                    if (isset($c['t']) && $c['t'] == 's') {
+                        $v = $sharedStrings[(int)$v] ?? '';
+                    }
+                    
+                    $celdas[$columna] = $v;
+                }
+
+                // Obtener columnas específicas por letra
+                $almacenCompleto = trim($celdas['A'] ?? '');
+                $descripcion = trim($celdas['C'] ?? '');
+                $existencia = (int)($celdas['H'] ?? 0);
+                $barcodeId = trim($celdas['M'] ?? '');
+                $nombreCategoria = trim($celdas['N'] ?? '');
+                $publicoGeneral = (float)($celdas['Q'] ?? 0);
+
+                // FILTRO SILENCIOSO 1: Omitir si el almacén es "Central Cell Almacén general"
+                if (stripos($almacenCompleto, 'Almacén general') !== false) {
+                    continue;
+                }
+
+                // FILTRO SILENCIOSO 2: Omitir si la columna N contiene "SOLUCIONES TECNICAS"
+                if (stripos($nombreCategoria, 'SOLUCIONES TECNICAS') !== false) {
+                    continue;
+                }
+
+                // FILTRO SILENCIOSO 3: Omitir si la existencia es 0
+                if ($existencia == 0) {
+                    continue;
+                }
+
+                // Validación básica
+                if (empty($almacenCompleto) || empty($descripcion)) {
+                    continue;
+                }
+
+                // Extraer nombre del almacén
+                $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0) 
+                    ? trim(substr($almacenCompleto, strlen('Central Cell '))) 
+                    : $almacenCompleto;
+
+                $idAlmacen = obtenerIDSucursal($nombreAlmacen);
+
+                // SOLO REPORTAR ERROR SI NO SE ENCUENTRA EL ALMACÉN
+                if ($idAlmacen === null) {
+                    $resultado['registros_omitidos'][] = [
+                        'fila' => (int)$row['r'],
+                        'almacen' => $almacenCompleto,
+                        'descripcion' => $descripcion,
+                        'motivo' => 'Almacén no encontrado en la base de datos'
+                    ];
+                    continue;
+                }
+
+                // SOLO REPORTAR ERROR SI FALLA LA INSERCIÓN
+                if (insertarExistencia($idAlmacen, $descripcion, $existencia, $barcodeId, $publicoGeneral)) {
+                    $contadorInsertados++;
+                } else {
+                    $resultado['registros_omitidos'][] = [
+                        'fila' => (int)$row['r'],
+                        'almacen' => $almacenCompleto,
+                        'descripcion' => $descripcion,
+                        'motivo' => 'Error al insertar en la base de datos'
+                    ];
+                }
+            }
+
+            $zip->close();
+            $resultado['exito'] = true;
+            $resultado['registros_insertados'] = $contadorInsertados;
+            
+            if (count($resultado['registros_omitidos']) > 0) {
+                $resultado['mensaje'] = "Proceso completado. $contadorInsertados registros insertados, " . count($resultado['registros_omitidos']) . " con errores.";
+            } else {
+                $resultado['mensaje'] = "Proceso completado exitosamente. $contadorInsertados registros insertados.";
+            }
+        } else {
+            $resultado['mensaje'] = "No se pudo abrir el archivo Excel";
+        }
+    } catch (Exception $e) {
+        $resultado['mensaje'] = "Error: " . $e->getMessage();
+    }
+
+    return $resultado;
+}
+
+//aqui es el buscador 
+//Obtiene el nombre de un almacén por su ID
+function obtenerNombreAlmacen(int $idAlmacen): ?string {
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->prepare("SELECT nombre FROM sucursales WHERE id = :id");
+        $stmt->execute(['id' => $idAlmacen]);
+        $resultado = $stmt->fetch();
+        
+        return $resultado ? $resultado['nombre'] : null;
+    } catch (Exception $e) {
+        error_log("Error al obtener nombre del almacén: " . $e->getMessage());
+        return null;
+    }
+}
+
+/*
+ Busca sugerencias de productos para el autocompletado
+ SOLUCIÓN: Usa COLLATE utf8mb4_general_ci para búsqueda case-insensitive REAL
+*/
+function buscarSugerencias(string $termino): array {
+    try {
+        $conn = conectarBD();
+        
+        // Agregar % solo al FINAL para que busque "que EMPIECE con"
+        $terminoBusqueda = $termino . '%';
+        
+        $stmt = $conn->prepare("
+            SELECT DISTINCT descripcion, BarcodeId
+            FROM existencias
+            WHERE descripcion COLLATE utf8mb4_general_ci LIKE :termino 
+               OR BarcodeId COLLATE utf8mb4_general_ci LIKE :termino
+            GROUP BY descripcion
+            ORDER BY descripcion ASC
+            LIMIT 10
+        ");
+        
+        $stmt->execute(['termino' => $terminoBusqueda]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Error al buscar sugerencias: " . $e->getMessage());
+        return [];
+    }
+}
+
+/*
+  Busca productos por descripción o BarcodeId
+  SOLUCIÓN: Usa COLLATE utf8mb4_general_ci para búsqueda case-insensitive REAL
+*/
+function buscarProductos(string $termino): array {
+    try {
+        if (empty(trim($termino))) {
+            return [];
+        }
+
+        $conn = conectarBD();
+        $terminoTrim = trim($termino);
+
+        /* =====================================================
+           1️⃣ Buscar por BarcodeId EXACTO (prioridad máxima)
+        ===================================================== */
+        $stmt = $conn->prepare("
+            SELECT e.*, s.nombre AS nombre_almacen
+            FROM existencias e
+            LEFT JOIN sucursales s ON e.almacen = s.id
+            WHERE e.BarcodeId COLLATE utf8mb4_general_ci = :barcode
+            ORDER BY s.nombre ASC
+        ");
+        $stmt->execute(['barcode' => $terminoTrim]);
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($resultados)) {
+            return $resultados;
+        }
+
+        /* =====================================================
+           2️⃣ Extraer modelo exacto (X7D, X8A, A15, etc)
+        ===================================================== */
+        preg_match('/\b[A-Z]+\d+[A-Z]?\b/', strtoupper($terminoTrim), $match);
+        $modelo = $match[0] ?? null;
+
+        /* =====================================================
+           3️⃣ Buscar SOLO si contiene el modelo exacto
+        ===================================================== */
+        if ($modelo) {
+            $stmt = $conn->prepare("
+                SELECT e.*, s.nombre AS nombre_almacen
+                FROM existencias e
+                LEFT JOIN sucursales s ON e.almacen = s.id
+                WHERE e.descripcion REGEXP CONCAT('[[:<:]]', :modelo, '[[:>:]]')
+                ORDER BY s.nombre ASC, e.descripcion ASC
+            ");
+            $stmt->execute(['modelo' => $modelo]);
+            $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($resultados)) {
+                return $resultados;
+            }
+        }
+
+        /* =====================================================
+           4️⃣ ÚLTIMO RECURSO (LIKE controlado)
+           (No se dispara si ya hubo coincidencias)
+        ===================================================== */
+        $terminoLike = '%' . preg_replace('/\s+/', '%', $terminoTrim) . '%';
+
+        $stmt = $conn->prepare("
+            SELECT e.*, s.nombre AS nombre_almacen
+            FROM existencias e
+            LEFT JOIN sucursales s ON e.almacen = s.id
+            WHERE e.descripcion COLLATE utf8mb4_general_ci LIKE :termino
+            ORDER BY s.nombre ASC, e.descripcion ASC
+            LIMIT 200
+        ");
+        $stmt->execute(['termino' => $terminoLike]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (Exception $e) {
+        error_log("Error al buscar productos: " . $e->getMessage());
+        return [];
+    }
+}
+
 ?>
