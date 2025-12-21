@@ -21,8 +21,8 @@
     
         }
         .section .contenedorpartdos .imagendos{
-            transform: scale(0.8); /* Ajusta el valor para el tamaño deseado */
-            max-width: 100%; /* Opcional: ajusta el ancho máximo */
+            transform: scale(0.8); 
+            max-width: 100%; 
            
             
             
@@ -64,9 +64,15 @@
             </div>
             <div class="imagendos">
     <div class="inicio">
-    <iframe src="https://drive.google.com/file/d/1-jvKFnriGAc5UzfOOXJW8Nuj7-0XRDCL/preview" 
-            width="400" height="270" allow="autoplay" frameborder="0">
-    </iframe>
+    <iframe 
+    width="400" 
+    height="270"
+    src="https://www.youtube.com/embed/EV5Pcn5YUNE"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen>
+</iframe>
     </div>
 </div>
  

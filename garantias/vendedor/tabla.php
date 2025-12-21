@@ -42,7 +42,7 @@
     
       <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
            style="
-             widthttps://garantiasinnovacionmovil.rf.gd/vendedor/garantias.php?i=1h: 40px; 
+             width: 40px; 
              height: 40Px; 
              object-fit: contain;
              position: relative;

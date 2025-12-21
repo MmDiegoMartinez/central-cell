@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
+    <div class="navidad-overlay" id="navidad"></div>
     <nav>
         <h1 id="nombre">Central Cell Garantias</h1>
         <ul id="menu">
@@ -101,6 +102,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
            " />
     </span>
      Home
+  </a>
+</li>
+<li>
+    
+  <a href="../../existencias/buscador.php" style="display: flex; align-items: center; gap: 12px;  ">
+    
+      <img src="../../recursos/img/existencias.png" alt="Logo Central Cell" 
+           style="
+             width: 40px; 
+             height: 40Px; 
+             object-fit: contain;
+             position: relative;
+             top: 0; left: 0;
+           " />
+    </span>
+     Existencias
   </a>
 </li>
 
@@ -214,5 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Ya no se valida contra la BD, se envía directo
     });
 });</script>
+    
+    <script src="../../recursos/efecto.js"></script>
 </body>
 </html>

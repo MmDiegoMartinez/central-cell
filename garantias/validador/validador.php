@@ -75,6 +75,12 @@ $validador_id = $_SESSION['validador_id'];
     </li>
 
     <li>
+      <a href="../../existencias/index.php" style="display: flex; align-items: center; gap: 12px;">
+        📦 Existencias
+      </a>
+    </li>
+
+    <li>
       <a href="anotarmermassinregistrar.php" style="display: flex; align-items: center; gap: 12px;">
         ⚠️ Anot Mer.
       </a>

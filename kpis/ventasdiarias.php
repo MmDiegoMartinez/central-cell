@@ -29,7 +29,7 @@ caption{text-align:left;font-weight:600;padding:8px;}
       <li>
         <a href="index.php" class="menu-link">
           <span class="logo-container">
-            <img src="../Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
 
           </span>
           Home
