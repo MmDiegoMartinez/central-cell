@@ -45,6 +45,7 @@
         </label>
         <ul id="menu">
             <li><a href="index.php">Inicio</a></li>
+            <li><a href="../garantias/vendedor/garantias.php" >📝 Registrar Garantía</a></li>
             <li><a href="material.php" >◀️ Atras</a></li>
         </ul>
     </nav>
