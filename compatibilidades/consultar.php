@@ -15,24 +15,39 @@ require_once '../funciones.php';
 
 </head>
 <body>
-<h1 style="display: flex; align-items: center; gap: 10px;">
+<header>
+    <h1 style="display: flex; align-items: center; gap: 10px;">
 <span style="
     display: inline-flex;
-    width: 40px; 
-    height: 40px; 
+    width: 50px; 
+    height: 50px; 
     background: white; 
-    border-radius: 50%; 
+    border-radius: 60%; 
     justify-content: center; 
     align-items: center; 
     overflow: hidden;
      border: 0.2px solid black;
   ">
     <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
-         style="width: 30px; height: 30px; object-fit: contain;" />
+         style="width: 38px; height: 38px; object-fit: contain;" />
   </span>  
 Consultar Compatibilidades
   
 </h1>
+    <nav>
+        <ul>
+            <li><a href="../garantias/vendedor/garantias.php"> Registrar Garantía</a></li>
+        </ul>
+    </nav>
+</header>
+
+
+
+
+
+
+
+
 
 
 <label for="modelo_buscar">Escribe el modelo:</label>

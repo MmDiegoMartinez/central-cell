@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="../css.css?v=<?php echo time(); ?>">
 
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
@@ -103,11 +104,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      Home
   </a>
 </li>
+
 <li>
     
-  <a href="../existencias/buscador.php" style="display: flex; align-items: center; gap: 12px;  ">
+  <a href="../bitacora/Vendedores/index.php" style="display: flex; align-items: center; gap: 12px;  ">
     
-      <img src="../recursos/img/existencias.png" alt="Logo Central Cell" 
+      <img src="../recursos/img/productosNegados.png" alt="Logo Central Cell" 
            style="
              width: 40px; 
              height: 40Px; 
@@ -116,7 +118,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              top: 0; left: 0;
            " />
     </span>
-     Existencias
+     Productos negados
+  </a>
+</li>
+
+<li>
+    
+  <a href="../compatibilidades/consultar.php" style="display: flex; align-items: center; gap: 12px;  ">
+    
+      <img src="../recursos/img/compatibilidades.png" alt="Logo Central Cell" 
+           style="
+             width: 40px; 
+             height: 40Px; 
+             object-fit: contain;
+             position: relative;
+             top: 0; left: 0;
+           " />
+    </span>
+     Compatibilidades
+  </a>
+</li>
+
+<li>
+    
+  <a href="../Evaluacion/mermas.php" style="display: flex; align-items: center; gap: 12px;  ">
+    
+      <img src="../recursos/img/tuto.png" alt="Logo Central Cell" 
+           style="
+             width: 40px; 
+             height: 40Px; 
+             object-fit: contain;
+             position: relative;
+             top: 0; left: 0;
+           " />
+    </span>
+     Cómo Enviar
   </a>
 </li>
 
@@ -230,6 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Ya no se valida contra la BD, se envía directo
     });
 });</script>
-<script src="../recursos/efecto.js"></script>
+    
+    <script src="../recursos/efecto.js"></script>
 </body>
 </html>

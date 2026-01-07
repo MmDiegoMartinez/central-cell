@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <ul id="menu">
         <li>
-            <a href="index.php" style="display:flex;align-items:center;gap:12px;">
+            <a href="../../garantias/vendedor/garantias.php" style="display:flex;align-items:center;gap:12px;">
                 <span style="
                     display:inline-flex;
                     width:40px;
@@ -119,7 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png"
                          style="width:30px;height:30px;"/>
                 </span>
-                Home
+                Registrar Garantía
+            </a>
+        </li>
+        <li>
+            <a href="index.php" style="display:flex;align-items:center;gap:12px;">
+                <img src="../../recursos/img/productosNegados.png" style="width:40px;height:40px;"/>
+                Registrar Negado
             </a>
         </li>
 
