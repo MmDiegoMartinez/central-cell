@@ -15,25 +15,13 @@ require_once '../funciones.php';
 $mensaje = "";
 
 // ---------------------------
-// Insertar / Eliminar compatibilidad
+// Eliminar compatibilidad
 // ---------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     $accion = $_POST['accion'];
-    $tipo = trim($_POST['tipo'] ?? '');
-   $nota = trim($_POST['nota'] ?? '');
-
-    $modelo_principal = trim($_POST['modelo_principal'] ?? '');
-    $modelo_compatible = trim($_POST['modelo_compatible'] ?? '');
 
     try {
-        $m1 = $modelo_principal ? obtenerModeloPorNombre($modelo_principal) : null;
-        $m2 = $modelo_compatible ? obtenerModeloPorNombre($modelo_compatible) : null;
-
-        if ($accion === 'insertar') {
-            if (!$m1 || !$m2) throw new Exception("El modelo principal o compatible no existe en la base de datos.");
-            insertarCompatibilidad($m1['id'], $m2['id'], $tipo, $nota);
-            $mensaje = "✅ Compatibilidad registrada con éxito.";
-        } elseif ($accion === 'eliminar') {
+        if ($accion === 'eliminar') {
             $id = intval($_POST['id']);
             eliminarCompatibilidad($id);
             $mensaje = "✅ Compatibilidad eliminada con éxito.";
@@ -54,24 +42,18 @@ $modelos = obtenerModelos();
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>CRUD de Compatibilidades</title>
+<title>Eliminar Compatibilidades</title>
 <link rel="stylesheet" href="estilos.css">
-
-
 </head>
 <body>
     <header>
-    <div class="logo">CRUD de Compatibilidades</div>
+    <div class="logo">Eliminar Compatibilidades</div>
     <nav>
         <ul>
-            <li><a href="index.php">Inicio 🏠</a></li>
-            <li><a href="modelos.php">Agregar Modelo🆕</a></li>
-            
+            <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
         </ul>
     </nav>
 </header>
-
-
 
 <?php if ($mensaje): ?>
 <p><?= htmlspecialchars($mensaje) ?></p>
@@ -83,6 +65,7 @@ Tipo:
     <option value="">Todos</option>
     <option value="glass">Glass</option>
     <option value="funda">Funda</option>
+    <option value="camara">Protector de Cámara</option>
 </select>
 <br><br>
 
@@ -91,34 +74,6 @@ Modelo (principal o compatible):
 <input type="hidden" id="filtroModeloId">
 <ul id="listaModelos" class="autocomplete-list"></ul>
 <br><br>
-
-<h2>Agregar Compatibilidad</h2>
-<form method="post">
-    <input type="hidden" name="accion" value="insertar">
-    
-    Modelo principal  :
-    <input type="text" name="modelo_principal" list="modelos" required>
-    
-    <br>Modelo compatible:
-    <input type="text" name="modelo_compatible" list="modelos" required>
-
-    <br>Tipo:
-    <select name="tipo" required>
-        <option value="glass">Glass</option>
-        <option value="funda">Funda</option>
-    </select>
-
-    <br>Nota (opcional):
-    <input type="text" name="nota">
-
-    <button type="submit">Guardar</button>
-</form>
-
-<datalist id="modelos">
-<?php foreach ($modelos as $m): ?>
-    <option value="<?= htmlspecialchars($m['marca'].' '.$m['modelo']) ?>">
-<?php endforeach; ?>
-</datalist>
 
 <h2>Lista de Compatibilidades</h2>
 <table border="1" cellpadding="5" id="tablaCompatibilidades">
@@ -159,7 +114,6 @@ inputModelo.addEventListener('input', function() {
     activeIndex = -1;
     lista.innerHTML = '';
     if(!q) return;
-    <?php // Pasamos todos los modelos a JS ?>
     const modelosJS = <?= json_encode(array_map(function($m){ return $m['marca'].' '.$m['modelo']; }, $modelos)); ?>;
     modelosJS.forEach((m) => {
         if(m.toLowerCase().includes(q)){

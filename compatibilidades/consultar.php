@@ -1,4 +1,10 @@
 <?php
+session_start();
+
+// Determinar si es administrador (1) o usuario normal (2)
+$es_admin = isset($_SESSION['validador_id']) ? 1 : 2;
+?>
+<?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -37,18 +43,16 @@ Consultar Compatibilidades
     <nav>
         <ul>
             <li><a href="../garantias/vendedor/garantias.php"> Registrar Garantía</a></li>
+             <li><a href="tabla_compatibilidades.php"> Descargar Compatibilidades</a></li>
+             <li><a href="ingresar.php"> Ingresar Compatibilidades</a></li>
+            <?php if ($es_admin === 1): ?>
+                <li><a href="eliminar.php">Eliminar Compatibilidades</a></li>
+                    <li><a href="../garantias/validador/validador.php">Validar Garantias</a></li>
+
+                <?php endif; ?>
         </ul>
     </nav>
 </header>
-
-
-
-
-
-
-
-
-
 
 <label for="modelo_buscar">Escribe el modelo:</label>
 <input type="text" id="modelo_buscar" placeholder="Ej: IPHONE 13">
@@ -60,6 +64,7 @@ Consultar Compatibilidades
 <select id="tipo_filtro">
     <option value="glass">Glass</option>
     <option value="funda">Funda</option>
+    <option value="camara">Protector de Cámara</option>
 </select>
 <br><br>
 
