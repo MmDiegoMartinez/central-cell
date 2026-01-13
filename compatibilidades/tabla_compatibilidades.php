@@ -32,7 +32,7 @@ $compatibilidades = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="logo">Tabla de Compatibilidades</div>
     <nav>
         <ul>
-            <li><a href="index.php">Inicio 🏠</a></li>
+            <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
           
             
         </ul>

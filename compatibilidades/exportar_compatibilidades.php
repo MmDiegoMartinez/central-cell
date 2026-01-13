@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once '../funciones.php'; // Usa tu conexión PDO
+require_once '../funciones.php';
 
 try {
     $conn = conectarBD();
@@ -34,53 +34,62 @@ try {
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Generar XML de Excel (sin dependencias externas)
-    $xml = '<?xml version="1.0"?>
-    <?mso-application progid="Excel.Sheet"?>
-    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-              xmlns:o="urn:schemas-microsoft-com:office:office"
-              xmlns:x="urn:schemas-microsoft-com:office:excel"
-              xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
-              xmlns:html="http://www.w3.org/TR/REC-html40">
-      <Worksheet ss:Name="Compatibilidades">
-        <Table>
-          <Column ss:AutoFitWidth="0" ss:Width="100"/> <!-- Tipo -->
-          <Column ss:AutoFitWidth="0" ss:Width="150"/> <!-- Marca -->
-          <Column ss:AutoFitWidth="0" ss:Width="150"/> <!-- Modelo -->
-          <Column ss:AutoFitWidth="0" ss:Width="500"/> <!-- Compatibilidades -->
-          <Column ss:AutoFitWidth="0" ss:Width="300"/> <!-- Observaciones -->
-          <Row>
-            <Cell><Data ss:Type="String">Tipo</Data></Cell>
-            <Cell><Data ss:Type="String">Marca</Data></Cell>
-            <Cell><Data ss:Type="String">Modelo Principal</Data></Cell>
-            <Cell><Data ss:Type="String">Compatibilidades</Data></Cell>
-            <Cell><Data ss:Type="String">Observaciones</Data></Cell>
-          </Row>';
+    // Generar XML de Excel (SpreadsheetML)
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Styles>
+    <Style ss:ID="Header">
+      <Font ss:Bold="1"/>
+      <Interior ss:Color="#4472C4" ss:Pattern="Solid"/>
+      <Font ss:Color="#FFFFFF"/>
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="Compatibilidades">
+    <Table>
+      <Column ss:Width="100"/>
+      <Column ss:Width="150"/>
+      <Column ss:Width="150"/>
+      <Column ss:Width="500"/>
+      <Column ss:Width="300"/>
+      <Row ss:StyleID="Header">
+        <Cell><Data ss:Type="String">Tipo</Data></Cell>
+        <Cell><Data ss:Type="String">Marca</Data></Cell>
+        <Cell><Data ss:Type="String">Modelo Principal</Data></Cell>
+        <Cell><Data ss:Type="String">Compatibilidades</Data></Cell>
+        <Cell><Data ss:Type="String">Observaciones</Data></Cell>
+      </Row>';
 
     foreach ($rows as $r) {
-        $xml .= "<Row>";
-        $xml .= "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($r['tipo']) . "</Data></Cell>";
-        $xml .= "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($r['marca_principal']) . "</Data></Cell>";
-        $xml .= "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($r['modelo_principal']) . "</Data></Cell>";
-        $xml .= "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($r['compatibilidades']) . "</Data></Cell>";
-        $xml .= "<Cell><Data ss:Type=\"String\">" . htmlspecialchars($r['observaciones'] ?? '') . "</Data></Cell>";
-        $xml .= "</Row>";
+        $xml .= '<Row>';
+        $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($r['tipo'], ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($r['marca_principal'], ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($r['modelo_principal'], ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($r['compatibilidades'], ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($r['observaciones'] ?? '', ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        $xml .= '</Row>';
     }
 
-    $xml .= '</Table></Worksheet></Workbook>';
+    $xml .= '    </Table>
+  </Worksheet>
+</Workbook>';
 
-    // Cabeceras para descarga
-    header("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    header("Content-Disposition: attachment; filename=compatibilidades.xlsx");
-    header("Cache-Control: max-age=0");
+    // Cabeceras correctas para Excel XML (formato .xls)
+    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="compatibilidades_' . date('Y-m-d') . '.xls"');
+    header('Cache-Control: max-age=0');
+    header('Pragma: public');
 
     echo $xml;
-
-    // Regresar automáticamente a la página anterior después de la descarga
-    echo "<script>setTimeout(() => window.history.back(), 1000);</script>";
+    exit;
 
 } catch (Exception $e) {
-    echo "Error al generar archivo: " . $e->getMessage();
+    header('Content-Type: text/html; charset=UTF-8');
+    echo "Error al generar archivo: " . htmlspecialchars($e->getMessage());
     exit;
 }
 ?>

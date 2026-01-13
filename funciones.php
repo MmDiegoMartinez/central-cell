@@ -530,31 +530,166 @@ function crearValidador(array $datos): bool|string {
  * @return bool
  * @throws Exception
  */
-function insertarCompatibilidad(int $modelo_id, int $compatible_id, string $tipo, ?string $nota = null): bool {
+function insertarCompatibilidad(int $modelo_id, int $compatible_id, string $tipo, ?string $nota = null, int $origen = 1): bool {
     try {
         $conn = conectarBD();
 
         // Validar que tipo sea válido
-        if (!in_array($tipo, ['glass', 'funda'])) {
+        if (!in_array($tipo, ['glass', 'funda', 'camara'])) {
             throw new Exception("Tipo de compatibilidad inválido");
         }
 
+        // PASO 1: Buscar el modelo principal real de ambos modelos ingresados
+        $modelo_principal_final = null;
+        $modelo_compatible_final = null;
+
+        // Buscar si el modelo_id ya existe como principal DEL MISMO TIPO
+        $stmt = $conn->prepare("SELECT modelo_id FROM compatibilidades WHERE modelo_id = :id AND tipo = :tipo LIMIT 1");
+        $stmt->execute([':id' => $modelo_id, ':tipo' => $tipo]);
+        $modelo_id_es_principal = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Buscar si el modelo_id ya existe como compatible de otro DEL MISMO TIPO
+        $stmt = $conn->prepare("SELECT modelo_id FROM compatibilidades WHERE compatible_id = :id AND tipo = :tipo LIMIT 1");
+        $stmt->execute([':id' => $modelo_id, ':tipo' => $tipo]);
+        $modelo_id_tiene_padre = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Buscar si el compatible_id ya existe como principal DEL MISMO TIPO
+        $stmt = $conn->prepare("SELECT modelo_id FROM compatibilidades WHERE modelo_id = :id AND tipo = :tipo LIMIT 1");
+        $stmt->execute([':id' => $compatible_id, ':tipo' => $tipo]);
+        $compatible_id_es_principal = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Buscar si el compatible_id ya existe como compatible de otro DEL MISMO TIPO
+        $stmt = $conn->prepare("SELECT modelo_id FROM compatibilidades WHERE compatible_id = :id AND tipo = :tipo LIMIT 1");
+        $stmt->execute([':id' => $compatible_id, ':tipo' => $tipo]);
+        $compatible_id_tiene_padre = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // LÓGICA DE DECISIÓN: Determinar cuál es el modelo principal real
+        
+        // Caso 1: El modelo_id YA es principal en la BD → usar ese como principal
+        if ($modelo_id_es_principal) {
+            $modelo_principal_final = $modelo_id;
+            $modelo_compatible_final = $compatible_id;
+        }
+        // Caso 2: El compatible_id YA es principal en la BD → usar ese como principal
+        else if ($compatible_id_es_principal) {
+            $modelo_principal_final = $compatible_id;
+            $modelo_compatible_final = $modelo_id;
+        }
+        // Caso 3: El modelo_id es compatible de otro → usar el padre de modelo_id
+        else if ($modelo_id_tiene_padre) {
+            $modelo_principal_final = $modelo_id_tiene_padre['modelo_id'];
+            $modelo_compatible_final = $compatible_id;
+        }
+        // Caso 4: El compatible_id es compatible de otro → usar el padre de compatible_id
+        else if ($compatible_id_tiene_padre) {
+            $modelo_principal_final = $compatible_id_tiene_padre['modelo_id'];
+            $modelo_compatible_final = $modelo_id;
+        }
+        // Caso 5: Ninguno existe aún → usar el orden que ingresó el usuario
+        else {
+            $modelo_principal_final = $modelo_id;
+            $modelo_compatible_final = $compatible_id;
+        }
+
+        // PASO 2: Validar que no sea el mismo modelo
+        if ($modelo_principal_final === $modelo_compatible_final) {
+            throw new Exception("Un modelo no puede ser compatible consigo mismo");
+        }
+
+        // PASO 3: Verificar si ya existe esta compatibilidad exacta
+        $stmt = $conn->prepare("
+            SELECT id FROM compatibilidades 
+            WHERE modelo_id = :modelo_id 
+            AND compatible_id = :compatible_id 
+            AND tipo = :tipo
+        ");
+        $stmt->execute([
+            ':modelo_id' => $modelo_principal_final,
+            ':compatible_id' => $modelo_compatible_final,
+            ':tipo' => $tipo
+        ]);
+        
+        if ($stmt->fetch()) {
+            throw new Exception("Esta compatibilidad ya existe en el sistema");
+        }
+
+        // PASO 4: Verificar si el compatible_final ya es compatible del principal_final
+        // (evita ingresar Honor X6B PLUS dos veces si ya está)
+        $stmt = $conn->prepare("
+            SELECT id FROM compatibilidades 
+            WHERE modelo_id = :modelo_id 
+            AND compatible_id = :compatible_id 
+            AND tipo = :tipo
+        ");
+        $stmt->execute([
+            ':modelo_id' => $modelo_principal_final,
+            ':compatible_id' => $modelo_compatible_final,
+            ':tipo' => $tipo
+        ]);
+        
+        if ($stmt->fetch()) {
+            throw new Exception("Esta compatibilidad ya existe en el sistema");
+        }
+
+        // PASO 5: Preparar nota final según el origen
+        $nota_final = $nota;
+        if ($origen === 2) {
+            // Si es origen 2 (tienda), agregar el texto adicional
+            $nota_final = $nota ? $nota . " | Compatibilidad registrada en tienda" : " | Compatibilidad registrada en tienda";
+        }
+
+        // PASO 6: Insertar la compatibilidad normalizada
         $sql = "INSERT INTO compatibilidades (modelo_id, compatible_id, tipo, nota)
                 VALUES (:modelo_id, :compatible_id, :tipo, :nota)";
         $stmt = $conn->prepare($sql);
 
-        return $stmt->execute([
-            ':modelo_id' => $modelo_id,
-            ':compatible_id' => $compatible_id,
+        $resultado = $stmt->execute([
+            ':modelo_id' => $modelo_principal_final,
+            ':compatible_id' => $modelo_compatible_final,
             ':tipo' => $tipo,
-            ':nota' => $nota
+            ':nota' => $nota_final
         ]);
+
+        // PASO 7: Logging para debugging
+        if ($modelo_principal_final != $modelo_id || $modelo_compatible_final != $compatible_id) {
+            $tipo_origen = $origen === 1 ? "ADMIN" : "TIENDA";
+            error_log("COMPATIBILIDAD NORMALIZADA [$tipo] [$tipo_origen]: Usuario ingresó ($modelo_id -> $compatible_id), se guardó como ($modelo_principal_final -> $modelo_compatible_final)");
+        }
+
+        return $resultado;
+
     } catch (PDOException $e) {
         error_log("Error en insertarCompatibilidad: " . $e->getMessage());
         throw new Exception("No se pudo insertar la compatibilidad. Intente de nuevo.");
     }
 }
 
+
+/**
+ * Verifica si una marca existe en la base de datos
+ * @param string $marca - Nombre de la marca a verificar
+ * @return bool - true si existe, false si no existe
+ */
+function verificarMarcaExiste(string $marca): bool {
+    try {
+        $conn = conectarBD();
+        
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as total 
+            FROM modelos 
+            WHERE marca = :marca
+        ");
+        
+        $stmt->execute([':marca' => $marca]);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $resultado['total'] > 0;
+        
+    } catch (PDOException $e) {
+        error_log("Error en verificarMarcaExiste: " . $e->getMessage());
+        return false;
+    }
+}
 /**
  * Obtener todos los modelos (para llenar los selects del formulario)
  * 

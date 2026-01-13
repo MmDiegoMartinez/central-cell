@@ -99,7 +99,7 @@ $validador_id = $_SESSION['validador_id'];
       </a>
     </li>
     <li>
-      <a href="../../compatibilidades/index.php" style="display: flex; align-items: center; gap: 12px;">
+      <a href="../../compatibilidades/consultar.php" style="display: flex; align-items: center; gap: 12px;">
         🔗 Compatibilidades
       </a>
     </li>

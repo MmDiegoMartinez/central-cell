@@ -1,11 +1,11 @@
+
 <?php
 session_start();
 
-if (!isset($_SESSION['validador_id'])) {
-    header("Location: ../validador/loginvalidador.php");
-    exit;
-}
+// Determinar el origen: 1 = Administrador/Validador, 2 = Vendedor/Tienda
+$origen = isset($_SESSION['validador_id']) ? 1 : 2;
 ?>
+
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -26,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($modelo_id === $compatible_id) {
                 $mensaje = "⚠️ El modelo principal y compatible no pueden ser iguales.";
             } else {
-                insertarCompatibilidad($modelo_id, $compatible_id, $tipo, $nota);
+                // Pasar el origen a la función
+                insertarCompatibilidad($modelo_id, $compatible_id, $tipo, $nota, $origen);
                 $mensaje = "✅ Compatibilidad registrada con éxito.";
             }
         } else {
@@ -50,16 +51,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <header>
-    <div class="logo">Agregar Compatibiliedades</div>
+    <div class="logo">Agregar Compatibilidades</div>
     <nav>
         <ul>
-            <li><a href="index.php">Inicio 🏠</a></li>
+            <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
+            <li><a href="modelos.php">Agregar Módelo ➕📱</a></li>
             
         </ul>
     </nav>
 </header>
 
 <h1>Agregar Compatibilidad</h1>
+<?php if ($origen === 2): ?>
+    <p style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
+        ℹ️ <strong>Modo Tienda:</strong> Las compatibilidades que agregues serán marcadas como "registradas en tienda".
+    </p>
+<?php endif; ?>
 
 <?php if ($mensaje): ?>
     <p><?= htmlspecialchars($mensaje) ?></p>
@@ -82,10 +89,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
      <label for="tipo">Tipo:</label>
 <label>
-  <input type="radio" name="tipo" value="glass"> Glass
+  <input type="radio" name="tipo" value="glass" required> Glass
 </label>
 <label>
   <input type="radio" name="tipo" value="funda"> Funda
+</label>
+<label>
+  <input type="radio" name="tipo" value="camara"> Protector de Cámara
 </label>
 
     <label for="nota">Nota (opcional):</label>
