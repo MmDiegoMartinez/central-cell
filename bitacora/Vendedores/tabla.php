@@ -30,7 +30,7 @@
         <li>
             <a href="index.php" style="display: flex; align-items: center; gap: 12px;">
                 <span style="display: inline-flex; width: 40px; height: 40px; background: white; border-radius: 50%; justify-content: center; align-items: center;">
-                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain;" />
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain;" />
                 </span>
                 Home
             </a>
@@ -122,7 +122,7 @@
 </div>
 
 <script>
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0vakEWFxjgzKoeoanwOrqxG5rlAbpiK7jQqiKdL6e5B4Ddvomnltu436epFHsAUG_/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynYy67vrk7v0GzC7gzBrjzseVPj6RrxRAxn5AssxVdith8SwcejDzHjytWUlJSTjtW/exec";
 
 let allRows = [];
 let filteredRows = [];
@@ -142,31 +142,41 @@ function hideLoading() {
     clearInterval(dotsInterval);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadData();
-    initializeFilters();
-    renderTable();
-});
-
+//  FUNCIÓN PRINCIPAL DE CARGA - SOLO UNA VEZ
 async function loadData() {
     showLoading();
     try {
+        console.log('Iniciando carga de datos...');
         const response = await fetch(GOOGLE_SCRIPT_URL);
+        
+        console.log('Respuesta recibida:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('Datos parseados:', result);
+        
         if (result.ok) {
             allRows = result.data.map((row, index) => ({
                 ...row,
                 id: index + 1
             }));
             
+            console.log('Total de registros:', allRows.length);
+            
             // Ordenar del más reciente al más antiguo
             allRows.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
+            
             filteredRows = [...allRows];
+            initializeFilters();
+            renderTable();
         } else {
             alert("Error al obtener datos: " + result.error);
         }
     } catch (err) {
+        console.error('Error completo:', err);
         alert("Error de conexión con Google Sheets: " + err.message);
     } finally {
         hideLoading();
@@ -225,6 +235,12 @@ function renderTable() {
     const tbody = document.getElementById('table-body');
     tbody.innerHTML = '';
 
+    if (filteredRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No hay registros para mostrar</td></tr>';
+        document.getElementById('results-count').textContent = 'No hay registros';
+        return;
+    }
+
     filteredRows.forEach(row => {
         const tr = document.createElement('tr');
 
@@ -240,14 +256,14 @@ function renderTable() {
         }
 
         tr.innerHTML = `
-            <td>${row.marca_modelo}</td>
-            <td>${row.producto}</td>
-            <td>${row.sucursal}</td>
-            <td>${row.colaborador}</td>
-            <td>${row.estatus}</td>
-            <td>${row.anotaciones}</td>
-            <td>${row.anotacionAlmacen}</td>
-            <td>${new Date(row.fecha).toLocaleString()}</td>
+            <td>${row.marca_modelo || ''}</td>
+            <td>${row.producto || ''}</td>
+            <td>${row.sucursal || ''}</td>
+            <td>${row.colaborador || ''}</td>
+            <td>${row.estatus || ''}</td>
+            <td>${row.anotaciones || ''}</td>
+            <td>${row.anotacionAlmacen || ''}</td>
+            <td>${row.fecha ? new Date(row.fecha).toLocaleString() : ''}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -264,6 +280,9 @@ function clearAllFilters() {
     filteredRows = [...allRows];
     renderTable();
 }
+
+//  INICIAR AL CARGAR LA PÁGINA
+document.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>

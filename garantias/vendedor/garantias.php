@@ -1,5 +1,8 @@
 <?php 
-include_once '../../funciones.php';   
+include_once '../../funciones.php';  
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 $mensaje = "";  
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {     
@@ -74,10 +77,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </script>
 </head>
-<body>
-    <div class="navidad-overlay" id="navidad"></div>
+<body><!--
+    <div class="overlay navidad-overlay" id="navidad"></div>
+    <div class="overlay sanvalentin-overlay" id="sanvalentin"></div>
+    <div class="overlay muertos-overlay" id="muertos"></div>
+    <div class="overlay independencia-overlay" id="independencia"></div>-->
     <nav>
-        <h1 id="nombre">Central Cell Garantias</h1>
+        <h1 id="nombre">Innovación Móvil</h1>
         <ul id="menu">
             <li>
   <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
@@ -92,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       overflow: visible;
       position: relative;
     ">
-      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
            style="
              width: 30px; 
              height: 30Px; 
@@ -104,6 +110,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      Home
   </a>
 </li>
+
+<li>
+    
+  <a href="metas.php" style="display: flex; align-items: center; gap: 12px;  ">
+    
+      <img src="../../recursos/img/Metas.png" alt="Logo Central Cell" 
+           style="
+             width: 40px; 
+             height: 40Px; 
+             object-fit: contain;
+             position: relative;
+             top: 0; left: 0;
+           " />
+    </span>
+     Metas IM
+  </a>
+</li>
+
 
 <li>
     
@@ -267,6 +291,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 });</script>
     
-    <script src="../../recursos/efecto.js"></script>
+    <!--<script src="../../recursos/efecto.js"></script>-->
 </body>
 </html>

@@ -1590,7 +1590,7 @@ function buscarProductos(string $termino): array {
         $terminoTrim = trim($termino);
 
         /* =====================================================
-           1️⃣ Buscar por BarcodeId EXACTO (prioridad máxima)
+            Buscar por BarcodeId EXACTO (prioridad máxima)
         ===================================================== */
         $stmt = $conn->prepare("
             SELECT e.*, s.nombre AS nombre_almacen
@@ -1607,13 +1607,13 @@ function buscarProductos(string $termino): array {
         }
 
         /* =====================================================
-           2️⃣ Extraer modelo exacto (X7D, X8A, A15, etc)
+            Extraer modelo exacto (X7D, X8A, A15, etc)
         ===================================================== */
         preg_match('/\b[A-Z]+\d+[A-Z]?\b/', strtoupper($terminoTrim), $match);
         $modelo = $match[0] ?? null;
 
         /* =====================================================
-           3️⃣ Buscar SOLO si contiene el modelo exacto
+            Buscar SOLO si contiene el modelo exacto
         ===================================================== */
         if ($modelo) {
             $stmt = $conn->prepare("
@@ -1631,8 +1631,7 @@ function buscarProductos(string $termino): array {
             }
         }
 
-        /* =====================================================
-           4️⃣ ÚLTIMO RECURSO (LIKE controlado)
+        /* === ÚLTIMO RECURSO (LIKE controlado)
            (No se dispara si ya hubo coincidencias)
         ===================================================== */
         $terminoLike = '%' . preg_replace('/\s+/', '%', $terminoTrim) . '%';
@@ -1655,4 +1654,70 @@ function buscarProductos(string $termino): array {
     }
 }
 
+function obtenerSucursalesConMetas(): array {
+    try {
+        $conn = conectarBD();
+        $sql = "SELECT id, nombre, metaIM, estatus 
+                FROM sucursales 
+                WHERE estatus = 1 
+                ORDER BY nombre ASC";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Error al obtener sucursales: " . $e->getMessage());
+        throw new Exception("Error al cargar las sucursales");
+    }
+}
+
+/**
+ * Obtiene la meta de una sucursal específica
+ * @param int $idSucursal ID de la sucursal
+ * @return array|null Datos de la sucursal o null si no existe
+ */
+function obtenerMetaSucursal(int $idSucursal): ?array {
+    try {
+        $conn = conectarBD();
+        $sql = "SELECT id, nombre, metaIM, estatus 
+                FROM sucursales 
+                WHERE id = :id AND estatus = 1";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':id', $idSucursal, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $resultado = $stmt->fetch();
+        return $resultado ?: null;
+    } catch (PDOException $e) {
+        error_log("Error al obtener meta de sucursal: " . $e->getMessage());
+        throw new Exception("Error al cargar la meta de la sucursal");
+    }
+}
+
+
+/**
+ * Calcula las metas diarias y semanales para una tienda y sus vendedores
+ * @param float $metaDiaria Meta diaria de la tienda
+ * @param int $plantilla Número de vendedores en la plantilla
+ * @return array Cálculos de metas
+ */
+function calcularMetas(float $metaDiaria, int $plantilla): array {
+    $metaSemanal = $metaDiaria * 7;
+    $metaIndividualDiaria = $plantilla > 0 ? $metaDiaria / $plantilla : 0;
+    $metaIndividualSemanal = $plantilla > 0 ? $metaSemanal / $plantilla : 0;
+    
+    return [
+        'tienda' => [
+            'diaria' => $metaDiaria,
+            'semanal' => $metaSemanal
+        ],
+        'individual' => [
+            'diaria' => $metaIndividualDiaria,
+            'semanal' => $metaIndividualSemanal
+        ],
+        'plantilla' => $plantilla
+    ];
+}
 ?>

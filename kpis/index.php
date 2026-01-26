@@ -44,12 +44,13 @@
                  <img src="../recursos/img/89875.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Detalle de las ventas individuales por día y por vendedor durante el mes de ventas.</div>
             </a>
-
-            <a href="analisis_fundas.php" class="card">
-                <div class="card-title">Venta de Fundas</div>
+             <a href="analisis_fundas_ventas_existencias.php" class="card">
+                <div class="card-title">Fundas</div>
                  <img src="../recursos/img/case.png" alt="Icono Ventas" style="width:150px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Se muestra el modelo de fundas más vendidas actualmente.</div>
+                <div class="card-desc">Ventas (modelo/marca) y distribución por modelo por sucursal.</div>
             </a>
+
+         
 
             <a href="comparativo_mensual.php" class="card">
                 <div class="card-title">Comparación de Meses</div>

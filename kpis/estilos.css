@@ -67,7 +67,7 @@ nav{
   border-bottom-right-radius: 8px;
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 0;
   backdrop-filter: blur(6px);
 }
 
@@ -84,7 +84,7 @@ nav .nav-inner {
   display:flex;
   gap:12px;
   align-items:center;
-  color: #fff;
+  color: #000000;
   text-decoration:none;
   font-weight:700;
   letter-spacing: -0.02em;
