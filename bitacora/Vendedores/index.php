@@ -3,48 +3,42 @@ include_once '../../funciones.php';
 
 define(
     "GOOGLE_SCRIPT_URL",
-    "https://script.google.com/macros/s/AKfycby0vakEWFxjgzKoeoanwOrqxG5rlAbpiK7jQqiKdL6e5B4Ddvomnltu436epFHsAUG_/exec"
+    "https://script.google.com/macros/s/AKfycbynYy67vrk7v0GzC7gzBrjzseVPj6RrxRAxn5AssxVdith8SwcejDzHjytWUlJSTjtW/exec"
 );   
 
 $mensaje = "";
 
-// Si se envía el formulario (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Datos enviados a Google Sheets
     $data = [
-    "indicador" => "Anotado",
-    "marca_modelo" => $_POST['marca_modelo'],
-    "producto" => $_POST['producto'],
-    "sucursal" => $_POST['sucursal'],
-    "colaborador" => $_POST['apasionado'],
-    "estatus" => $_POST['estatus'],
-    "anotaciones" => $_POST['anotaciones_vendedor'] // <--- AGREGADO
-];
-
-    // Opciones para enviar el JSON por POST
-    $options = [
-        "http" => [
-            "header"  => "Content-Type: application/json",
-            "method"  => "POST",
-            "content" => json_encode($data)
-        ]
+        "marca_modelo" => $_POST['marca_modelo'],
+        "producto" => $_POST['producto'],
+        "sucursal" => $_POST['sucursal'],
+        "colaborador" => $_POST['apasionado'],
+        "estatus" => $_POST['estatus'],
+        "anotaciones" => $_POST['anotaciones_vendedor'] ?? ''
     ];
 
-    $context  = stream_context_create($options);
-    $result   = file_get_contents(GOOGLE_SCRIPT_URL, false, $context);
+    // ⭐ USAR cURL EN LUGAR DE file_get_contents
+    $ch = curl_init(GOOGLE_SCRIPT_URL);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // ⭐ IMPORTANTE: Sigue redirecciones
+    
+    $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-    // Manejo de errores
-    if ($result === FALSE) {
-        $mensaje = "❌ Error al enviar datos a Google Sheets.";
+    if ($result === FALSE || $httpCode !== 200) {
+        $mensaje = "❌ Error al enviar datos a Google Sheets. Código HTTP: $httpCode";
     } else {
-
         $respuesta = json_decode($result, true);
-
-        if ($respuesta["ok"]) {
-            $mensaje = "✅ Producto registrado Correctamente.";
+        if ($respuesta && $respuesta["ok"]) {
+            $mensaje = "✅ Producto registrado correctamente.";
         } else {
-            $mensaje = "❌ Error: " . $respuesta["error"];
+            $mensaje = "❌ Error: " . ($respuesta["error"] ?? "Respuesta inválida");
         }
     }
 }
@@ -116,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     align-items:center;
                     overflow:visible;
                     position:relative;">
-                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png"
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>"
                          style="width:30px;height:30px;"/>
                 </span>
                 Registrar Garantía

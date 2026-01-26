@@ -34,7 +34,7 @@ require_once '../funciones.php';
     overflow: hidden;
      border: 0.2px solid black;
   ">
-    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
          style="width: 38px; height: 38px; object-fit: contain;" />
   </span>  
 Consultar Compatibilidades

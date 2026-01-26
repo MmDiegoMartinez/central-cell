@@ -79,15 +79,9 @@ select {
   <header>
   <nav>
     <ul id="menu">
-      <li>
-        <a href="index.php" class="menu-link">
-          <span class="logo-container">
-            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
-
-          </span>
-          Home
-        </a>
-      </li>
+       <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
+        <li><a href="fundasstock.php">Distribucion Por Modelo Fundas</a></li>
+        <li><a href="ventasfundas.php">Ventas Por Modelo Fundas</a></li>
     </ul>
   </nav>
 </header>

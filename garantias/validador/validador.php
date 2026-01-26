@@ -55,7 +55,7 @@ $validador_id = $_SESSION['validador_id'];
           overflow: visible;
           position: relative;
         ">
-          <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" 
+          <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
                style="
                  width: 30px; 
                  height: 30px; 
