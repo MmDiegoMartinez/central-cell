@@ -5,6 +5,7 @@ include_once '../funciones.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
   <meta charset="UTF-8">
   <title>Tickets de Mayor Precio — INNOVACION MOVIL</title>
@@ -27,20 +28,30 @@ caption{text-align:left;font-weight:600;padding:8px;}
   <link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
-     <header>
+    <header>
   <nav>
-    <ul id="menu">
-      <li>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                <li>
         <a href="index.php" class="menu-link">
           <span class="logo-container">
             <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
 
           </span>
-          Home
+          Atras
         </a>
       </li>
-    </ul>
-  </nav>
+            </ul>
+        </div>
+    </nav>
 </header>
  
 <div class="container">
@@ -545,6 +556,21 @@ document.getElementById("btnDescargar").addEventListener('click', ()=>{
 
   XLSX.writeFile(wb, "Tickets_Mayor_Precio_Colores.xlsx");
 });
+</script>
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 </body>
 </html>

@@ -14,16 +14,28 @@ $validadores = obtenerValidadores();
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Validadores</title>
     <link rel="stylesheet" href="../../csstabla.css">
 </head>
 <body>
 
 
-<nav style="background:#1D6C90; padding:10px;">
-  <ul id="menu">
+  <nav style="background:#0F5476; padding:10px;">
+    <h1 id="nombre">­ </h1>
     
-    <li>
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
+    <ul id="menu">
+           <li>
       <a href="validador.php" style="display: flex; align-items: center; gap: 12px;">
         <span style="
           display: inline-flex;
@@ -34,7 +46,7 @@ $validadores = obtenerValidadores();
           justify-content: center; 
           align-items: center; 
           overflow: visible;
-          position: relative;
+          position: relative;\
         ">
           <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
                style="
@@ -54,10 +66,10 @@ $validadores = obtenerValidadores();
          ➕ Nuevo Validador
       </a>
     </li>
-  </ul>
+        </ul>
 </nav>
 
-   <br><br>
+   <br><br><br>
    <div class="center-container">
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>

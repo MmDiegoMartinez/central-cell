@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 <html lang="es">
 <head>
 <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fusión Excel + Garantías — INNOVACION MOVIL</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
@@ -44,8 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 <body>
     <header>
   <nav>
-    <ul id="menu">
-      <li>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                <li>
         <a href="index.php" class="menu-link">
           <span class="logo-container">
             <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
@@ -54,8 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
           Home
         </a>
       </li>
-    </ul>
-  </nav>
+            </ul>
+        </div>
+    </nav>
 </header>
 <div class="center-container">
 <h1>📊 Mermas / ventas %</h1>
@@ -393,6 +404,21 @@ descargarBtn.addEventListener('click', () => {
 // Helpers
 function sanitizeSheetName(name){ return name.toString().slice(0,31).replace(/[\/\\\*\?\:\[\]]/g,'_'); }
 function escapeHtml(unsafe){ return String(unsafe||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;"); }
+</script>
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 </body>
 </html>

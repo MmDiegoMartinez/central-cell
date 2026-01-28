@@ -8,12 +8,22 @@
 </head>
 <body>
     <nav>
-        <ul>
-            <li><a href="#">Inicio</a></li>
-            <li><a href="../compatibilidades/consultar.php">Compatibilidades</a></li>
-            <li><a href="../capacitados/capa.php">Capacitaciones</a></li>
-            <li><a href="../garantias/validador/validador.php">Validar Mermas</a></li>
-        </ul>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                <li><a href="#">Inicio</a></li>
+                <li><a href="../compatibilidades/consultar.php">Compatibilidades</a></li>
+                <li><a href="../capacitados/capa.php">Capacitaciones</a></li>
+                <li><a href="../garantias/validador/validador.php">Validar Mermas</a></li>
+            </ul>
+        </div>
     </nav>
 
     <div class="container">
@@ -49,8 +59,6 @@
                  <img src="../recursos/img/case.png" alt="Icono Ventas" style="width:150px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Ventas (modelo/marca) y distribución por modelo por sucursal.</div>
             </a>
-
-         
 
             <a href="comparativo_mensual.php" class="card">
                 <div class="card-title">Comparación de Meses</div>
@@ -90,11 +98,24 @@
                  <img src="../recursos/img/descuento.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Este apartado es ideal para épocas de descuentos, donde se aplican códigos promocionales y se pueden visualizar claramente las ventas reales y los descuentos aplicados.</div>
             </a>
-            
-
-            
 
         </div>
     </div>
+
+    <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
+</script>
 </body>
 </html>

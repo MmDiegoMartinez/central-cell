@@ -280,24 +280,6 @@ p { color: var(--muted); margin:0 0 18px; }
   align-items:center;
 }
 
-/* ===========================
-   Layout móvil y menús colapsables
-   =========================== */
-@media (max-width: 880px){
-  nav .nav-inner { padding: 0 10px; gap:12px; }
-  .container { padding: 16px; margin: 18px auto; }
-  .card { padding:16px; border-radius:12px; }
-  .grid-sections { gap:14px; }
-}
-
-/* ===========================
-   Accesibilidad y print friendly
-   =========================== */
-@media print{
-  nav, .btn { display:none; }
-  body { background: #fff; color:#000; }
-  .card { box-shadow:none; border:1px solid #eee; }
-}
 
 /* Small utility helpers */
 .text-muted{ color:var(--muted); font-size:0.95rem; }
@@ -591,3 +573,155 @@ p { color: var(--muted); margin:0 0 18px; }
   white-space: nowrap;       /* Evita que el texto se divida, fuerza scroll si es muy largo */
 }
 
+/* ===========================
+   MENÚ HAMBURGUESA RESPONSIVO
+   =========================== */
+
+/* Ocultar checkbox */
+#menu-check {
+    -webkit-appearance: none;
+    display: none;
+    visibility: hidden;
+}
+
+/* Hamburguesa - oculta en desktop */
+.bar-menu {
+    display: none;
+    position: fixed; /* 👈 CAMBIO: de absolute a fixed */
+    right: 20px;
+    top: 15px; /* 👈 AGREGADO: posición fija desde arriba */
+    cursor: pointer;
+    width: 32px;
+    height: 26px;
+    z-index: 10000; /* 👈 CAMBIO: z-index MÁS ALTO que el menú (9999) */
+}
+/* Líneas de la hamburguesa */
+.bar-menu span {
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    background: #ffffff;
+    border-radius: 100px;
+    transition: 0.3s ease;
+    left: 0;
+}
+
+.bar-menu span.top { top: 0; }
+.bar-menu span.middle { top: 11px; }
+.bar-menu span.bottom { bottom: 0; }
+
+/* Animación a X */
+.bar-menu input[type="checkbox"]:checked ~ span.top {
+    transform: rotate(45deg);
+    transform-origin: top left;
+    width: 34px;
+    left: 3px;
+}
+
+.bar-menu input[type="checkbox"]:checked ~ span.bottom {
+    transform: rotate(-45deg);
+    transform-origin: top left;
+    width: 34px;
+    bottom: -2px;
+}
+
+.bar-menu input[type="checkbox"]:checked ~ span.middle {
+    transform: translateX(-20px);
+    opacity: 0;
+}
+
+/* ===========================
+   Layout móvil y menús colapsables
+   =========================== */
+@media (max-width: 880px){
+  nav .nav-inner { padding: 0 10px; gap:12px; }
+  .container { padding: 16px; margin: 18px auto; }
+  .card { padding:16px; border-radius:12px; }
+  .grid-sections { gap:14px; }
+}
+/* Responsive - Móvil */
+/* Responsive - Móvil */
+@media (max-width: 768px) {
+    
+    /* Mostrar hamburguesa */
+    .bar-menu {
+        display: block;
+    }
+
+    /* Nav más grande y sin bordes */
+    nav {
+        border-radius: 0 !important;
+        z-index: 1000 !important;
+        margin: 0;
+        padding: 24px 20px !important;
+    }
+
+    .nav-inner {
+        position: relative;
+        justify-content: center !important;
+    }
+
+    /* 👇 OCULTAR COMPLETAMENTE el menú con display none */
+    nav ul {
+        position: fixed;
+        top: 0;
+        right: 0; /* 👈 Ya en posición final */
+        width: 260px;
+        height: 100vh;
+        background: linear-gradient(180deg, rgba(15,84,118,0.98), rgba(22,114,154,0.95));
+        flex-direction: column;
+        padding: 90px 20px 20px;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.25);
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 9999;
+        gap: 0;
+        margin: 0;
+        display: flex;
+        opacity: 0; /* 👈 Invisible */
+        visibility: hidden; /* 👈 No clickeable */
+        pointer-events: none; /* 👈 No interactúa */
+    }
+
+    /* Container pegado al nav */
+    .container {
+        margin-top: 0 !important;
+        padding-top: 20px;
+    }
+
+    /* Centrar CONTENIDO dentro de cada card */
+    .card {
+        text-align: center;
+        align-items: center;
+    }
+
+    .card img {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .card-title {
+        text-align: center;
+    }
+
+    .card-desc {
+        text-align: center;
+    }
+
+    nav ul li {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    nav ul li a {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.06);
+    }
+
+    nav ul li a:hover {
+        background: rgba(255,255,255,0.12);
+    }
+}

@@ -13,7 +13,7 @@ body {
     color: #1f2937;
     line-height: 1.5;
     padding: 15px;
-    font-size: 0.95em; /* Ajuste general tamaño de texto */
+    font-size: 0.95em;
 }
 
 h1, h2 {
@@ -45,9 +45,9 @@ header {
 }
 
 header .logo {
-    font-size: 1.8em; /* tamaño más contenido */
+    font-size: 1.8em;
     font-weight: 700;
-    color: #2563eb; /* azul simple */
+    color: #2563eb;
     margin-bottom: 10px;
     text-shadow: 0 1px 4px rgba(37,99,235,0.3);
 }
@@ -58,13 +58,14 @@ nav ul {
     gap: 15px;
     flex-wrap: wrap;
     justify-content: center;
+    margin-top: 10px;
 }
 
 nav ul li a {
     text-decoration: none;
-    color: #2563eb; /* azul simple */
+    color: #2563eb;
     font-weight: 600;
-    padding: 6px 12px; /* reducido */
+    padding: 6px 12px;
     border-radius: 6px;
     transition: all 0.3s ease;
     position: relative;
@@ -105,7 +106,7 @@ label {
 
 input[type="text"], input[type="hidden"], textarea, select {
     width: 50%;
-    padding: 8px 10px; /* más compacto */
+    padding: 8px 10px;
     margin-bottom: 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
@@ -123,7 +124,7 @@ button {
     background-color: #2563eb;
     color: #fff;
     border: none;
-    padding: 9px 16px; /* más compacto */
+    padding: 9px 16px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.95em;
@@ -174,15 +175,15 @@ tr:hover {
 ----------------------------- */
 .autocomplete-list {
     border: 1px solid #d1d5db;
-    max-height: 160px; /* un poco más compacto */
+    max-height: 160px;
     overflow-y: auto;
     list-style: none;
     padding: 0;
     margin: 0;
     position: absolute;
     background: #ffffff;
-    z-index: 1000;
-    width: 100%;
+    z-index: 100; /* 👈 Menor que el menú */
+    width: 50%;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
@@ -223,36 +224,163 @@ p.warning {
 }
 
 /* -----------------------------
-   Responsivo elegante
+   Header hamburguesa
 ----------------------------- */
-@media (max-width: 768px) {
-    nav ul {
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
-    }
-
-    table, form input, form select, form textarea, .autocomplete-list, button {
-        width: 100%;
-        font-size: 0.9em;
-    }
-
-    .container {
-        padding: 15px;
-    }
+/* Centra el header-top en desktop */
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 👈 Centrado en desktop */
+    width: 100%;
+    padding: 0 10px;
+    position: relative; /* 👈 Para posicionar la hamburguesa absoluta */
 }
 
-@media (max-width: 480px) {
-    h1, h2 {
-        font-size: 1.4em;
+.main-header {
+    position: relative;
+    width: 100%;
+}
+
+/* Menú normal en escritorio */
+#menu {
+    display: block;
+    margin-top: 10px;
+}
+
+#menu ul {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4em;
+}
+
+.logo-circle {
+    display: inline-flex;
+    width: 45px; 
+    height: 45px; 
+    background: white; 
+    border-radius: 60%; 
+    justify-content: center; 
+    align-items: center; 
+    overflow: hidden;
+    border: 0.2px solid black;
+}
+
+.logo-circle img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Checkbox oculto */
+#check {
+    display: none;
+}
+
+/* Hamburguesa */
+.bar {
+    display: none;
+    position: relative;
+    cursor: pointer;
+    width: 32px;
+    height: 26px;
+    z-index: 1100;
+    margin-left: auto; /* 👈 Empuja hacia la derecha */
+}
+
+/* Líneas de la hamburguesa */
+.bar span {
+    position: absolute;
+    width: 30px;
+    height: 4px;
+    background: #000000;
+    border-radius: 100px;
+    transition: 0.3s ease;
+    left: 0;
+}
+
+.bar span.top { top: 0; }
+.bar span.middle { top: 11px; }
+.bar span.bottom { bottom: 0; }
+
+/* Animación a X */
+#check:checked ~ .header-top .bar span.top {
+    transform: rotate(45deg);
+    transform-origin: top left;
+    width: 34px;
+    left: 3px;
+}
+
+#check:checked ~ .header-top .bar span.bottom {
+    transform: rotate(-45deg);
+    transform-origin: top left;
+    width: 34px;
+    bottom: -2px;
+}
+
+#check:checked ~ .header-top .bar span.middle {
+    transform: translateX(-20px);
+    opacity: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+
+    .bar {
+        display: block;
     }
 
-    th, td {
-        padding: 6px 8px;
-        font-size: 0.85em;
+    #menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 260px;
+        height: 100vh;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        padding: 90px 20px 20px;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.25);
+        transition: right 0.4s ease;
+        z-index: 1050; /* 👈 Por encima del autocomplete */
     }
 
-    button {
-        padding: 8px 12px;
+    #check:checked ~ nav#menu {
+        right: 0;
+    }
+
+    #menu ul {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 0;
+        padding: 0;
+    }
+
+    #menu ul li {
+        list-style: none;
+    }
+
+    #menu ul li a {
+        display: block;
+        color: #2563eb;
+        font-size: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        background: #f4f7f9;
+        text-decoration: none;
+    }
+
+    #menu ul li a:hover {
+        background: rgba(37,99,235,0.1);
     }
 }

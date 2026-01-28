@@ -3,6 +3,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabla de Garantías y Mermas</title>
      <link rel="stylesheet" href="../../csstabla.css?v=<?php echo time(); ?>">
 
@@ -10,50 +11,35 @@
 <body>
     
      <nav style="background:#0F5476; padding:10px;">
+        <!-- Checkbox PRIMERO (importante para el CSS) -->
+        <input type="checkbox" id="check">
+         <h1 id="nombre">Tabla de Garantías</h1>
+        
+        
+        
+        <!-- Menú Hamburguesa -->
+        <label class="bar" for="check">
+            <span class="top"></span>
+            <span class="middle"></span>
+            <span class="bottom"></span>
+        </label>
+        
         <ul id="menu">
             <li>
-  <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
-    <span style="
-      display: inline-flex;
-      width: 40px; 
-      height: 40px; 
-      background: white; 
-      border-radius: 50%; 
-      justify-content: center; 
-      align-items: center; 
-      overflow: visible;
-      position: relative;
-    ">
-      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
-           style="
-             width: 30px; 
-             height: 30Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Home
-  </a>
-</li>
+                <a href="garantias.php">
+                    <span style="display: inline-flex; width: 40px; height: 40px; background: white; border-radius: 50%; justify-content: center; align-items: center; overflow: visible; position: relative;">
+                        <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                    </span>
+                    Home
+                </a>
+            </li>
 
-<li>
-  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Garantías / Mermas
-  </a>
-</li>
-
-            
+            <li>
+                <a href="tabla.php">
+                    <img src="../../recursos/img/merma.png" alt="Garantías" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                    Garantías / Mermas
+                </a>
+            </li>
         </ul>
     </nav>
     <hr>

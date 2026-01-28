@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         "anotaciones" => $_POST['anotaciones_vendedor'] ?? ''
     ];
 
-    // ⭐ USAR cURL EN LUGAR DE file_get_contents
+    //  USAR cURL EN LUGAR DE file_get_contents
     $ch = curl_init(GOOGLE_SCRIPT_URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -47,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Productos negados</title>
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
@@ -95,8 +96,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <nav>
-    <h1 id="nombre">Productos negados</h1>
-
+    <h1 id="nombre">Productos Negados</h1>
+    
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
     <ul id="menu">
         <li>
             <a href="../../garantias/vendedor/garantias.php" style="display:flex;align-items:center;gap:12px;">

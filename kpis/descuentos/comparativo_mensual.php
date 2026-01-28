@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comparativo Mensual — INNOVACION MOVIL (Ventas Reales)</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
@@ -21,23 +22,33 @@
   .center-table{margin:20px 0;}
   .loader-container{display:flex;justify-content:center;align-items:center;padding:20px;}
 </style>
-<link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="../estilos.css">
 </head>
 <body>
   <header>
   <nav>
-    <ul id="menu">
-      <li>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                <li>
         <a href="index.php" class="menu-link">
           <span class="logo-container">
             <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
 
           </span>
-          Home
+          Atras
         </a>
       </li>
-    </ul>
-  </nav>
+            </ul>
+        </div>
+    </nav>
 </header>
 <div class="container">
 <h1>🔁 Comparativo Mensual por Categoría — INNOVACION MOVIL (Ventas Reales)</h1>
@@ -541,6 +552,21 @@ function getLabel(key){
 function escapeHtml(s){ 
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
 }
+</script>
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 </body>
 </html>

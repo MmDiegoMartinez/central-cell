@@ -3,6 +3,7 @@ include_once '../funciones.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
 <meta charset="utf-8" />
 <title>📊 Análisis de Fundas — INNOVACION MOVIL</title>
@@ -76,14 +77,28 @@ select {
 <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-  <header>
-  <nav>
-    <ul id="menu">
-       <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
+<header>
+ <nav>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                 <li> <a href="index.php">
+          
+          Home
+        </a></li>
+           <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
         <li><a href="fundasstock.php">Distribucion Por Modelo Fundas</a></li>
         <li><a href="ventasfundas.php">Ventas Por Modelo Fundas</a></li>
-    </ul>
-  </nav>
+            </ul>
+        </div>
+    </nav>
 </header>
 <div class="container">
 <h1>📊 Análisis de Fundas — INNOVACION MOVIL</h1>
@@ -311,5 +326,20 @@ function descargarExcel() {
 }
 </script>
 
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
+</script>
 </body>
 </html>

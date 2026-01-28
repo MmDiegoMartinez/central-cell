@@ -40,20 +40,42 @@ $modelos = obtenerModelos();
 
 <!DOCTYPE html>
 <html lang="es">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
 <meta charset="UTF-8">
 <title>Eliminar Compatibilidades</title>
-<link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="estilos.css?v=<?php echo time(); ?>">
 </head>
 <body>
-    <header>
-    <div class="logo">Eliminar Compatibilidades</div>
-    <nav>
+     
+
+<header class="main-header">
+    <!-- Checkbox PRIMERO, antes de todo -->
+    <input type="checkbox" id="check">
+    
+    <div class="header-top">
+        <h1 class="titulo">
+            <span class="logo-circle">
+                <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" />
+            </span>  
+                 Eliminar Compatibilidades
+        </h1>
+
+        <!-- Botón hamburguesa animado -->
+        <label class="bar" for="check">
+            <span class="top"></span>
+            <span class="middle"></span>
+            <span class="bottom"></span>
+        </label>
+    </div>
+
+    <nav id="menu">
         <ul>
             <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
         </ul>
     </nav>
 </header>
+
 
 <?php if ($mensaje): ?>
 <p><?= htmlspecialchars($mensaje) ?></p>
