@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+  
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Análisis Ventas vs Existencias - INNOVACION MOVIL</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+<link rel="stylesheet" href="estilos.css">
 
 <style>
 * {
@@ -19,33 +22,9 @@ body {
   min-height: 100vh;
 }
 
-header {
-  background: linear-gradient(135deg, #306F94 0%, #306F94 100%);
-  padding: 15px 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
 
-nav ul {
-  list-style: none;
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  padding: 0 20px;
-}
 
-nav a {
-  color: white;
-  text-decoration: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  transition: all 0.3s;
-  font-weight: 500;
-}
 
-nav a:hover {
-  background: rgba(255,255,255,0.2);
-  transform: translateY(-2px);
-}
 
 .container {
   max-width: 900px;
@@ -237,16 +216,26 @@ input[type=file] {
 <body>
 
 <header>
-  <nav>
-    <ul>
-        <li> <a href="index.php">
+<nav>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                 <li> <a href="index.php">
           
           Home
         </a></li>
       <li><a href="fundasstock.php">📦 Distribución Fundas</a></li>
       <li><a href="ventasfundas.php">🛍️ Ventas por Modelo</a></li>
-    </ul>
-  </nav>
+            </ul>
+        </div>
+    </nav>
 </header>
 
 <div class="container">
@@ -602,6 +591,22 @@ async function generarReporte() {
   a.click();
   URL.revokeObjectURL(url);
 }
+</script>
+
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 
 </body>

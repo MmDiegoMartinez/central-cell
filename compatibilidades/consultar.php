@@ -16,44 +16,46 @@ require_once '../funciones.php';
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultar Compatibilidades</title>
-    <link rel="stylesheet" href="estilos.css">
+    
+    <link rel="stylesheet" href="estilos.css?v=<?php echo time(); ?>">
 
 </head>
 <body>
-<header>
-    <h1 style="display: flex; align-items: center; gap: 10px;">
-<span style="
-    display: inline-flex;
-    width: 50px; 
-    height: 50px; 
-    background: white; 
-    border-radius: 60%; 
-    justify-content: center; 
-    align-items: center; 
-    overflow: hidden;
-     border: 0.2px solid black;
-  ">
-    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
-         style="width: 38px; height: 38px; object-fit: contain;" />
-  </span>  
-Consultar Compatibilidades
-  
-</h1>
-    <nav>
-        <ul>
-            <li><a href="../garantias/vendedor/garantias.php"> Registrar Garantía</a></li>
-             <li><a href="tabla_compatibilidades.php"> Descargar Compatibilidades</a></li>
-             <li><a href="ingresar.php"> Ingresar Compatibilidades</a></li>
-            <?php if ($es_admin === 1): ?>
-                <li><a href="eliminar.php">Eliminar Compatibilidades</a></li>
-                    <li><a href="../garantias/validador/validador.php">Validar Garantias</a></li>
+<header class="main-header">
+    <!-- Checkbox PRIMERO, antes de todo -->
+    <input type="checkbox" id="check">
+    
+    <div class="header-top">
+        <h1 class="titulo">
+            <span class="logo-circle">
+                <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" />
+            </span>  
+            Compatibilidades
+        </h1>
 
-                <?php endif; ?>
+        <!-- Botón hamburguesa animado -->
+        <label class="bar" for="check">
+            <span class="top"></span>
+            <span class="middle"></span>
+            <span class="bottom"></span>
+        </label>
+    </div>
+
+    <nav id="menu">
+        <ul>
+            <li><a href="../garantias/vendedor/garantias.php">🧾 Registrar Garantía</a></li>
+            <li><a href="tabla_compatibilidades.php">⬇️ Descargar Compatibilidades</a></li>
+            <li><a href="ingresar.php">📝 Ingresar Compatibilidades</a></li>
+
+            <?php if ($es_admin === 1): ?>
+                <li><a href="eliminar.php">🗑️ Eliminar Compatibilidades</a></li>
+                <li><a href="../garantias/validador/validador.php">🛡️ Validar Garantías</a></li>
+            <?php endif; ?>
         </ul>
     </nav>
 </header>
-
 <label for="modelo_buscar">Escribe el modelo:</label>
 <input type="text" id="modelo_buscar" placeholder="Ej: IPHONE 13">
 <input type="hidden" id="modelo_buscar_id">
@@ -169,5 +171,6 @@ document.getElementById('btn_consultar').addEventListener('click', function() {
         });
 });
 </script>
+
 </body>
 </html>

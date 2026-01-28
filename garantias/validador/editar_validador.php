@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="es">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <meta charset="UTF-8" />
     <title>Editar Validador</title>
@@ -79,12 +80,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
-<nav>
-    <h1 id="nombre">Editar Validador</h1>
+<nav style="background:#0F5476; padding:10px;">
+    <h1 id="nombre">­ </h1>
+    
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
     <ul id="menu">
-        <li><a href="validador.php">🏠 Home</a></li>
+             
+    <li><a href="validador.php">🏠 Home</a></li>
         <li><a href="Validadores.php">⬅️ Atrás</a></li>
-    </ul>
+        </ul>
 </nav>
 
 <div class="contenedor">

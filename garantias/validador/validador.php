@@ -23,10 +23,12 @@ $validador_id = $_SESSION['validador_id'];
 
 <!DOCTYPE html>
 <html lang="es">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <meta charset="UTF-8">
     <title>Panel del Validador</title>
-   <link rel="stylesheet" href="../../csstabla.css">
+
+   <link rel="stylesheet" href="../../csstabla.css?v=<?php echo time(); ?>">
   <style>
   .btn-edit {
     display: inline-block !important;
@@ -38,11 +40,21 @@ $validador_id = $_SESSION['validador_id'];
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <body>
     
-
-<nav style="background:#1D6C90; padding:10px;">
-  <ul id="menu">
+    <nav style="background:#0F5476; padding:10px;">
+    <h1 id="nombre">­ </h1>
     
-    <li>
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
+    <ul id="menu">
+            <li>
       <a href="validador.php" style="display: flex; align-items: center; gap: 12px;">
         <span style="
           display: inline-flex;
@@ -125,11 +137,10 @@ $validador_id = $_SESSION['validador_id'];
         🆕 Validador
       </a>
     </li>
-
-  </ul>
+        </ul>
 </nav>
 
-
+<div class="fila-usuario"> 
     <header style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; padding: 10px 20px; font-family: Arial, sans-serif;">
   <span style="font-weight: 600; font-size: 18px;">Bienvenido, <?= htmlspecialchars($nombre) . ' ' . htmlspecialchars($apellido) ?></span>
   <form action="logout.php" method="POST" style="margin: 0;">
@@ -144,7 +155,7 @@ $validador_id = $_SESSION['validador_id'];
       <div class="text">ㅤLogout</div>
     </button>
   </form>
-</header>
+</header></div>
 
     
     <div class="container">

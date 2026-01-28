@@ -17,20 +17,29 @@ if (isset($_GET['borrar'])) {
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sucursales Eliminadas</title>
   <link rel="stylesheet" href="../../kpis/estilos.css">
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="sucursales.php" class="brand"><div class="logo">IM</div> Tienda - Admin</a>
-    <ul>
-      <li><a href="sucursales.php">Sucursales</a></li>
+<header>
+        <nav>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+<a href="#" class="brand"><div class="logo">IM</div> Tienda - Admin</a>
+            <ul id="nav-menu">
+                 <li><a href="sucursales.php">Sucursales</a></li>
       <li><a href="sucursales_eliminadas.php" class="primary-cta">Eliminadas</a></li>
-    </ul>
-  </div>
-</nav>
-
+            </ul>
+        </div>
+    </nav>
+    </header>
 <div class="container">
   <h1>Sucursales Eliminadas</h1>
   <?php if ($mensaje): ?>
@@ -61,5 +70,20 @@ if (isset($_GET['borrar'])) {
     </table>
   </div>
 </div>
+<script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
+</script>
 </body>
 </html>

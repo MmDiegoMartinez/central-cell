@@ -40,13 +40,15 @@
   --shadow-md: 0 10px 30px rgba(12, 18, 26, 0.09);
   --transition-fast: 220ms cubic-bezier(.2, .9, .2, 1);
 }
-*{
+
+* {
   cursor: url("recursos/cursores/arrow.cur"), auto;
 }
 
-a{
+a {
   cursor: url("recursos/cursores/link.cur"), pointer;
 }
+
 /* ===========================
    Encabezado
    =========================== */
@@ -94,6 +96,66 @@ nav ul li a:hover {
   transform: scale(1.08);
 }
 
+/* Menú hamburguesa (oculto por defecto) */
+.bar {
+  display: none;
+  position: relative;
+  cursor: pointer;
+  width: 30px;        /* ANCHO total aquí */
+  height: 25px;       /*  ALTURA total aquí */
+  z-index: 1001;
+}
+
+#check {
+  -webkit-appearance: none;
+  display: none;
+  visibility: hidden;
+}
+
+.bar span {
+  position: absolute;
+  width: 28px;        /* LARGO de las líneas aquí */
+  height: 4px;        /*  GROSOR de las líneas aquí */
+  background: #f1faee;
+  border-radius: 100px;
+  display: inline-block;
+  transition: 0.3s ease;
+  left: 0;
+}
+
+.bar span.top {
+  top: 0;
+}
+
+.bar span.middle {
+  top: 11px;          /* 👈 Ajusta la posición del medio aquí */
+}
+
+.bar span.bottom {
+  bottom: 0;
+}
+
+/* Animación de hamburguesa a X */
+#check:checked + .bar span.top {
+  transform: rotate(45deg);
+  transform-origin: top left;
+  width: 31px;        /* 👈 Ajusta el largo de la línea superior en X */
+  left: 3px;
+}
+
+#check:checked + .bar span.bottom {
+  transform: rotate(-45deg);
+  transform-origin: top left;
+  width: 31px;        /* 👈 Ajusta el largo de la línea inferior en X */
+  bottom: -1px;
+  box-shadow: 0 0 10px #495057;
+}
+
+#check:checked + .bar span.middle {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
 /* ===========================
    Títulos animados
    =========================== */
@@ -136,6 +198,7 @@ body, html {
 .contenedor {
   margin-top: 550px;
   width: 400px;
+  max-width: 90%;
   background: linear-gradient(145deg, #ffffff, #f1f5f9);
   padding: 35px 28px;
   border-radius: var(--radius-lg);
@@ -259,181 +322,323 @@ input[type="submit"]:active {
   transform: translateY(2px);
   box-shadow: none;
 }
-/* Base para todas las animaciones */
+
+/* ===========================
+   Overlays de animaciones
+   =========================== */
 .overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 9999;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 9999;
 }
-.overlay.oculto { display: none; }
 
-/* ===== NAVIDAD ===== */
+.overlay.oculto { 
+  display: none; 
+}
+
+/* NAVIDAD */
 .snowflake {
-    position: absolute;
-    top: -20px;
-    color: #C7D2E0;
-    opacity: 0.9;
-    animation: caer linear forwards;
-}
-@keyframes caer {
-    from { transform: translateY(0) rotate(0deg); opacity: 1; }
-    to   { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  position: absolute;
+  top: -20px;
+  color: #C7D2E0;
+  opacity: 0.9;
+  animation: caer linear forwards;
 }
 
-/* ===== SAN VALENTÍN ===== */
+@keyframes caer {
+  from { transform: translateY(0) rotate(0deg); opacity: 1; }
+  to { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+
+/* SAN VALENTÍN */
 .carta {
-    position: absolute;
-    bottom: -40px;
-    left: -40px;
-    font-size: 28px;
-    animation: volar 8s linear forwards;
-    opacity: 0;
-    filter: drop-shadow(0 0 8px rgba(255,80,120,.6));
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  font-size: 28px;
+  animation: volar 8s linear forwards;
+  opacity: 0;
+  filter: drop-shadow(0 0 8px rgba(255,80,120,.6));
 }
 
 @keyframes volar {
-    0% {
-        transform: translate(0,0) rotate(-10deg) scale(0.6);
-        opacity: 0;
-    }
-    10% {
-        opacity: 1;
-    }
-    50% {
-        transform: translate(50vw,-50vh) rotate(10deg) scale(1);
-    }
-    100% {
-        transform: translate(110vw,-120vh) rotate(25deg) scale(1.3);
-        opacity: 0;
-    }
-}
-/* ===== DÍA DE MUERTOS ===== */
-.petalo {
-    position: absolute;
-    top: -30px;
-    width: 6px;
-    height: 20px;
-    background: linear-gradient(to bottom, #ffe89a 0%, #ffb347 30%, #ff8c00 70%, #d97000 100%);
-    border-radius: 50% 50% 45% 45% / 20% 20% 80% 80%;
-    opacity: 0.85;
-    filter: drop-shadow(0 1px 3px rgba(209, 112, 0, 0.4));
-      animation: caer linear forwards;
-    will-change: transform;
-    transform-origin: center top;
+  0% {
+    transform: translate(0,0) rotate(-10deg) scale(0.6);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(50vw,-50vh) rotate(10deg) scale(1);
+  }
+  100% {
+    transform: translate(110vw,-120vh) rotate(25deg) scale(1.3);
+    opacity: 0;
+  }
 }
 
-/* Variaciones de tamaño */
+/* DÍA DE MUERTOS */
+.petalo {
+  position: absolute;
+  top: -30px;
+  width: 6px;
+  height: 20px;
+  background: linear-gradient(to bottom, #ffe89a 0%, #ffb347 30%, #ff8c00 70%, #d97000 100%);
+  border-radius: 50% 50% 45% 45% / 20% 20% 80% 80%;
+  opacity: 0.85;
+  filter: drop-shadow(0 1px 3px rgba(209, 112, 0, 0.4));
+  animation: petalo linear forwards;
+  will-change: transform;
+  transform-origin: center top;
+}
+
 .petalo:nth-child(3n) {
-    width: 8px;
-    height: 25px;
-    background: linear-gradient(to bottom, #fff4c4 0%, #ffa500 25%, #ff7518 65%, #c96500 100%);
-    filter: drop-shadow(0 2px 5px rgba(255, 140, 0, 0.5));
+  width: 8px;
+  height: 25px;
+  background: linear-gradient(to bottom, #fff4c4 0%, #ffa500 25%, #ff7518 65%, #c96500 100%);
+  filter: drop-shadow(0 2px 5px rgba(255, 140, 0, 0.5));
 }
 
 .petalo:nth-child(5n) {
-    width: 5px;
-    height: 16px;
-    background: linear-gradient(to bottom, #ffd970 0%, #ff9500 35%, #e8630a 75%, #b85500 100%);
-    opacity: 0.7;
-    filter: blur(0.3px) drop-shadow(0 1px 2px rgba(201, 101, 0, 0.3));
+  width: 5px;
+  height: 16px;
+  background: linear-gradient(to bottom, #ffd970 0%, #ff9500 35%, #e8630a 75%, #b85500 100%);
+  opacity: 0.7;
+  filter: blur(0.3px) drop-shadow(0 1px 2px rgba(201, 101, 0, 0.3));
 }
 
 .petalo:nth-child(7n) {
-    width: 9px;
-    height: 28px;
-    background: linear-gradient(to bottom, #ffdb6e 0%, #ff9f00 20%, #ff6600 60%, #cc5200 100%);
-    filter: drop-shadow(0 3px 6px rgba(255, 117, 24, 0.6));
+  width: 9px;
+  height: 28px;
+  background: linear-gradient(to bottom, #ffdb6e 0%, #ff9f00 20%, #ff6600 60%, #cc5200 100%);
+  filter: drop-shadow(0 3px 6px rgba(255, 117, 24, 0.6));
 }
 
-.petalo:nth-child(4n) {
-    width: 7px;
-    height: 22px;
-}
-
-/* Animación orgánica con balanceo */
 @keyframes petalo {
-    0% {
-        transform: translateY(0) translateX(0) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
-        opacity: 0;
-    }
-    5% {
-        opacity: 0.85;
-    }
-    15% {
-        transform: translateY(15vh) translateX(-15px) rotateZ(45deg) rotateX(90deg) rotateY(30deg);
-    }
-    30% {
-        transform: translateY(30vh) translateX(10px) rotateZ(120deg) rotateX(180deg) rotateY(90deg);
-    }
-    45% {
-        transform: translateY(45vh) translateX(-25px) rotateZ(200deg) rotateX(270deg) rotateY(150deg);
-    }
-    60% {
-        transform: translateY(60vh) translateX(20px) rotateZ(280deg) rotateX(360deg) rotateY(210deg);
-    }
-    75% {
-        transform: translateY(75vh) translateX(-18px) rotateZ(350deg) rotateX(450deg) rotateY(270deg);
-        opacity: 0.65;
-    }
-    90% {
-        transform: translateY(90vh) translateX(12px) rotateZ(420deg) rotateX(540deg) rotateY(330deg);
-        opacity: 0.4;
-    }
-    100% {
-        transform: translateY(105vh) translateX(-8px) rotateZ(480deg) rotateX(630deg) rotateY(380deg);
-        opacity: 0;
-    }
+  0% {
+    transform: translateY(0) translateX(0) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.85;
+  }
+  15% {
+    transform: translateY(15vh) translateX(-15px) rotateZ(45deg) rotateX(90deg) rotateY(30deg);
+  }
+  30% {
+    transform: translateY(30vh) translateX(10px) rotateZ(120deg) rotateX(180deg) rotateY(90deg);
+  }
+  45% {
+    transform: translateY(45vh) translateX(-25px) rotateZ(200deg) rotateX(270deg) rotateY(150deg);
+  }
+  60% {
+    transform: translateY(60vh) translateX(20px) rotateZ(280deg) rotateX(360deg) rotateY(210deg);
+  }
+  75% {
+    transform: translateY(75vh) translateX(-18px) rotateZ(350deg) rotateX(450deg) rotateY(270deg);
+    opacity: 0.65;
+  }
+  90% {
+    transform: translateY(90vh) translateX(12px) rotateZ(420deg) rotateX(540deg) rotateY(330deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(105vh) translateX(-8px) rotateZ(480deg) rotateX(630deg) rotateY(380deg);
+    opacity: 0;
+  }
 }
 
-/* Variaciones de timing */
-.petalo:nth-child(2n) {
-    animation-timing-function: ease-in-out;
-}
-
-.petalo:nth-child(3n) {
-    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.petalo:nth-child(4n) {
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-.petalo:nth-child(5n) {
-    animation-timing-function: cubic-bezier(0.5, 0, 0.5, 1);
-}
-
-/* Overlay */
-.muertos-overlay {
-    pointer-events: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    z-index: 9999;
-}
-
-/* ===== INDEPENDENCIA ===== */
+/* INDEPENDENCIA */
 .confeti {
-    position: absolute;
-    width: 10px;
-    height: 16px;
-    opacity: 0;                 /* 👈 ocultos al inicio */
-    animation-name: confeti;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  opacity: 0;
+  animation-name: confeti;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
 }
 
 @keyframes confeti {
-    0% {
-        transform: translateY(-10vh) rotate(0deg);
-        opacity: 1;           /* 👈 aparecen justo al empezar a caer */
-    }
-    100% {
-        transform: translateY(120vh) rotate(720deg);
-        opacity: 0;
-    }
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* ===========================
+   RESPONSIVE - TABLETS
+   =========================== */
+@media screen and (max-width: 768px) {
+  nav {
+    padding: 15px 20px;
+  }
+
+  #nombre {
+    font-size: 20px;
+  }
+
+  nav ul li {
+    margin-left: 20px;
+  }
+
+  nav ul li a {
+    font-size: 16px;
+  }
+
+  .contenedor {
+    width: 90%;
+    margin-top: 150px;
+    padding: 30px 20px;
+  }
+
+  .formulario h1 {
+    font-size: 22px;
+  }
+
+  nav ul li a {
+    gap: 8px !important;
+  }
+
+  nav ul li a img {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
+
+/* ===========================
+   RESPONSIVE - MÓVILES
+   =========================== */
+@media screen and (max-width: 600px) {
+  /* Mostrar hamburguesa */
+  .bar {
+    display: block;
+  }
+
+  nav {
+    padding: 12px 20px;
+  }
+
+  #nombre {
+    font-size: 30px;
+  }
+
+  /* Ocultar menú por defecto */
+  #menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background-color: var(--primary-600);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 80px 20px 30px 20px;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    overflow-y: auto;
+    z-index: 999;
+  }
+
+  /* Mostrar menú cuando checkbox está activado */
+  #check:checked ~ #menu {
+    right: 0;
+  }
+
+  nav ul li {
+    margin: 0;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  nav ul li a {
+    font-size: 16px;
+    padding: 12px 15px;
+    display: flex !important;
+    align-items: center;
+    gap: 12px !important;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+  }
+
+  nav ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1);
+  }
+
+  nav ul li a img {
+    width: 35px !important;
+    height: 35px !important;
+  }
+
+  /* Formulario */
+  .contenedor {
+    margin-top: 270px;
+    width: 92%;
+    padding: 25px 20px;
+  }
+  
+
+  .formulario h1 {
+    font-size: 25px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    font-size: 13px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  input[type="submit"] {
+    font-size: 16px;
+    padding: 12px 0;
+  }
+
+  #titulo, #titulo2 {
+    font-size: 24px;
+  }
+}
+
+/* ===========================
+   RESPONSIVE - MÓVILES PEQUEÑOS
+   =========================== */
+@media screen and (max-width: 400px) {
+  #nombre {
+    font-size: 16px;
+  }
+
+  .contenedor {
+    
+    padding: 20px 15px;
+  }
+
+  .formulario h1 {
+    font-size: 18px;
+  }
+
+  nav ul li a {
+    font-size: 15px;
+    padding: 10px;
+  }
+
+  nav ul li a img {
+    width: 30px !important;
+    height: 30px !important;
+  }
 }

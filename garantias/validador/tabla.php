@@ -15,14 +15,27 @@ include_once '../../funciones.php'; $garantias = verTablanoguardados(); ?>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabla de Garantías y Mermas</title>
      <link rel="stylesheet" href="../../csstabla.css">
 </head>
 <body>
     
-     <nav style="background:#1D6C90; padding:10px;">
-        <ul id="menu">
-            <li>
+     <nav style="background:#0F5476; padding:10px;">
+    <h1 id="nombre">­ </h1>
+    
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
+    <ul id="menu">
+           <li>
   <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
     <span style="
       display: inline-flex;
@@ -48,26 +61,9 @@ include_once '../../funciones.php'; $garantias = verTablanoguardados(); ?>
   </a>
 </li>
 
-<li>
-  <a href="Tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Garantías / Mermas
-  </a>
-</li>
-
-            
         </ul>
-    </nav>
-    <hr>
+</nav>
+    <br>
     
     <div class="container">
         <h2>Historial de Garantías y Mermas No Registradas</h2>

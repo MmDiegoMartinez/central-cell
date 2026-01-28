@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="es">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <meta charset="UTF-8">
     <title>Login Validador</title>
@@ -170,6 +171,44 @@ input:-webkit-autofill:active {
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   -webkit-text-fill-color: var(--text) !important;
   transition: background-color 9999s ease-in-out 0s !important;
+}
+/* 📱 Ajustes para teléfonos */
+@media (max-width: 480px) {
+
+  body {
+    padding: 35px;
+    height: auto;
+  }
+
+  .container {
+    width: 80%;
+    max-width: 80%;
+    border-radius: 25px;
+    padding: 20px;
+  }
+
+  .heading {
+    font-size: 24px;
+  }
+
+  .logo {
+    max-width: 160px;
+  }
+
+  .form .input {
+    width: 88%;
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+
+  .form .login-button {
+    font-size: 15px;
+    padding-block: 14px;
+  }
+
+  .error {
+    font-size: 13px;
+  }
 }
 
     </style>

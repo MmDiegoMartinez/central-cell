@@ -7,6 +7,7 @@ include_once '../funciones.php';
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ticket Promedio por Vendedor — INNOVACION MOVIL</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
@@ -294,6 +295,21 @@ document.getElementById("btnDescargarVendedor").addEventListener('click', ()=>{
   XLSX.utils.book_append_sheet(wb, ws, `Tickets_${vendedorActual.vendedor}`);
   XLSX.writeFile(wb, `Tickets_${vendedorActual.vendedor}.xlsx`);
 });
+</script>
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 </body>
 </html>

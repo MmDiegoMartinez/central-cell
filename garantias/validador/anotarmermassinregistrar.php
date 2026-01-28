@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
@@ -75,55 +76,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
-    <nav>
-        <h1 id="nombre">Garantiasinguardarguardar</h1>
-        <ul id="menu">
-            <li>
-  <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
-    <span style="
-      display: inline-flex;
-      width: 40px; 
-      height: 40px; 
-      background: white; 
-      border-radius: 50%; 
-      justify-content: center; 
-      align-items: center; 
-      overflow: visible;
-      position: relative;
-    ">
-      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
-           style="
-             width: 30px; 
-             height: 30Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Home
-  </a>
-</li>
-
-<li>
-  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
+    <nav style="background:#0F5476; padding:10px;">
+    <h1 id="nombre">­ </h1>
     
-      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Mermas pendientes
-  </a>
-</li>
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
+    <ul id="menu">
+             <li>
+                <a href="validador.php" style="display: flex; align-items: center; gap: 12px;  ">
+                    <span style="
+                    display: inline-flex;
+                    width: 40px; 
+                    height: 40px; 
+                    background: white; 
+                    border-radius: 50%; 
+                    justify-content: center; 
+                    align-items: center; 
+                    overflow: visible;
+                    position: relative;
+                    ">
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
+                        style="
+                            width: 30px; 
+                            height: 30Px; 
+                            object-fit: contain;
+                            position: relative;
+                            top: 0; left: 0;
+                        " />
+                    </span>
+                    Home
+                </a>
+                </li>
 
-            
+                <li>
+                <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
+                    
+                    <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
+                        style="
+                            width: 40px; 
+                            height: 40Px; 
+                            object-fit: contain;
+                            position: relative;
+                            top: 0; left: 0;
+                        " />
+                    </span>
+                    Mermas pendientes
+                </a>
+                </li> 
         </ul>
-    </nav>
-
+</nav>
     <div class="contenedor">
         <div class="formulario">
             <h1>⚠️ Registrar mermas pendientes</h1><br>

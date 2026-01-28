@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Garantía</title>
     
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
@@ -75,6 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 });
 
+
+
     </script>
 </head>
 <body><!--
@@ -82,123 +85,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="overlay sanvalentin-overlay" id="sanvalentin"></div>
     <div class="overlay muertos-overlay" id="muertos"></div>
     <div class="overlay independencia-overlay" id="independencia"></div>-->
-    <nav>
-        <h1 id="nombre">Innovación Móvil</h1>
-        <ul id="menu">
-            <li>
-  <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;  ">
-    <span style="
-      display: inline-flex;
-      width: 40px; 
-      height: 40px; 
-      background: white; 
-      border-radius: 50%; 
-      justify-content: center; 
-      align-items: center; 
-      overflow: visible;
-      position: relative;
-    ">
-      <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" 
-           style="
-             width: 30px; 
-             height: 30Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Home
-  </a>
-</li>
+   <nav>
+    <h1 id="nombre">Innovación Móvil</h1>
+    
+    <!-- Checkbox PRIMERO (importante para el CSS) -->
+    <input type="checkbox" id="check">
+    
+    <!-- Menú Hamburguesa -->
+    <label class="bar" for="check">
+        <span class="top"></span>
+        <span class="middle"></span>
+        <span class="bottom"></span>
+    </label>
+    
+    <ul id="menu">
+        <li>
+            <a href="garantias.php" style="display: flex; align-items: center; gap: 12px;">
+                <span style="display: inline-flex; width: 40px; height: 40px; background: white; border-radius: 50%; justify-content: center; align-items: center; overflow: visible; position: relative;">
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo Central Cell" style="width: 30px; height: 30px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                </span>
+                Home
+            </a>
+        </li>
 
-<li>
-    
-  <a href="metas.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/Metas.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Metas IM
-  </a>
-</li>
+        <li>
+            <a href="metas.php" style="display: flex; align-items: center; gap: 12px;">
+                <img src="../../recursos/img/Metas.png" alt="Metas" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                Metas IM
+            </a>
+        </li>
 
+        <li>
+            <a href="../../bitacora/Vendedores/index.php" style="display: flex; align-items: center; gap: 12px;">
+                <img src="../../recursos/img/productosNegados.png" alt="Productos Negados" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                Productos negados
+            </a>
+        </li>
 
-<li>
-    
-  <a href="../../bitacora/Vendedores/index.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/productosNegados.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Productos negados
-  </a>
-</li>
+        <li>
+            <a href="../../compatibilidades/consultar.php" style="display: flex; align-items: center; gap: 12px;">
+                <img src="../../recursos/img/compatibilidades.png" alt="Compatibilidades" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                Compatibilidades
+            </a>
+        </li>
 
-<li>
-    
-  <a href="../../compatibilidades/consultar.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/compatibilidades.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Compatibilidades
-  </a>
-</li>
+        <li>
+            <a href="../../Evaluacion/mermas.php" style="display: flex; align-items: center; gap: 12px;">
+                <img src="../../recursos/img/tuto.png" alt="Tutorial" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                Cómo Enviar
+            </a>
+        </li>
 
-<li>
-    
-  <a href="../../Evaluacion/mermas.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/tuto.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Cómo Enviar
-  </a>
-</li>
-
-<li>
-  <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;  ">
-    
-      <img src="../../recursos/img/merma.png" alt="Logo Central Cell" 
-           style="
-             width: 40px; 
-             height: 40Px; 
-             object-fit: contain;
-             position: relative;
-             top: 0; left: 0;
-           " />
-    </span>
-     Garantías / Mermas
-  </a>
-</li>
-
-            
-        </ul>
-    </nav>
+        <li>
+            <a href="tabla.php" style="display: flex; align-items: center; gap: 12px;">
+                <img src="../../recursos/img/merma.png" alt="Mermas" style="width: 40px; height: 40px; object-fit: contain; position: relative; top: 0; left: 0;" />
+                Garantías / Mermas
+            </a>
+        </li>
+    </ul>
+</nav>
 
     <div class="contenedor">
         <div class="formulario">

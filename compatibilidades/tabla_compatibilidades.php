@@ -21,24 +21,41 @@ $compatibilidades = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!DOCTYPE html>
 <html lang="es">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <meta charset="UTF-8">
     <title>Tabla de Compatibilidades</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="estilos.css">
+   <link rel="stylesheet" href="estilos.css?v=<?php echo time(); ?>">
 </head>
 <body>
-    <header>
-    <div class="logo">Tabla de Compatibilidades</div>
-    <nav>
+    
+<header class="main-header">
+    <!-- Checkbox PRIMERO, antes de todo -->
+    <input type="checkbox" id="check">
+    
+    <div class="header-top">
+        <h1 class="titulo">
+            <span class="logo-circle">
+                <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" />
+            </span>  
+               Descargar Compatibilidades
+        </h1>
+
+        <!-- Botón hamburguesa animado -->
+        <label class="bar" for="check">
+            <span class="top"></span>
+            <span class="middle"></span>
+            <span class="bottom"></span>
+        </label>
+    </div>
+
+    <nav id="menu">
         <ul>
             <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
-          
-            
         </ul>
     </nav>
 </header>
-
     
 
     <a href="exportar_compatibilidades.php" class="btn-exportar">📥 Descargar en Excel</a>

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analizador de Ventas</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -77,15 +78,28 @@ button{
 </head>
 <body>
 <header>
-  <nav>
-    <ul id="menu">
-      
-      <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
+ <nav>
+        <div class="nav-inner">
+            <!-- Botón hamburguesa -->
+            <label class="bar-menu">
+                <input type="checkbox" id="menu-check">
+                <span class="top"></span>
+                <span class="middle"></span>
+                <span class="bottom"></span>
+            </label>
+
+            <ul id="nav-menu">
+                 <li> <a href="index.php">
+          
+          Home
+        </a></li>
+            <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
        
         <li><a href="fundasstock.php">Distribucion Por Modelo Fundas</a></li>
-        <a href="analisis_fundas.php">Ventas Por Marca Fundas</a>
-    </ul>
-  </nav>
+        <li><a href="analisis_fundas.php">Ventas Por Marca Fundas</a></li>
+            </ul>
+        </div>
+    </nav>
 </header>
 
 <div class="container">
@@ -353,6 +367,21 @@ download.onclick=async ()=>{
  a.download=`Ventas_${marcaActiva}_${modeloActivo}.xlsx`
  a.click()
 }
+</script>
+  <script>
+    // Controlar menú hamburguesa
+    document.getElementById('menu-check').addEventListener('change', function() {
+        const menu = document.getElementById('nav-menu');
+        if (this.checked) {
+            menu.style.opacity = '1';
+            menu.style.visibility = 'visible';
+            menu.style.pointerEvents = 'auto';
+        } else {
+            menu.style.opacity = '0';
+            menu.style.visibility = 'hidden';
+            menu.style.pointerEvents = 'none';
+        }
+    });
 </script>
 </body>
 </html>
