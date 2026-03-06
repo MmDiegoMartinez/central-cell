@@ -1590,7 +1590,7 @@ function buscarProductos(string $termino): array {
         $terminoTrim = trim($termino);
 
         /* =====================================================
-            Buscar por BarcodeId EXACTO (prioridad máxima)
+           1️⃣ Buscar por BarcodeId EXACTO (prioridad máxima)
         ===================================================== */
         $stmt = $conn->prepare("
             SELECT e.*, s.nombre AS nombre_almacen
@@ -1607,13 +1607,13 @@ function buscarProductos(string $termino): array {
         }
 
         /* =====================================================
-            Extraer modelo exacto (X7D, X8A, A15, etc)
+           2️⃣ Extraer modelo exacto (X7D, X8A, A15, etc)
         ===================================================== */
         preg_match('/\b[A-Z]+\d+[A-Z]?\b/', strtoupper($terminoTrim), $match);
         $modelo = $match[0] ?? null;
 
         /* =====================================================
-            Buscar SOLO si contiene el modelo exacto
+           3️⃣ Buscar SOLO si contiene el modelo exacto
         ===================================================== */
         if ($modelo) {
             $stmt = $conn->prepare("
@@ -1631,7 +1631,8 @@ function buscarProductos(string $termino): array {
             }
         }
 
-        /* === ÚLTIMO RECURSO (LIKE controlado)
+        /* =====================================================
+           4️⃣ ÚLTIMO RECURSO (LIKE controlado)
            (No se dispara si ya hubo coincidencias)
         ===================================================== */
         $terminoLike = '%' . preg_replace('/\s+/', '%', $terminoTrim) . '%';
@@ -1653,7 +1654,6 @@ function buscarProductos(string $termino): array {
         return [];
     }
 }
-
 function obtenerSucursalesConMetas(): array {
     try {
         $conn = conectarBD();

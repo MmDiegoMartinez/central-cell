@@ -42,7 +42,11 @@
                 <img src="../recursos/img/ventasemanas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
                 <div class="card-desc">Muestra el desempeño semana a semana por sucursal y vendedor, calculando automáticamente el porcentaje de cumplimiento con indicadores visuales.</div>
             </a>
-
+			 <a href="analisisproductos.html" class="card">
+                <div class="card-title">Analisis Productos</div>
+                <img src="../recursos/img/ventas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
+                <div class="card-desc">Aquí se mostrará el análisis de los productos ventas, y stock.</div>
+            </a>
             <a href="protectores.php" class="card">
                 <div class="card-title">Ventas de Micas</div>
                  <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">

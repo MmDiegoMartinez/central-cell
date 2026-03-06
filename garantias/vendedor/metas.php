@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Metas de Venta Accesorios</title>
-    <style>
+   <style>
         * {
             margin: 0;
             padding: 0;
@@ -13,10 +13,10 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16729a 0%, #0f5476 100%);
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: #0f1724;
         }
 
         .container {
@@ -79,7 +79,7 @@
             display: block;
             font-weight: bold;
             margin-bottom: 10px;
-            color: #667eea;
+            color: #0f5476;
             font-size: 1.1em;
         }
 
@@ -87,7 +87,7 @@
         .form-group input {
             width: 100%;
             padding: 15px 20px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #d1d5db;
             border-radius: 10px;
             font-size: 1.1em;
             transition: all 0.3s ease;
@@ -97,7 +97,7 @@
         }
 
         .form-group select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230f5476' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 15px center;
             background-size: 20px;
@@ -109,15 +109,15 @@
 
         .form-group select:hover,
         .form-group input:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102,126,234,0.15);
+            border-color: #16729a;
+            box-shadow: 0 4px 12px rgba(22, 114, 154, 0.15);
         }
 
         .form-group select:focus,
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2);
+            border-color: #16729a;
+            box-shadow: 0 0 0 4px rgba(22, 114, 154, 0.2);
             transform: translateY(-2px);
         }
 
@@ -208,19 +208,19 @@
         }
 
         .motivational-section h2 {
-            color: #667eea;
+            color: #0f5476;
             margin-bottom: 15px;
             font-size: 2em;
         }
 
         .motivational-section p {
             font-size: 1.3em;
-            color: #666;
+            color: #6b7280;
             line-height: 1.6;
         }
 
         .stats-summary {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e5e7eb 100%);
             border-radius: 20px;
             padding: 25px;
             margin-top: 20px;
@@ -228,7 +228,7 @@
         }
 
         .stats-summary h3 {
-            color: #333;
+            color: #0f1724;
             margin-bottom: 15px;
             font-size: 1.5em;
         }
@@ -246,12 +246,12 @@
 
         .stat-label {
             font-weight: bold;
-            color: #555;
+            color: #6b7280;
         }
 
         .stat-value {
             font-size: 1.2em;
-            color: #333;
+            color: #0f1724;
             font-weight: bold;
         }
 
@@ -268,7 +268,7 @@
         }
 
         .error {
-            background: #ff6b6b;
+            background: #dc2626;
             color: white;
             padding: 15px;
             border-radius: 10px;
@@ -504,7 +504,7 @@
                     sucursales.forEach(sucursal => {
                         const option = document.createElement('option');
                         option.value = sucursal.id;
-                        option.textContent = `${sucursal.nombre} - Meta: ${formatearMoneda(sucursal.metaIM)}`;
+                        option.textContent = `${sucursal.nombre} `;
                         selectSucursal.appendChild(option);
                     });
                 } else {
@@ -517,29 +517,32 @@
         }
 
         // Calcular y mostrar metas
-        async function calcularMetas() {
-            if (!sucursalActual) return;
+       async function calcularMetas() {
+        if (!sucursalActual) return;
 
-            const plantilla = parseInt(document.getElementById('plantilla').value) || 1;
-            const metaDiaria = parseFloat(sucursalActual.metaIM);
+        const plantilla = parseInt(document.getElementById('plantilla').value) || 1;
 
-            // Cálculos locales (sin necesidad de API para esto)
-            const metaSemanal = metaDiaria * 7;
-            const metaIndividualDiaria = metaDiaria / plantilla;
-            const metaIndividualSemanal = metaSemanal / plantilla;
+        const metaDiariaTienda = parseFloat(sucursalActual.metaIM);
+        const metaSemanalTienda = metaDiariaTienda * 7;
 
-            mostrarResultados({
-                tienda: {
-                    diaria: metaDiaria,
-                    semanal: metaSemanal
-                },
-                individual: {
-                    diaria: metaIndividualDiaria,
-                    semanal: metaIndividualSemanal
-                },
-                plantilla: plantilla
-            });
-        }
+        // Meta individual semanal (correcta)
+        const metaIndividualSemanal = metaSemanalTienda / plantilla;
+
+        // 🔥 Meta individual diaria correcta (divide entre 6 días laborales)
+        const metaIndividualDiaria = metaIndividualSemanal / 6;
+
+        mostrarResultados({
+            tienda: {
+                diaria: metaDiariaTienda,
+                semanal: metaSemanalTienda
+            },
+            individual: {
+                diaria: metaIndividualDiaria,
+                semanal: metaIndividualSemanal
+            },
+            plantilla: plantilla
+        });
+    }
 
         // Mostrar resultados en el dashboard
         function mostrarResultados(datos) {
@@ -567,7 +570,7 @@
                         <span class="card-icon">🎯</span>
                         <div class="card-title">Tu Meta Diaria</div>
                         <div class="card-value">${formatearMoneda(datos.individual.diaria)}</div>
-                        <div class="card-subtitle">Con ${datos.plantilla} vendedor${datos.plantilla > 1 ? 'es' : ''}</div>
+                        <div class="card-subtitle">Tomando en cuenta tu día de descanso.</div>
                     </div>
 
                     <div class="card individual semanal">
@@ -594,7 +597,7 @@
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">Tu Meta Mensual (aprox):</span>
-                        <span class="stat-value">${formatearMoneda(datos.individual.diaria * 30)}</span>
+                        <span class="stat-value"> ${formatearMoneda(((datos.individual.diaria * 6) / 7) * 30)}</span>
                     </div>
                 </div>
 

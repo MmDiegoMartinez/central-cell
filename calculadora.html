@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Descuentos</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    padding: 15px;
+    margin: 0;
+}
+
+.container {
+    max-width: 420px;
+    margin: auto;
+}
+
+.box {
+    background: #fff;
+    padding: 18px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 18px;
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.resultado {
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* 📱 Ajustes extra para pantallas pequeñas */
+@media (max-width: 480px) {
+    h2 {
+        font-size: 16px;
+    }
+
+    input {
+        font-size: 20px;
+        padding: 16px;
+    }
+
+    .resultado {
+        font-size: 17px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="box">
+        <h2>Accesorios y Reparaciones (20%)</h2>
+        <input type="number" id="precioAcc" placeholder="Precio de venta"
+               inputmode="decimal" oninput="calcularAcc()">
+        <div class="resultado" id="resultadoAcc"></div>
+    </div>
+
+    <div class="box">
+        <h2>Telefonía (10%)</h2>
+        <input type="number" id="precioTel" placeholder="Precio del producto"
+               inputmode="decimal" oninput="calcularTel()">
+        <div class="resultado" id="resultadoTel"></div>
+    </div>
+
+</div>
+
+<script>
+function calcularAcc() {
+    let precio = parseFloat(document.getElementById("precioAcc").value);
+
+    if (!precio || precio <= 0) {
+        document.getElementById("resultadoAcc").innerHTML = "";
+        return;
+    }
+
+    let descuento = precio * 0.20;
+    let total = precio - descuento;
+
+    document.getElementById("resultadoAcc").innerHTML =
+        `Descuento: $${descuento.toFixed(2)}<br>Total: $${total.toFixed(2)}`;
+}
+
+function calcularTel() {
+    let precio = parseFloat(document.getElementById("precioTel").value);
+
+    if (!precio || precio <= 0) {
+        document.getElementById("resultadoTel").innerHTML = "";
+        return;
+    }
+
+    let descuento = precio * 0.10;
+    let total = precio - descuento;
+
+    document.getElementById("resultadoTel").innerHTML =
+        `Descuento: $${descuento.toFixed(2)}<br>Total: $${total.toFixed(2)}`;
+}
+</script>
+
+</body>
+</html>

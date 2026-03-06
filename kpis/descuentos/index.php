@@ -47,7 +47,7 @@
                 <div class="card-desc">Aquí se mostrará el análisis de la semana de ventas reales de Innovación Móvil por sucursal y vendedor. sin que afecte el código promocional</div>
             </a>
              <a href="codigopromocional.php" class="card">
-                <div class="card-title">Control de Promociones en Tickets</div>
+                <div class="card-title">Control de Promociones en Tickets 3x 2</div>
                 <img src="../../recursos/img/ticket.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
                 <div class="card-desc">Este apartado permite visualizar los tickets y mostrar el estado de aquellos donde las promociones fueron aplicadas correctamente, así como identificar los que se usaron de forma incorrecta.</div>
             </a>
@@ -55,6 +55,11 @@
                 <div class="card-title">Comparación de Meses</div>
                  <img src="../../recursos/img/balanza.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Analiza dos meses y observa en qué categoría subimos o bajamos sin contar los códigos promocionales.</div>
+            </a>
+            <a href="descuento20por.php" class="card">
+                <div class="card-title">Control de Promociones en Tickets 20%</div>
+                <img src="../../recursos/img/ticket.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
+                <div class="card-desc">Este apartado permite visualizar los tickets y mostrar el estado de aquellos donde las promociones fueron aplicadas correctamente, así como identificar los que se usaron de forma incorrecta.</div>
             </a>
 
            
