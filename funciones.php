@@ -25,60 +25,110 @@ function conectarBD(): PDO {
 function guardarGarantia($datos) {
     $conn = conectarBD();
 
-    // Forzar configuración de zona horaria en InfinityFree
     ini_set('date.timezone', 'America/Mexico_City');
     date_default_timezone_set('America/Mexico_City');
 
-    // Generar fecha actual en formato compatible con MySQL
     $hora_actual = date('Y-m-d H:i:s');
 
-    // Confirmar que se generó correctamente (solo para pruebas)
-    // echo "Fecha actual: $hora_actual";
+    /* ── Departamento ── */
+    $dpto = (isset($datos['dpto']) && $datos['dpto'] === 'tm') ? 'tm' : 'im';
 
-    // Buscar colaborador (exacto o case-insensitive)
-    $sql = "SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([':nombre' => $datos['apasionado']]);
+    /* ── Campos que varían por depto ── */
+    if ($dpto === 'im') {
+        $tipo         = $datos['tipo_im']  ?? null;
+        $causa        = $datos['causa_im'] ?? null;
+        $piezas       = $datos['piezas']   ?? null;
+        $sucursal     = $datos['sucursal'] ?? null;
+        $apasionado   = $datos['apasionado'] ?? null;
+        $fecha        = $datos['fecha']    ?? null;
+        $anotaciones  = $datos['anotaciones_vendedor'] ?? null;
+        $numero_serie = null;
+    } else {
+        $tipo         = $datos['tipo_tm']       ?? null;
+        $causa        = $datos['causa_tm']      ?? null;
+        $piezas       = $datos['piezas_tm']     ?? null;
+        $sucursal     = $datos['sucursal_tm']   ?? null;
+        $apasionado   = $datos['apasionado_tm'] ?? null;
+        $fecha        = $datos['fecha_tm']      ?? null;
+        $anotaciones  = $datos['anotaciones_tm'] ?? null;
+        $numero_serie = trim($datos['numero_serie'] ?? '');
+        if ($numero_serie === '') $numero_serie = null;
+    }
+
+    /* ── Colaborador ── */
+    $stmt = $conn->prepare("SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1");
+    $stmt->execute([':nombre' => $apasionado]);
     $colaborador = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($colaborador) {
         $idColaborador = $colaborador['id'];
     } else {
-        $sqlInsert = "INSERT INTO colaboradores (nombre) VALUES (:nombre)";
-        $stmtInsert = $conn->prepare($sqlInsert);
-        $stmtInsert->execute([':nombre' => $datos['apasionado']]);
+        $stmtIns = $conn->prepare("INSERT INTO colaboradores (nombre) VALUES (:nombre)");
+        $stmtIns->execute([':nombre' => $apasionado]);
         $idColaborador = $conn->lastInsertId();
     }
 
-    // Validar sucursal
-    $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
-    $stmtSucursal = $conn->prepare($sqlSucursal);
-    $stmtSucursal->execute([':id' => $datos['sucursal']]);
-    $sucursalValida = $stmtSucursal->fetch(PDO::FETCH_ASSOC);
-
-    if (!$sucursalValida) {
+    /* ── Validar sucursal ── */
+    $stmtSuc = $conn->prepare("SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1");
+    $stmtSuc->execute([':id' => $sucursal]);
+    if (!$stmtSuc->fetch(PDO::FETCH_ASSOC)) {
         throw new Exception("Sucursal inválida o inactiva.");
     }
 
-    // Guardar garantía
-    try {
-        $sqlGarantia = "INSERT INTO garantia 
-            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado, created_at, updated_at) 
-            VALUES 
-            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 1, :created_at, :updated_at)";
+    /* ── Procesar fotos ── */
+    $fotoGuardar = null;
+    if (!empty($datos['foto_url']) && is_array($datos['foto_url'])) {
+        $stmtNum = $conn->prepare("SELECT foto FROM garantia WHERE foto IS NOT NULL ORDER BY id DESC LIMIT 100");
+        $stmtNum->execute();
+        $registrosFoto = $stmtNum->fetchAll(PDO::FETCH_COLUMN);
 
-        $stmtGarantia = $conn->prepare($sqlGarantia);
-        $stmtGarantia->execute([
-            ':plows' => strtoupper($datos['plows']),
-            ':tipo' => $datos['tipo'],
-            ':causa' => $datos['causa'],
-            ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'],
-            ':apasionado' => $idColaborador,
-            ':fecha' => $datos['fecha'],
-            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
-            ':created_at' => $hora_actual,
-            ':updated_at' => $hora_actual
+        $numerosUsados = [];
+        foreach ($registrosFoto as $fotoStr) {
+            foreach (explode(',', $fotoStr) as $parte) {
+                if (preg_match('/garantia-merma(\d+)/i', trim($parte), $m)) {
+                    $numerosUsados[] = (int)$m[1];
+                }
+            }
+        }
+
+        $sig = empty($numerosUsados) ? 1 : (max($numerosUsados) + 1);
+        $fotosConNombre = [];
+        foreach ($datos['foto_url'] as $url) {
+            $url = trim($url);
+            if (empty($url)) continue;
+            $fotosConNombre[] = 'garantia-merma' . $sig . '|' . $url;
+            $sig++;
+        }
+        if (!empty($fotosConNombre)) $fotoGuardar = implode(',', $fotosConNombre);
+    }
+
+    /* ── Insertar ── */
+    try {
+        $sql = "INSERT INTO garantia 
+            (plows, tipo, numero_serie, causa, piezas, sucursal, apasionado, fecha,
+             estatus, anotaciones_vendedor, anotado, foto, dispositivo, dpto,
+             created_at, updated_at) 
+            VALUES 
+            (:plows, :tipo, :numero_serie, :causa, :piezas, :sucursal, :apasionado, :fecha,
+             'Anotado', :anotaciones, 1, :foto, :dispositivo, :dpto,
+             :created_at, :updated_at)";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            ':plows'        => strtoupper($datos['plows']),
+            ':tipo'         => $tipo,
+            ':numero_serie' => $numero_serie,
+            ':causa'        => $causa,
+            ':piezas'       => $piezas,
+            ':sucursal'     => $sucursal,
+            ':apasionado'   => $idColaborador,
+            ':fecha'        => $fecha,
+            ':anotaciones'  => $anotaciones,
+            ':foto'         => $fotoGuardar,
+            ':dispositivo'  => trim(($datos['dispositivo'] ?? '') . ' | IP:' . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'IP?')),
+            ':dpto'         => $dpto,
+            ':created_at'   => $hora_actual,
+            ':updated_at'   => $hora_actual,
         ]);
     } catch (PDOException $e) {
         throw new Exception("Error al guardar garantía: " . $e->getMessage());
@@ -86,63 +136,114 @@ function guardarGarantia($datos) {
 
     return true;
 }
-//guardar garantia de vendedores que no lo anotaron 
-// Guardar garantía de vendedores que no lo anotaron 
+
 function guardarGarantiasinguardar($datos) {
     $conn = conectarBD();
 
-    // Forzar configuración de zona horaria para InfinityFree
     ini_set('date.timezone', 'America/Mexico_City');
     date_default_timezone_set('America/Mexico_City');
-
-    //  Generar fecha y hora actual (formato compatible con MySQL)
     $hora_actual = date('Y-m-d H:i:s');
 
-    // Buscar colaborador (exacto o case-insensitive)
-    $sql = "SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([':nombre' => $datos['apasionado']]);
+    /* ── Departamento ── */
+    $dpto = (isset($datos['dpto']) && $datos['dpto'] === 'tm') ? 'tm' : 'im';
+
+    /* ── Campos según depto ── */
+    if ($dpto === 'im') {
+        $tipo        = $datos['tipo_im']       ?? null;
+        $causa       = $datos['causa_im']      ?? null;
+        $piezas      = $datos['piezas_im']     ?? null;
+        $sucursal    = $datos['sucursal_im']   ?? null;
+        $apasionado  = $datos['apasionado']    ?? null;
+        $fecha       = $datos['fecha_im']      ?? null;
+        $anotaciones = $datos['anotaciones_im'] ?? null;
+        $numero_serie = null;
+    } else {
+        $tipo        = $datos['tipo_tm']        ?? null;
+        $causa       = $datos['causa_tm']       ?? null;
+        $piezas      = $datos['piezas_tm']      ?? null;
+        $sucursal    = $datos['sucursal_tm']    ?? null;
+        $apasionado  = $datos['apasionado_tm']  ?? null;
+        $fecha       = $datos['fecha_tm']       ?? null;
+        $anotaciones = $datos['anotaciones_tm'] ?? null;
+        $numero_serie = trim($datos['numero_serie'] ?? '');
+        if ($numero_serie === '') $numero_serie = null;
+    }
+
+    /* ── Colaborador ── */
+    $stmt = $conn->prepare("SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1");
+    $stmt->execute([':nombre' => $apasionado]);
     $colaborador = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($colaborador) {
         $idColaborador = $colaborador['id'];
     } else {
-        // Insertar nuevo colaborador
-        $sqlInsert = "INSERT INTO colaboradores (nombre) VALUES (:nombre)";
-        $stmtInsert = $conn->prepare($sqlInsert);
-        $stmtInsert->execute([':nombre' => $datos['apasionado']]);
+        $stmtIns = $conn->prepare("INSERT INTO colaboradores (nombre) VALUES (:nombre)");
+        $stmtIns->execute([':nombre' => $apasionado]);
         $idColaborador = $conn->lastInsertId();
     }
 
-    // Validar sucursal
-    $sqlSucursal = "SELECT id FROM sucursales WHERE id = :id AND estatus = 1 LIMIT 1";
-    $stmtSucursal = $conn->prepare($sqlSucursal);
-    $stmtSucursal->execute([':id' => $datos['sucursal']]);
-    $sucursalValida = $stmtSucursal->fetch(PDO::FETCH_ASSOC);
-
-    if (!$sucursalValida) {
+    /* ── Validar sucursal (acepta estatus 1 o 4) ── */
+    $stmtSuc = $conn->prepare("SELECT id FROM sucursales WHERE id = :id AND estatus IN (1, 4) LIMIT 1");
+    $stmtSuc->execute([':id' => $sucursal]);
+    if (!$stmtSuc->fetch(PDO::FETCH_ASSOC)) {
         throw new Exception("Sucursal inválida o inactiva.");
     }
 
-    // Guardar garantía
-    try {
-        $sqlGarantia = "INSERT INTO garantia 
-            (plows, tipo, causa, piezas, sucursal, apasionado, fecha, estatus, anotaciones_vendedor, anotado, created_at, updated_at) 
-            VALUES 
-            (:plows, :tipo, :causa, :piezas, :sucursal, :apasionado, :fecha, 'Anotado', :anotaciones, 2, :created_at, :updated_at)";
+    /* ── Procesar fotos ── */
+    $fotoGuardar = null;
+    if (!empty($datos['foto_url']) && is_array($datos['foto_url'])) {
+        $stmtNum = $conn->prepare("SELECT foto FROM garantia WHERE foto IS NOT NULL ORDER BY id DESC LIMIT 100");
+        $stmtNum->execute();
+        $registrosFoto = $stmtNum->fetchAll(PDO::FETCH_COLUMN);
 
-        $stmtGarantia = $conn->prepare($sqlGarantia);
-        $stmtGarantia->execute([
-            ':plows' => strtoupper($datos['plows']),
-            ':tipo' => $datos['tipo'],
-            ':causa' => $datos['causa'],
-            ':piezas' => $datos['piezas'],
-            ':sucursal' => $datos['sucursal'], 
-            ':apasionado' => $idColaborador,   
-            ':fecha' => $datos['fecha'],
-            ':anotaciones' => $datos['anotaciones_vendedor'] ?? null,
-            ':created_at' => $hora_actual,
-            ':updated_at' => $hora_actual
+        $numerosUsados = [];
+        foreach ($registrosFoto as $fotoStr) {
+            foreach (explode(',', $fotoStr) as $parte) {
+                $parte = trim($parte);
+                if (preg_match('/garantia-merma(\d+)/i', $parte, $m)) {
+                    $numerosUsados[] = (int)$m[1];
+                }
+            }
+        }
+
+        $sig = empty($numerosUsados) ? 1 : (max($numerosUsados) + 1);
+        $fotosConNombre = [];
+        foreach ($datos['foto_url'] as $url) {
+            $url = trim($url);
+            if (empty($url)) continue;
+            $fotosConNombre[] = 'garantia-merma' . $sig . '|' . $url;
+            $sig++;
+        }
+        if (!empty($fotosConNombre)) $fotoGuardar = implode(',', $fotosConNombre);
+    }
+
+    /* ── Insertar — anotado = 2 ── */
+    try {
+        $sql = "INSERT INTO garantia 
+            (plows, tipo, numero_serie, causa, piezas, sucursal, apasionado, fecha,
+             estatus, anotaciones_vendedor, anotado, foto, dispositivo, dpto,
+             created_at, updated_at) 
+            VALUES 
+            (:plows, :tipo, :numero_serie, :causa, :piezas, :sucursal, :apasionado, :fecha,
+             'Anotado', :anotaciones, 2, :foto, :dispositivo, :dpto,
+             :created_at, :updated_at)";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            ':plows'        => strtoupper($datos['plows']),
+            ':tipo'         => $tipo,
+            ':numero_serie' => $numero_serie,
+            ':causa'        => $causa,
+            ':piezas'       => $piezas,
+            ':sucursal'     => $sucursal,
+            ':apasionado'   => $idColaborador,
+            ':fecha'        => $fecha,
+            ':anotaciones'  => $anotaciones,
+            ':foto'         => $fotoGuardar,
+            ':dispositivo'  => trim(($datos['dispositivo'] ?? '') . ' | IP:' . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'IP?')),
+            ':dpto'         => $dpto,
+            ':created_at'   => $hora_actual,
+            ':updated_at'   => $hora_actual,
         ]);
     } catch (PDOException $e) {
         throw new Exception("Error al guardar garantía: " . $e->getMessage());
@@ -150,23 +251,48 @@ function guardarGarantiasinguardar($datos) {
 
     return true;
 }
+
+function obtenerSucursalesValidador(): array
+{
+    try {
+        $conn = conectarBD();
+
+        $query = "SELECT id, nombre 
+                  FROM sucursales 
+                  WHERE estatus IN (1, 4) 
+                  ORDER BY nombre ASC";
+
+        $stmt = $conn->prepare($query);
+        $stmt->execute();
+
+        $sucursales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $sucursales ?: [];
+    } catch (PDOException $e) {
+        error_log(sprintf('[%s] Error en obtenerSucursalesValidador: %s', date('Y-m-d H:i:s'), $e->getMessage()));
+        return [];
+    } finally {
+        $conn = null;
+    }
+}
+
 
 function verTabla(): array {
     try {
         $conexion = conectarBD();
 
-        // Definir la zona horaria de México
-        $fechaActual = new DateTime("now", new DateTimeZone("America/Mexico_City"));
+        $fechaActual    = new DateTime("now", new DateTimeZone("America/Mexico_City"));
         $fechaActualStr = $fechaActual->format('Y-m-d');
 
         $sql = "SELECT 
             g.id,
             g.plows, 
-            g.tipo, 
+            g.tipo,
+            g.dpto,
+            d.nombre  AS dpto_nombre,
             g.causa, 
             g.piezas, 
-            s.nombre AS sucursal,  
-            c.nombre AS apasionado, 
+            s.nombre  AS sucursal,
+            c.nombre  AS apasionado,
             g.fecha, 
             g.estatus,
             g.anotaciones_vendedor, 
@@ -176,15 +302,17 @@ function verTabla(): array {
             g.numero_ajuste, 
             g.anotaciones_validador,
             g.id_validador, 
-            v.nombre AS validador_nombre, 
-            v.apellido AS validador_apellido
+            v.nombre  AS validador_nombre, 
+            v.apellido AS validador_apellido,
+            g.foto
         FROM garantia g
-        LEFT JOIN validador v ON g.id_validador = v.id
+        LEFT JOIN validador     v ON g.id_validador = v.id
+        LEFT JOIN sucursales    s ON g.sucursal = s.id
         LEFT JOIN colaboradores c ON g.apasionado = c.id
-        LEFT JOIN sucursales s ON g.sucursal = s.id   
+        LEFT JOIN departamento  d ON g.dpto = d.cod
         WHERE g.anotado = 1
           AND NOT (
-                g.estatus = 'Anotado' 
+                g.estatus = 'Anotado'
                 AND g.fecha < DATE_SUB(:fechaActual, INTERVAL 1 MONTH)
             )
         ORDER BY g.fecha DESC, g.id DESC";
@@ -194,8 +322,8 @@ function verTabla(): array {
         $stmt->execute();
 
         $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $stmt = null;
-        $conexion = null;
+        $stmt      = null;
+        $conexion  = null;
 
         return $resultado;
 
@@ -205,7 +333,6 @@ function verTabla(): array {
     }
 }
 
-//tabla que muestra loas garantias sin guardar
 function verTablanoguardados(): array {
     try {
         $conexion = conectarBD();
@@ -213,11 +340,13 @@ function verTablanoguardados(): array {
         $sql = "SELECT 
             g.id,
             g.plows, 
-            g.tipo, 
+            g.tipo,
+            g.dpto,
+            d.nombre  AS dpto_nombre,
             g.causa, 
             g.piezas, 
-            s.nombre AS sucursal,   
-            c.nombre AS apasionado, 
+            s.nombre  AS sucursal,
+            c.nombre  AS apasionado,
             g.fecha, 
             g.estatus,
             g.anotaciones_vendedor, 
@@ -227,12 +356,14 @@ function verTablanoguardados(): array {
             g.numero_ajuste, 
             g.anotaciones_validador,
             g.id_validador, 
-            v.nombre AS validador_nombre, 
-            v.apellido AS validador_apellido
+            v.nombre  AS validador_nombre, 
+            v.apellido AS validador_apellido,
+            g.foto
         FROM garantia g
-        LEFT JOIN validador v ON g.id_validador = v.id
+        LEFT JOIN validador     v ON g.id_validador = v.id
+        LEFT JOIN sucursales    s ON g.sucursal = s.id
         LEFT JOIN colaboradores c ON g.apasionado = c.id
-        LEFT JOIN sucursales s ON g.sucursal = s.id  
+        LEFT JOIN departamento  d ON g.dpto = d.cod
         WHERE g.anotado = 2
         ORDER BY g.fecha DESC, g.id DESC";
 
@@ -240,8 +371,8 @@ function verTablanoguardados(): array {
         $stmt->execute();
 
         $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $stmt = null;
-        $conexion = null;
+        $stmt      = null;
+        $conexion  = null;
 
         return $resultado;
 
@@ -258,11 +389,13 @@ function verTablavalidador(): array {
         $sql = "SELECT 
             g.id,
             g.plows, 
-            g.tipo, 
+            g.tipo,
+            g.dpto,
+            d.nombre  AS dpto_nombre,
             g.causa, 
             g.piezas, 
-            s.nombre AS sucursal,   -- <-- mostrar nombre de sucursal
-            c.nombre AS apasionado, 
+            s.nombre  AS sucursal,
+            c.nombre  AS apasionado,
             g.fecha, 
             g.estatus,
             g.anotaciones_vendedor, 
@@ -272,12 +405,16 @@ function verTablavalidador(): array {
             g.numero_ajuste, 
             g.anotaciones_validador,
             g.id_validador, 
-            v.nombre AS validador_nombre, 
-            v.apellido AS validador_apellido
+            v.nombre  AS validador_nombre, 
+            v.apellido AS validador_apellido,
+            g.foto,
+            g.dispositivo,
+            g.created_at
         FROM garantia g
-        LEFT JOIN validador v ON g.id_validador = v.id
+        LEFT JOIN validador    v ON g.id_validador = v.id
+        LEFT JOIN sucursales   s ON g.sucursal = s.id
         LEFT JOIN colaboradores c ON g.apasionado = c.id
-        LEFT JOIN sucursales s ON g.sucursal = s.id  -- <-- nuevo JOIN
+        LEFT JOIN departamento  d ON g.dpto = d.cod
         WHERE g.anotado = 1
         ORDER BY g.fecha DESC, g.id DESC";
 
@@ -285,8 +422,8 @@ function verTablavalidador(): array {
         $stmt->execute();
 
         $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $stmt = null;
-        $conexion = null;
+        $stmt      = null;
+        $conexion  = null;
 
         return $resultado;
 
@@ -299,7 +436,6 @@ function verTablavalidador(): array {
 
 function obtenerGarantiaPorId($id): ?array {
     if (!is_numeric($id) || $id <= 0) {
-        // ❗ Validación de entrada: solo IDs numéricos positivos
         return null;
     }
 
@@ -316,14 +452,14 @@ function obtenerGarantiaPorId($id): ?array {
 
         $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = null;         // 🔐 Libera statement
-        $conexion = null;     // 🔐 Cierra conexión
+        $stmt     = null;
+        $conexion = null;
 
-        return $resultado ?: null; // Devuelve null si no se encontró nada
+        return $resultado ?: null;
 
     } catch (PDOException $e) {
         error_log("Error al obtener garantía por ID ($id): " . $e->getMessage());
-        return null; // ⚠️ No exponer el error
+        return null;
     }
 }
 
@@ -956,23 +1092,26 @@ function obtenerSucursalesdos(): array
     }
 }
 //esta es usada para obterne la meta de im por tienda en kpis
-function obtenerMetasTiendas(): array {
+function obtenerMetasTiendas(string $depto = 'IM'): array {
+    $campo = $depto === 'TM' ? 'metaTM' : 'metaIM';
+
     try {
         $conexion = conectarBD();
-        $sql = "SELECT id, nombre, metaIM, estatus FROM sucursales WHERE estatus = 1";
-        $stmt = $conexion->prepare($sql);
+        $stmt = $conexion->prepare(
+            "SELECT nombre, {$campo} AS meta FROM sucursales WHERE estatus = 1"
+        );
         $stmt->execute();
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $stmt = null;
+        $stmt     = null;
         $conexion = null;
 
         $metas = [];
         foreach ($resultados as $row) {
-            // Concatenar "Central Cell " para que coincida con Excel
+            // Prefijo igual que el original para que coincida con el Excel
             $key = "Central Cell " . trim($row['nombre']);
             $metas[$key] = [
-                'diaria' => floatval($row['metaIM']),
-                'limite' => 9999 // si quieres poner un límite fijo o puedes agregar columna en la BD
+                'diaria' => floatval($row['meta']),
+                'limite' => 9999
             ];
         }
         return $metas;
@@ -1008,19 +1147,25 @@ function obtenerSucursalesEliminadas(): array {
 }
 
 
-function agregarSucursal(string $nombre, float $metaIM): bool {
-    if (empty(trim($nombre))) {
+function agregarSucursal(string $nombre, float $metaIM, float $metaTM = 0): bool {
+    if (empty(trim($nombre)))
         throw new InvalidArgumentException("El nombre de la sucursal no puede estar vacío.");
-    }
-    if ($metaIM < 0) {
+    if ($metaIM < 0)
         throw new InvalidArgumentException("La meta IM no puede ser negativa.");
-    }
+    if ($metaTM < 0)
+        throw new InvalidArgumentException("La meta TM no puede ser negativa.");
 
     try {
         $conn = conectarBD();
-        $sql = "INSERT INTO sucursales (nombre, metaIM, estatus) VALUES (:nombre, :metaIM, 1)";
-        $stmt = $conn->prepare($sql);
-        return $stmt->execute([':nombre' => $nombre, ':metaIM' => $metaIM]);
+        $stmt = $conn->prepare(
+            "INSERT INTO sucursales (nombre, metaIM, metaTM, estatus)
+             VALUES (:nombre, :metaIM, :metaTM, 1)"
+        );
+        return $stmt->execute([
+            ':nombre' => trim($nombre),
+            ':metaIM' => $metaIM,
+            ':metaTM' => $metaTM,
+        ]);
     } catch (PDOException $e) {
         error_log("Error agregarSucursal: " . $e->getMessage());
         throw new Exception("No se pudo agregar la sucursal.");
@@ -1028,22 +1173,40 @@ function agregarSucursal(string $nombre, float $metaIM): bool {
 }
 
 
-function actualizarMetaSucursal(int $id, float $metaIM): bool {
-    if ($id <= 0) {
-        throw new InvalidArgumentException("ID inválido.");
-    }
-    if ($metaIM < 0) {
-        throw new InvalidArgumentException("La meta IM no puede ser negativa.");
-    }
+// ── Agregar al final de funciones.php ──────────────────────────────────────────
+
+/**
+ * Guarda metaIM y metaTM de todas las sucursales en una sola transacción.
+ * $metas = [ id => ['im' => valor, 'tm' => valor], ... ]
+ */
+function actualizarTodasLasMetas(array $metas): bool {
+    if (empty($metas)) return false;
 
     try {
         $conn = conectarBD();
-        $sql = "UPDATE sucursales SET metaIM = :metaIM WHERE id = :id";
-        $stmt = $conn->prepare($sql);
-        return $stmt->execute([':metaIM' => $metaIM, ':id' => $id]);
+        $conn->beginTransaction();
+
+        $stmt = $conn->prepare(
+            "UPDATE sucursales SET metaIM = :im, metaTM = :tm WHERE id = :id"
+        );
+
+        foreach ($metas as $id => $valores) {
+            $id = (int) $id;
+            $im = max(0, (float) ($valores['im'] ?? 0));
+            $tm = max(0, (float) ($valores['tm'] ?? 0));
+
+            if ($id <= 0) continue;
+
+            $stmt->execute([':im' => $im, ':tm' => $tm, ':id' => $id]);
+        }
+
+        $conn->commit();
+        return true;
+
     } catch (PDOException $e) {
-        error_log("Error actualizarMetaSucursal: " . $e->getMessage());
-        throw new Exception("No se pudo actualizar la meta de la sucursal.");
+        $conn->rollBack();
+        error_log("Error actualizarTodasLasMetas: " . $e->getMessage());
+        return false;
     }
 }
 
@@ -1252,6 +1415,7 @@ function obtenerMermasFrecuentes(string $fechaInicio, string $fechaFin): array
                 garantia
             WHERE 
                 fecha BETWEEN :inicio AND :fin
+                AND estatus = 'Ajuste Realizado'
             GROUP BY 
                 tipo, plows
             ORDER BY 
