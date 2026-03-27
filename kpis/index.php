@@ -33,68 +33,86 @@
 
             <a href="semanaventas.php" class="card">
                 <div class="card-title">Ventas Generales</div>
-                <img src="../recursos/img/ventas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
-                <div class="card-desc">Aquí se mostrará el análisis de la semana de ventas de Innovación Móvil por sucursal y vendedor.</div>
+                <img src="../recursos/img/ventas.png" alt="Icono Ventas" style="width:200px; height:130px; margin-bottom:8px;">
+                <div class="card-desc">Analiza un archivo de ventas en Excel para mostrar el rendimiento de vendedores y tiendas comparado con sus metas</div>
+            </a>
+
+            <a href="telefonos.php" class="card">
+                <div class="card-title">Ventas Telefonos</div>
+                <img src="../recursos/img/cel.png" alt="Icono Ventas" style="width:200px; height:130px; margin-bottom:8px;">
+                <div class="card-desc">Analiza, las ventas de Smartphone</div>
             </a>
 
             <a href="analisis_general.php" class="card">
                 <div class="card-title">Analizador Multisemana</div>
-                <img src="../recursos/img/ventasemanas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
-                <div class="card-desc">Muestra el desempeño semana a semana por sucursal y vendedor, calculando automáticamente el porcentaje de cumplimiento con indicadores visuales.</div>
+                <img src="../recursos/img/ventasemanas.png" alt="Icono Ventas" style="width:200px; height:150px; margin-bottom:8px;">
+                <div class="card-desc">Analiza ventas por varias semanas para comparar el desempeño de vendedores y sucursales en Innovación Móvil y Tecnología Móvil</div>
             </a>
 			 <a href="analisisproductos.html" class="card">
-                <div class="card-title">Analisis Productos</div>
-                <img src="../recursos/img/ventas.png" alt="Icono Ventas" style="width:230px; height:130px; margin-bottom:8px;">
-                <div class="card-desc">Aquí se mostrará el análisis de los productos ventas, y stock.</div>
+                <div class="card-title">Análisis Inventario y Ventas</div>
+                <img src="../recursos/img/scrip.png" alt="Icono Ventas" style="width:200px; height:150px; margin-bottom:8px;">
+                <div class="card-desc">Analiza existencias, ventas y compras para detectar productos con baja rotación, exceso de stock y sugerencias de reabasto entre sucursales.</div>
             </a>
             <a href="protectores.php" class="card">
-                <div class="card-title">Ventas de Micas</div>
-                 <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Visualiza los números de ventas de micas Hidrogel, Protection Pro y Glass por sucursal y vendedor.</div>
+                <div class="card-title">Análisis Ventas de Protectores</div>
+                 <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:200px; height:130px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza las ventas de protectores por sucursal y vendedor a partir de un archivo de ventas en Excel.</div>
             </a>
             
             <a href="ventasdiarias.php" class="card">
-                <div class="card-title">Ventas Individuales por Día</div>
-                 <img src="../recursos/img/89875.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
+                <div class="card-title">Análisis Semanal de Ventas</div>
+                 <img src="../recursos/img/89875.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
                 <div class="card-desc">Detalle de las ventas individuales por día y por vendedor durante el mes de ventas.</div>
             </a>
              <a href="analisis_fundas_ventas_existencias.php" class="card">
                 <div class="card-title">Fundas</div>
-                 <img src="../recursos/img/case.png" alt="Icono Ventas" style="width:150px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Ventas (modelo/marca) y distribución por modelo por sucursal.</div>
+                 <img src="../recursos/img/case.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Muestra dónde están las fundas, cuánto se vende y cómo se relacionan las ventas con las existencias.</div>
+            </a>
+
+            <a href="analisis_celulares_ventas_existencias.php" class="card">
+                <div class="card-title">Telefonos</div>
+                 <img src="../recursos/img/cel.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Muestra dónde están las telefonos, cuánto se vende y cómo se relacionan las ventas con las existencias.</div>
             </a>
 
             <a href="comparativo_mensual.php" class="card">
                 <div class="card-title">Comparación de Meses</div>
-                 <img src="../recursos/img/balanza.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Analiza dos meses y observa en qué categoría subimos o bajamos.</div>
+                 <img src="../recursos/img/balanza.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Compara dos meses para ver cómo cambiaron las ventas por categoría en cada tienda.</div>
+            </a>
+
+            <a href="comparativo_semanal.php" class="card">
+                <div class="card-title">Comparación Semanal</div>
+                 <img src="../recursos/img/balanza.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Compara dos semanas para ver cómo cambiaron las ventas por categoría en cada tienda.</div>
             </a>
 
             <a href="topproductos.php" class="card">
-                <div class="card-title">Top Artículos</div>
-                 <img src="../recursos/img/top.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Visualiza los artículos más vendidos de las diferentes categorías.</div>
+                <div class="card-title">Productos Más Vendidos </div>
+                 <img src="../recursos/img/top.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza los productos más vendidos por categoría, tipo y sucursal a partir de un archivo de ventas.</div>
             </a>
             <a href="ticket.php" class="card">
-                <div class="card-title">Top Ticket</div>
-                 <img src="../recursos/img/ticket.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Visualiza el ticket más grande de un tiempo determinado.</div>
+                <div class="card-title">Tickets de Mayor Precio</div>
+                 <img src="../recursos/img/ticket.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza los tickets con mayor valor de venta y revisa sus productos en IM, TM o mixtos.</div>
             </a>
             <a href="reporte_garantias.php" class="card">
-                <div class="card-title">% Mermas Vs Ventas</div>
-                 <img src="../recursos/img/mermas.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Visualice el porcentaje de mermas por sucursal en relación con las ventas correspondientes, incluyendo los detalles específicos de cada caso.</div>
+                <div class="card-title">Mermas Vs Ventas</div>
+                 <img src="../recursos/img/mermas.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Compara las ventas de protectores con las mermas registradas para calcular porcentajes y analizar causas por sucursal.</div>
             </a>
 
             <a href="analisis_mermas.php" class="card">
-                <div class="card-title">Top Mermas</div>
-                 <img src="../recursos/img/topmermas.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Analiza qué productos presentan más mermas dentro de un rango de fechas, mostrando los resultados ordenados de mayor a menor frecuencia y agrupados por tipo.</div>
+                <div class="card-title">Mermas Frecuentes</div>
+                 <img src="../recursos/img/topmermas.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza qué productos generan más mermas en un periodo de tiempo y descarga el reporte.</div>
             </a>
             <a href="hidrogel-polimero.php" class="card">
-                <div class="card-title">Hidrogel y polimero</div>
-                 <img src="../recursos/img/mica.png" alt="Icono Ventas" style="width:180px; height:130px; display:block; margin: 0 auto 8px;">
-                <div class="card-desc">Visualiza la cantidad de micas Hidrogel, Protection Pro  vendidas por sucursal.</div>
+                <div class="card-title">Ventas Protectores por Sucursal</div>
+                 <img src="../recursos/img/micas.png" alt="Icono Ventas" style="width:200px; height:150px; display:block; margin: 0 auto 8px;">
+                <div class="card-desc">Analiza cuántos protectores Hidrogel y Polímero se vendieron en cada sucursal a partir de un archivo de ventas.</div>
             </a>
             
            <a href="descuentos/" class="card">

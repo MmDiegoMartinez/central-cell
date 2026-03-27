@@ -28,7 +28,7 @@ $eliminar->execute([$id]);
 
 // Verificar si hay sesión de validador
 if (isset($_SESSION['validador_id'])) {
-    header("Location: ../validador/tabla.php");
+    header("Location: ../validador/validador.php");
 } else {
     header("Location: tabla.php");
 }

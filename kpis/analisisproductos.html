@@ -6,1116 +6,1075 @@
     <title>Sistema de Análisis de Inventario - INNOVACION MOVIL & TECNOLOGIA MOVIL</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg: #f5f7fa;
+            --surface: #ffffff;
+            --muted: #6b7280;
+            --text: #0f1724;
+            --primary-700: #0a3d56;
+            --primary-600: #0f5476;
+            --primary-400: #16729a;
+            --primary-200: #b8d9ea;
+            --accent: #1f9a8a;
+            --accent-light: #e6f7f5;
+            --warn: #d97706;
+            --warn-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --glass: rgba(15, 23, 36, 0.04);
+            --border: #e2e8f0;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 6px 18px rgba(12, 18, 26, 0.06);
+            --shadow-md: 0 10px 30px rgba(12, 18, 26, 0.09);
+            --transition: 220ms cubic-bezier(.2, .9, .2, 1);
+            --font: 'DM Sans', system-ui, sans-serif;
+            --font-mono: 'DM Mono', monospace;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font);
+            background: var(--bg);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
+            color: var(--text);
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: var(--surface);
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
             overflow: hidden;
         }
 
+        /* ── HEADER ── */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-600) 60%, var(--accent) 100%);
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 36px 40px;
+            position: relative;
+            overflow: hidden;
         }
-
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: 10%;
+            width: 160px; height: 160px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+        }
         .header h1 {
-            font-size: 2.2em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.85em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+            position: relative;
         }
-
         .header p {
-            font-size: 1.1em;
-            opacity: 0.95;
+            font-size: 0.95em;
+            opacity: 0.82;
+            position: relative;
         }
 
-        .content {
-            padding: 40px;
-        }
+        /* ── CONTENT ── */
+        .content { padding: 36px 40px; }
 
+        /* ── UPLOAD CARDS ── */
         .upload-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 35px;
-        }
-
-        .file-card {
-            background: #f8f9fa;
-            border: 2px dashed #cbd5e0;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .file-card:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-
-        .file-card.loaded {
-            border-color: #48bb78;
-            background: #f0fff4;
-            border-style: solid;
-        }
-
-        .file-card h3 {
-            color: #2d3748;
-            margin-bottom: 12px;
-            font-size: 1.2em;
-        }
-
-        .file-card p {
-            color: #718096;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
-
-        .file-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 28px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .file-btn:active {
-            transform: scale(0.98);
-        }
-
-        .file-name {
-            margin-top: 12px;
-            font-size: 0.85em;
-            color: #48bb78;
-            font-weight: 600;
-            min-height: 20px;
-        }
-
-        .check-icon {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 1.5em;
-            display: none;
-        }
-
-        .file-card.loaded .check-icon {
-            display: block;
-            animation: checkPop 0.3s ease;
-        }
-
-        @keyframes checkPop {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .process-section {
-            text-align: center;
-            margin: 35px 0;
-        }
-
-        .process-btn {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            color: white;
-            padding: 16px 50px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.2em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
-        }
-
-        .process-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
-        }
-
-        .process-btn:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .process-btn:disabled {
-            background: #cbd5e0;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .loader-container {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-            gap: 20px;
-        }
-
-        .loader {
-            width: 60px;
-            height: 60px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .progress-wrapper {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 30px;
-            background: #e2e8f0;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #667eea 100%);
-            background-size: 200% 100%;
-            border-radius: 15px;
-            transition: width 0.3s ease;
-            animation: gradientShift 2s ease infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 0.85em;
-            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .progress-text {
-            text-align: center;
-            margin-top: 12px;
-            color: #4a5568;
-            font-weight: 600;
-            font-size: 0.95em;
-        }
-
-        .progress-details {
-            text-align: center;
-            margin-top: 8px;
-            color: #718096;
-            font-size: 0.85em;
-        }
-
-        .status-message {
-            text-align: center;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-            font-weight: 600;
-            display: none;
-        }
-
-        .status-message.show {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .status-message.success { background: #f0fff4; color: #22543d; border: 2px solid #48bb78; }
-        .status-message.error { background: #fff5f5; color: #742a2a; border: 2px solid #fc8181; }
-        .status-message.info { background: #ebf8ff; color: #2c5282; border: 2px solid #4299e1; }
-
-        .results-section {
-            margin-top: 40px;
-            display: none;
-        }
-
-        .results-section.show {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            margin-top: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            font-size: 0.9em;
-        }
-
-        thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        thead th {
-            padding: 14px 10px;
-            text-align: center;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tbody td {
-            padding: 12px 10px;
-            text-align: center;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        tbody tr:hover { background: #f7fafc; }
-
-        .prioridad-alta { background: #fff5f5 !important; border-left: 4px solid #fc8181; }
-        .prioridad-media { background: #fffbeb !important; border-left: 4px solid #f6ad55; }
-        .prioridad-baja { background: #f0fff4 !important; border-left: 4px solid #68d391; }
-
-        .observacion-cell {
-            text-align: left !important;
-            max-width: 300px;
-            font-size: 0.85em;
-            line-height: 1.4;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-alta { background: #fc8181; color: white; }
-        .badge-media { background: #f6ad55; color: white; }
-        .badge-baja { background: #68d391; color: white; }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
+        .file-card {
+            background: var(--bg);
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: all var(--transition);
+            position: relative;
+        }
+        .file-card:hover {
+            border-color: var(--primary-400);
+            background: #eef5fa;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .file-card.loaded {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            border-style: solid;
+        }
+        .file-card h3 {
+            color: var(--text);
+            margin-bottom: 8px;
+            font-size: 1.05em;
+            font-weight: 600;
+        }
+        .file-card p {
+            color: var(--muted);
+            font-size: 0.875em;
+            margin-bottom: 16px;
         }
 
-        .stat-card h4 { font-size: 0.9em; opacity: 0.9; margin-bottom: 8px; font-weight: 500; }
-        .stat-card .value { font-size: 2em; font-weight: 700; }
+        .file-input-wrapper { position: relative; display: inline-block; width: 100%; }
+        .file-input-wrapper input[type=file] { position: absolute; left: -9999px; }
+
+        .file-btn {
+            background: var(--primary-600);
+            color: white;
+            padding: 11px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            font-family: var(--font);
+            transition: all var(--transition);
+            display: inline-block;
+            width: 100%;
+            letter-spacing: 0.01em;
+        }
+        .file-btn:hover {
+            background: var(--primary-400);
+            box-shadow: 0 4px 12px rgba(15, 84, 118, 0.3);
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 0.82em;
+            color: var(--accent);
+            font-weight: 600;
+            min-height: 18px;
+        }
+
+        .check-icon {
+            position: absolute;
+            top: 14px; right: 14px;
+            font-size: 1.3em;
+            display: none;
+        }
+        .file-card.loaded .check-icon {
+            display: block;
+            animation: checkPop 0.3s ease;
+        }
+        @keyframes checkPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        /* ── PROCESS BTN ── */
+        .process-section { text-align: center; margin: 28px 0; }
+
+        .process-btn {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--accent) 100%);
+            color: white;
+            padding: 15px 52px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1em;
+            font-weight: 700;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 16px rgba(15, 84, 118, 0.35);
+            letter-spacing: 0.02em;
+        }
+        .process-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 84, 118, 0.45);
+        }
+        .process-btn:disabled {
+            background: var(--border);
+            color: var(--muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* ── LOADER ── */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            gap: 20px;
+        }
+        .loader {
+            width: 52px; height: 52px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary-600);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .progress-wrapper { width: 100%; max-width: 480px; }
+        .progress-bar-container {
+            width: 100%; height: 26px;
+            background: var(--border);
+            border-radius: 13px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-600), var(--accent));
+            border-radius: 13px;
+            transition: width 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.8em;
+        }
+        .progress-text {
+            text-align: center; margin-top: 10px;
+            color: var(--text); font-weight: 600; font-size: 0.9em;
+        }
+        .progress-details {
+            text-align: center; margin-top: 6px;
+            color: var(--muted); font-size: 0.82em;
+        }
+
+        /* ── STATUS ── */
+        .status-message {
+            padding: 14px 18px;
+            margin: 18px 0;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9em;
+            display: none;
+            border-left: 4px solid;
+        }
+        .status-message.show { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .status-message.success { background: var(--success-light); color: #065f46; border-color: var(--success); }
+        .status-message.error   { background: var(--danger-light);  color: #7f1d1d; border-color: var(--danger); }
+        .status-message.info    { background: #eff6ff; color: #1e3a5f; border-color: var(--primary-400); }
+
+        /* ── RESULTS ── */
+        .results-section { margin-top: 36px; display: none; }
+        .results-section.show { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ── STATS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--primary-600);
+            color: white;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-card h4 { font-size: 0.82em; opacity: 0.85; margin-bottom: 6px; font-weight: 500; }
+        .stat-card .value { font-size: 2em; font-weight: 700; letter-spacing: -0.02em; }
+
+        /* ── TABLE ── */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.845em;
+        }
+        thead {
+            background: linear-gradient(135deg, var(--primary-700), var(--primary-600));
+            color: white;
+        }
+        thead th {
+            padding: 13px 10px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+            position: sticky; top: 0; z-index: 10;
+            font-size: 0.82em;
+            letter-spacing: 0.02em;
+        }
+        tbody td {
+            padding: 11px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        tbody tr:hover { background: #f0f7fb; }
+
+        .prioridad-alta { background: #fff8f8 !important; border-left: 3px solid var(--danger); }
+        .prioridad-media { background: #fffbf0 !important; border-left: 3px solid var(--warn); }
+        .prioridad-baja { background: #f6fdfb !important; border-left: 3px solid var(--success); }
+
+        .observacion-cell {
+            text-align: left !important;
+            max-width: 280px;
+            font-size: 0.82em;
+            line-height: 1.45;
+            white-space: normal !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.72em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-alta  { background: var(--danger);  color: white; }
+        .badge-media { background: var(--warn);    color: white; }
+        .badge-baja  { background: var(--success); color: white; }
+
+        /* ── DOWNLOAD ── */
+        .download-section {
+            text-align: center;
+            margin-top: 28px;
+            padding: 24px;
+            background: var(--bg);
+            border-radius: var(--radius-lg);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, var(--primary-600), var(--accent));
+            color: white;
+            padding: 13px 40px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1em;
+            font-weight: 600;
+            font-family: var(--font);
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 12px rgba(15, 84, 118, 0.3);
+            text-decoration: none;
+            display: inline-block;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(15, 84, 118, 0.4);
+        }
 
         @media (max-width: 768px) {
             .content { padding: 20px; }
-            .header h1 { font-size: 1.6em; }
+            .header { padding: 24px 20px; }
+            .header h1 { font-size: 1.3em; }
             .upload-section { grid-template-columns: 1fr; }
             table { font-size: 0.75em; }
             thead th, tbody td { padding: 8px 5px; }
         }
-
-        .download-section {
-            text-align: center;
-            margin-top: 30px;
-            padding: 25px;
-            background: #f7fafc;
-            border-radius: 10px;
-        }
-
-        .download-btn {
-            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-            color: white;
-            padding: 14px 40px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(66, 153, 225, 0.5);
-        }
-
-        .download-btn:active { transform: translateY(0); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 Sistema de Análisis de Inventario - INNOVACION MOVIL & TECNOLOGIA MOVIL</h1>
-            <p>Análisis completo de existencias, ventas y compras de los departamentos INNOVACION MOVIL y TECNOLOGIA MOVIL</p>
-        </div>
-
-        <div class="content">
-            <div class="upload-section">
-                <div class="file-card" id="card1">
-                    <span class="check-icon">✅</span>
-                    <h3>📦 Archivo 1: EXISTENCIAS</h3>
-                    <p>Stock actual por almacén</p>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="fileExistencias" accept=".xlsx,.xls,.csv">
-                        <label for="fileExistencias" class="file-btn">Seleccionar Archivo</label>
-                    </div>
-                    <div class="file-name" id="name1"></div>
-                </div>
-
-                <div class="file-card" id="card2">
-                    <span class="check-icon">✅</span>
-                    <h3>💰 Archivo 2: VENTAS</h3>
-                    <p>Registro de ventas realizadas</p>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="fileVentas" accept=".xlsx,.xls,.csv">
-                        <label for="fileVentas" class="file-btn">Seleccionar Archivo</label>
-                    </div>
-                    <div class="file-name" id="name2"></div>
-                </div>
-
-                <div class="file-card" id="card3">
-                    <span class="check-icon">✅</span>
-                    <h3>🛒 Archivo 3: COMPRAS</h3>
-                    <p>Historial de compras (Hoja 2)</p>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="fileCompras" accept=".xlsx,.xls,.csv">
-                        <label for="fileCompras" class="file-btn">Seleccionar Archivo</label>
-                    </div>
-                    <div class="file-name" id="name3"></div>
-                </div>
-            </div>
-
-            <div class="process-section">
-                <button class="process-btn" id="processBtn" disabled>
-                    🚀 PROCESAR ANÁLISIS
-                </button>
-            </div>
-
-            <div class="loader-container" id="loader">
-                <div class="loader"></div>
-                <div class="progress-wrapper">
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="progressBar" style="width: 0%;">
-                            <span id="progressPercent">0%</span>
-                        </div>
-                    </div>
-                    <div class="progress-text" id="progressText">Iniciando procesamiento...</div>
-                    <div class="progress-details" id="progressDetails"></div>
-                </div>
-            </div>
-
-            <div class="status-message" id="statusMessage"></div>
-
-            <div class="results-section" id="resultsSection">
-                <div class="stats-grid" id="statsGrid"></div>
-
-                <div class="download-section">
-                    <h3 style="margin-bottom: 15px; color: #2d3748;">📥 Descargar Reporte Completo</h3>
-                    <!-- ✅ FIX 1: Usamos un <a> tag para descarga segura -->
-                    <a id="downloadBtn" class="download-btn" download="Analisis_Inventario.xlsx">
-                        ⬇️ Descargar Excel
-                    </a>
-                </div>
-
-                <h3 style="margin: 30px 0 15px 0; color: #2d3748;">📋 Vista Previa del Análisis</h3>
-                <div class="table-wrapper" id="tableWrapper"></div>
-            </div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>📊 Sistema de Análisis de Inventario</h1>
+        <p>INNOVACION MOVIL &amp; TECNOLOGIA MOVIL — Análisis completo de existencias, ventas y compras</p>
     </div>
 
-    <script>
-        // ========================================
-        // VARIABLES GLOBALES
-        // ========================================
-        let workbookExistencias = null;
-        let workbookVentas = null;
-        let workbookCompras = null;
-        let resultadoFinal = [];
+    <div class="content">
+        <div class="upload-section">
+            <div class="file-card" id="card1">
+                <span class="check-icon">✅</span>
+                <h3>📦 Archivo 1: EXISTENCIAS</h3>
+                <p>Stock actual por almacén</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileExistencias" accept=".xlsx,.xls,.csv">
+                    <label for="fileExistencias" class="file-btn">Seleccionar Archivo</label>
+                </div>
+                <div class="file-name" id="name1"></div>
+            </div>
 
-        const fileExistencias = document.getElementById('fileExistencias');
-        const fileVentas = document.getElementById('fileVentas');
-        const fileCompras = document.getElementById('fileCompras');
-        const processBtn = document.getElementById('processBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const loader = document.getElementById('loader');
-        const statusMessage = document.getElementById('statusMessage');
-        const resultsSection = document.getElementById('resultsSection');
-        const progressBar = document.getElementById('progressBar');
-        const progressPercent = document.getElementById('progressPercent');
-        const progressText = document.getElementById('progressText');
-        const progressDetails = document.getElementById('progressDetails');
+            <div class="file-card" id="card2">
+                <span class="check-icon">✅</span>
+                <h3>💰 Archivo 2: VENTAS</h3>
+                <p>Registro de ventas realizadas</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileVentas" accept=".xlsx,.xls,.csv">
+                    <label for="fileVentas" class="file-btn">Seleccionar Archivo</label>
+                </div>
+                <div class="file-name" id="name2"></div>
+            </div>
 
-        // ========================================
-        // NORMALIZAR NOMBRE
-        // ========================================
-        function normalizarProducto(nombre) {
-            return String(nombre || "")
-                .trim()
-                .replace(/\s+/g, " ")
-                .toUpperCase();
-        }
+            <div class="file-card" id="card3">
+                <span class="check-icon">✅</span>
+                <h3>🛒 Archivo 3: COMPRAS</h3>
+                <p>Historial de compras (Hoja 2)</p>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileCompras" accept=".xlsx,.xls,.csv">
+                    <label for="fileCompras" class="file-btn">Seleccionar Archivo</label>
+                </div>
+                <div class="file-name" id="name3"></div>
+            </div>
+        </div>
 
-        function actualizarProgreso(porcentaje, texto, detalles = '') {
-            progressBar.style.width = porcentaje + '%';
-            progressPercent.textContent = Math.round(porcentaje) + '%';
-            progressText.textContent = texto;
-            progressDetails.textContent = detalles;
-        }
+        <div class="process-section">
+            <button class="process-btn" id="processBtn" disabled>🚀 PROCESAR ANÁLISIS</button>
+        </div>
 
-        fileExistencias.addEventListener('change', (e) => handleFileUpload(e, 1, 'existencias'));
-        fileVentas.addEventListener('change', (e) => handleFileUpload(e, 2, 'ventas'));
-        fileCompras.addEventListener('change', (e) => handleFileUpload(e, 3, 'compras'));
-        processBtn.addEventListener('click', procesarArchivos);
+        <div class="loader-container" id="loader">
+            <div class="loader"></div>
+            <div class="progress-wrapper">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width:0%">
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+                <div class="progress-text" id="progressText">Iniciando procesamiento...</div>
+                <div class="progress-details" id="progressDetails"></div>
+            </div>
+        </div>
 
-        function handleFileUpload(event, cardNumber, tipo) {
-            const file = event.target.files[0];
-            if (!file) return;
+        <div class="status-message" id="statusMessage"></div>
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+        <div class="results-section" id="resultsSection">
+            <div class="stats-grid" id="statsGrid"></div>
 
-                    if (tipo === 'existencias') workbookExistencias = workbook;
-                    if (tipo === 'ventas') workbookVentas = workbook;
-                    if (tipo === 'compras') workbookCompras = workbook;
+            <div class="download-section">
+                <h3 style="margin-bottom:14px;color:var(--text);">📥 Descargar Reporte Completo</h3>
+                <a id="downloadBtn" class="download-btn" download="Analisis_Inventario.xlsx">⬇️ Descargar Excel</a>
+            </div>
 
-                    document.getElementById(`card${cardNumber}`).classList.add('loaded');
-                    document.getElementById(`name${cardNumber}`).textContent = `✓ ${file.name}`;
-                    checkAllFilesLoaded();
-                } catch (error) {
-                    showMessage('Error al leer el archivo: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
+            <h3 style="margin:28px 0 14px;color:var(--text);">📋 Vista Previa del Análisis</h3>
+            <div class="table-wrapper" id="tableWrapper"></div>
+        </div>
+    </div>
+</div>
 
-        function checkAllFilesLoaded() {
-            if (workbookExistencias && workbookVentas && workbookCompras) {
+<script>
+// ========================================
+// VARIABLES GLOBALES
+// ========================================
+let workbookExistencias = null;
+let workbookVentas      = null;
+let workbookCompras     = null;
+let resultadoFinal      = [];
+let yaFueProcesado      = false;   // FIX 1: evitar doble procesamiento
+
+const fileExistencias = document.getElementById('fileExistencias');
+const fileVentas      = document.getElementById('fileVentas');
+const fileCompras     = document.getElementById('fileCompras');
+const processBtn      = document.getElementById('processBtn');
+const downloadBtn     = document.getElementById('downloadBtn');
+const loader          = document.getElementById('loader');
+const statusMessage   = document.getElementById('statusMessage');
+const resultsSection  = document.getElementById('resultsSection');
+const progressBar     = document.getElementById('progressBar');
+const progressPercent = document.getElementById('progressPercent');
+const progressText    = document.getElementById('progressText');
+const progressDetails = document.getElementById('progressDetails');
+
+// ========================================
+// HELPERS
+// ========================================
+function normalizarProducto(nombre) {
+    return String(nombre || "").trim().replace(/\s+/g, " ").toUpperCase();
+}
+
+function actualizarProgreso(pct, texto, detalles = '') {
+    progressBar.style.width = pct + '%';
+    progressPercent.textContent = Math.round(pct) + '%';
+    progressText.textContent = texto;
+    progressDetails.textContent = detalles;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function formatearFecha(fecha) {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function calcularDiasDesdeCompra(fecha) {
+    if (!fecha) return 9999;
+    return Math.floor((new Date() - fecha) / 86400000);
+}
+
+// ========================================
+// FILE UPLOADS
+// ========================================
+fileExistencias.addEventListener('change', e => handleFileUpload(e, 1, 'existencias'));
+fileVentas.addEventListener('change',      e => handleFileUpload(e, 2, 'ventas'));
+fileCompras.addEventListener('change',     e => handleFileUpload(e, 3, 'compras'));
+processBtn.addEventListener('click', procesarArchivos);
+
+function handleFileUpload(event, cardNumber, tipo) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            if (tipo === 'existencias') workbookExistencias = wb;
+            if (tipo === 'ventas')      workbookVentas      = wb;
+            if (tipo === 'compras')     workbookCompras     = wb;
+            document.getElementById(`card${cardNumber}`).classList.add('loaded');
+            document.getElementById(`name${cardNumber}`).textContent = `✓ ${file.name}`;
+            // FIX 1: si cambian un archivo después de procesar, volver a habilitar
+            if (yaFueProcesado) {
+                yaFueProcesado = false;
                 processBtn.disabled = false;
-                showMessage('✓ Todos los archivos cargados. ¡Listo para procesar!', 'success');
+                processBtn.textContent = '🚀 PROCESAR ANÁLISIS';
+            }
+            checkAllFilesLoaded();
+        } catch (err) {
+            showMessage('Error al leer el archivo: ' + err.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function checkAllFilesLoaded() {
+    if (workbookExistencias && workbookVentas && workbookCompras && !yaFueProcesado) {
+        processBtn.disabled = false;
+        showMessage('✓ Todos los archivos cargados. ¡Listo para procesar!', 'success');
+    }
+}
+
+function showMessage(text, type) {
+    statusMessage.textContent = text;
+    statusMessage.className = `status-message ${type} show`;
+    setTimeout(() => statusMessage.classList.remove('show'), 5000);
+}
+
+// ========================================
+// PROCESAR ARCHIVOS (MAIN)
+// ========================================
+async function procesarArchivos() {
+    // FIX 1: deshabilitar inmediatamente al hacer clic
+    processBtn.disabled = true;
+    processBtn.textContent = '⏳ Procesando...';
+
+    loader.style.display = 'flex';
+    resultsSection.classList.remove('show');
+    showMessage('⏳ Procesando archivos...', 'info');
+    actualizarProgreso(0, 'Iniciando procesamiento...', '');
+
+    try {
+        await sleep(80);
+
+        // FIX 2: Progreso real — fases 0-15% = lectura de archivos
+        actualizarProgreso(2, 'Leyendo existencias...', 'Procesando filas del archivo de stock');
+        await sleep(30);
+        const existencias = procesarExistencias();
+        actualizarProgreso(5, 'Existencias listas', `${existencias.length} registros`);
+        await sleep(30);
+
+        actualizarProgreso(7, 'Leyendo ventas...', 'Procesando transacciones');
+        await sleep(30);
+        const ventas = procesarVentas();
+        actualizarProgreso(10, 'Ventas listas', `${ventas.length} transacciones`);
+        await sleep(30);
+
+        actualizarProgreso(12, 'Leyendo compras...', 'Hoja 2 + cruce con proveedores');
+        await sleep(30);
+        const { compras } = procesarCompras();
+        actualizarProgreso(15, 'Compras listas', `${compras.length} entradas encontradas`);
+        await sleep(30);
+
+        // FIX 2: Fases 15-95% = análisis producto a producto (progreso REAL)
+        actualizarProgreso(15, 'Indexando datos...', 'Construyendo índices de búsqueda rápida');
+        await sleep(30);
+        resultadoFinal = await generarAnalisis(existencias, ventas, compras);
+
+        actualizarProgreso(96, 'Generando tabla...', 'Renderizando resultados');
+        await sleep(30);
+        mostrarResultados(resultadoFinal);
+
+        actualizarProgreso(98, 'Preparando descarga...', 'Construyendo archivo Excel');
+        await sleep(30);
+        generarDescargaSegura(resultadoFinal);
+
+        actualizarProgreso(100, '✅ Completado', `${resultadoFinal.length} productos analizados`);
+        await sleep(600);
+
+        loader.style.display = 'none';
+        resultsSection.classList.add('show');
+        showMessage(`✅ Análisis completado: ${resultadoFinal.length} productos procesados`, 'success');
+
+        // FIX 1: marcar como procesado y dejar botón deshabilitado
+        yaFueProcesado = true;
+        processBtn.textContent = '✅ Análisis Completado';
+
+    } catch (error) {
+        loader.style.display = 'none';
+        // FIX 1: si hubo error, rehabilitar para que pueda reintentar
+        processBtn.disabled = false;
+        processBtn.textContent = '🚀 PROCESAR ANÁLISIS';
+        showMessage('❌ Error al procesar: ' + error.message, 'error');
+        console.error('Error completo:', error);
+    }
+}
+
+// ========================================
+// PROCESAR EXISTENCIAS
+// Col A(0)=Almacen, C(2)=ProdConcat, H(7)=Existencia,
+// F(5)=Marca, G(6)=Modelo, M(12)=BarcodeId,
+// N(13)=Clasificacion, Q(16)=PrecioPublico
+// ========================================
+function procesarExistencias() {
+    const sheet = workbookExistencias.Sheets[workbookExistencias.SheetNames[0]];
+    const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    const resultado = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+
+        const almacen       = String(row[0]  || "").trim();
+        const prodConcat    = normalizarProducto(row[2]);
+        const marca         = String(row[5]  || "").trim();
+        const modelo        = String(row[6]  || "").trim();
+        const existencia    = parseFloat(row[7])  || 0;
+        const barcodeId     = String(row[12] || "").trim();
+        const clasificacion = String(row[13] || "").trim();
+        const precioPublico = parseFloat(row[16]) || 0;
+
+        const partes       = clasificacion.split('>');
+        const departamento = partes[0] ? partes[0].trim().toUpperCase() : '';
+        const categoria    = partes[1] ? partes[1].trim() : '';
+        const tipo         = partes[2] ? partes[2].trim() : '';
+
+        if (departamento !== 'INNOVACION MOVIL' && departamento !== 'TECNOLOGIA MOVIL') continue;
+        if (!prodConcat) continue;
+
+        resultado.push({ almacen, prodConcat, existencia, barcodeId, departamento, categoria, tipo, precioPublico, marca, modelo });
+    }
+    console.log(`Existencias: ${resultado.length}`);
+    return resultado;
+}
+
+// ========================================
+// PROCESAR VENTAS
+// ========================================
+function procesarVentas() {
+    const sheet = workbookVentas.Sheets[workbookVentas.SheetNames[0]];
+    const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    const resultado = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+
+        const n1Upper = String(row[1] || "").trim().toUpperCase();
+        if (n1Upper !== 'INNOVACION MOVIL' && n1Upper !== 'TECNOLOGIA MOVIL') continue;
+
+        const prodConcat = normalizarProducto(row[11]);
+        if (!prodConcat) continue;
+
+        const crudo = row[14];
+        let cantidad = 0;
+        if (crudo !== undefined && crudo !== null) {
+            cantidad = parseFloat(String(crudo).replace(",", ".").replace(/[^\d.-]/g, "")) || 0;
+        }
+        if (cantidad <= 0) continue;
+
+        resultado.push({
+            almacen: String(row[0] || "").trim(),
+            n1: String(row[1] || "").trim(),
+            n2: String(row[2] || "").trim(),
+            n3: String(row[3] || "").trim(),
+            prodConcat, cantidad
+        });
+    }
+    console.log(`Ventas: ${resultado.length}`);
+    return resultado;
+}
+
+// ========================================
+// PROCESAR COMPRAS — HOJA 2 + HOJA 1
+// HOJA 2: A(0)=Almacen, B(1)=NoMov, C(2)=GrupoMov,
+//         E(4)=Fecha, F(5)=Producto, G(6)=Costo,
+//         H(7)=CostoTotal, I(8)=Cantidad
+// HOJA 1: G(6)=Almacen, B(1)=No.Mov → F(5)=Proveedor
+// ========================================
+function procesarCompras() {
+    const sheetName2 = workbookCompras.SheetNames[1];
+    if (!sheetName2) throw new Error('No se encontró la Hoja 2 en el archivo de compras');
+
+    // --- Mapa de proveedores desde Hoja 1 ---
+    const sheet1 = workbookCompras.Sheets[workbookCompras.SheetNames[0]];
+    const rows1  = XLSX.utils.sheet_to_json(sheet1, { header: 1, defval: "" });
+    const proveedorMap = new Map();
+    for (let i = 1; i < rows1.length; i++) {
+        const r = rows1[i];
+        if (!r || r.length === 0) continue;
+        const almacen   = String(r[6] || "").trim();
+        const noMov     = String(r[1] || "").trim();
+        const proveedor = String(r[5] || "").trim();
+        if (almacen && noMov) {
+            const clave = `${almacen.toUpperCase()}||${noMov.toUpperCase()}`;
+            if (!proveedorMap.has(clave)) proveedorMap.set(clave, proveedor);
+        }
+    }
+
+    // --- Procesar Hoja 2 ---
+    const sheet2 = workbookCompras.Sheets[sheetName2];
+    const rows2  = XLSX.utils.sheet_to_json(sheet2, { header: 1, defval: "" });
+    const resultado = [];
+
+    for (let i = 1; i < rows2.length; i++) {
+        const row = rows2[i];
+        if (!row || row.length === 0) continue;
+        if (String(row[2] || "").trim().toUpperCase() !== "ENTRADA") continue;
+
+        const producto = normalizarProducto(row[5]);
+        if (!producto) continue;
+
+        const almacenH2 = String(row[0] || "").trim();
+        const noMovH2   = String(row[1] || "").trim();
+        const clave     = `${almacenH2.toUpperCase()}||${noMovH2.toUpperCase()}`;
+        const proveedor = proveedorMap.get(clave) || '';
+
+        const fechaRaw = row[4];
+        let fecha = null;
+        if (fechaRaw) {
+            if (typeof fechaRaw === 'number') {
+                const p = XLSX.SSF.parse_date_code(fechaRaw);
+                fecha = new Date(p.y, p.m - 1, p.d);
+            } else {
+                fecha = new Date(fechaRaw);
             }
         }
 
-        function showMessage(text, type) {
-            statusMessage.textContent = text;
-            statusMessage.className = `status-message ${type} show`;
-            setTimeout(() => { statusMessage.classList.remove('show'); }, 5000);
-        }
+        resultado.push({
+            producto,
+            fecha,
+            costo:      parseFloat(row[6]) || 0,
+            costoTotal: parseFloat(row[7]) || 0,
+            cantidad:   parseFloat(row[8]) || 0,
+            proveedor
+        });
+    }
 
-        async function procesarArchivos() {
-            loader.style.display = 'flex';
-            resultsSection.classList.remove('show');
-            showMessage('⏳ Procesando archivos...', 'info');
-            actualizarProgreso(0, 'Iniciando procesamiento...', '');
+    console.log(`Compras: ${resultado.length}`);
+    return { compras: resultado, proveedorMap };
+}
 
-            try {
-                await sleep(100);
+// ========================================
+// GENERAR ANÁLISIS — OPTIMIZADO CON ÍNDICES
+//
+// FIX 3: En vez de hacer .filter() dentro del loop por cada producto
+// (O(n²)), pre-indexamos TODO en Maps al inicio → O(n) total.
+// Esto puede ser 10-100x más rápido en archivos grandes.
+// ========================================
+async function generarAnalisis(existencias, ventas, compras) {
+    const HOY = Date.now();
 
-                actualizarProgreso(5, 'Procesando existencias...', 'Leyendo archivo de stock');
-                await sleep(50);
-                const existencias = procesarExistencias();
-                actualizarProgreso(20, 'Existencias procesadas', `${existencias.length} registros encontrados`);
-                await sleep(100);
+    // ── PRE-INDEXAR EXISTENCIAS ──────────────────────────────
+    // exByProd:            producto → [registros]
+    // exByProdAlmacen:     "prod||almacen" → { suma existencia, barcodeId, marca, modelo, precioPublico }
+    const exByProd        = new Map();  // producto → primer registro (para meta)
+    const exStockPA       = new Map();  // "prod||almacen" → stock acumulado
+    const exMeta          = new Map();  // producto → { codigo, marca, modelo, precioPublico, dep, cat, tipo }
 
-                actualizarProgreso(25, 'Procesando ventas...', 'Analizando transacciones');
-                await sleep(50);
-                const ventas = procesarVentas();
-                actualizarProgreso(40, 'Ventas procesadas', `${ventas.length} transacciones encontradas`);
-                await sleep(100);
+    for (const e of existencias) {
+        const k = `${e.prodConcat}||${e.almacen}`;
+        exStockPA.set(k, (exStockPA.get(k) || 0) + e.existencia);
 
-                actualizarProgreso(45, 'Procesando compras...', 'Extrayendo historial (Hoja 2)');
-                await sleep(50);
-                const compras = procesarCompras();
-                actualizarProgreso(55, 'Compras procesadas', `${compras.length} compras encontradas`);
-                await sleep(100);
-
-                actualizarProgreso(60, 'Generando análisis...', 'Cruzando información');
-                await sleep(50);
-                resultadoFinal = await generarAnalisisConProgreso(existencias, ventas, compras);
-
-                actualizarProgreso(92, 'Preparando visualización...', 'Generando tablas y estadísticas');
-                await sleep(50);
-                mostrarResultados(resultadoFinal);
-
-                // ✅ FIX 1: Generar descarga segura con Blob
-                generarDescargaSegura(resultadoFinal);
-
-                actualizarProgreso(100, '✅ Proceso completado', `${resultadoFinal.length} productos analizados`);
-                await sleep(500);
-
-                loader.style.display = 'none';
-                resultsSection.classList.add('show');
-                showMessage(`✅ Análisis completado: ${resultadoFinal.length} productos procesados`, 'success');
-
-            } catch (error) {
-                loader.style.display = 'none';
-                showMessage('❌ Error al procesar: ' + error.message, 'error');
-                console.error('Error completo:', error);
-            }
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // ========================================
-        // ✅ FIX 1: DESCARGA SEGURA CON BLOB
-        // ========================================
-        function generarDescargaSegura(datos) {
-            try {
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(datos);
-
-                const columnas = Object.keys(datos[0]);
-                const wscols = columnas.map(col => {
-                    if (col === 'observaciones') return { wch: 60 };
-                    if (col === 'producto') return { wch: 25 };
-                    if (col.includes('Existencias') || col.includes('Ventas')) return { wch: 10 };
-                    return { wch: 14 };
-                });
-                ws['!cols'] = wscols;
-
-                XLSX.utils.book_append_sheet(wb, ws, 'Análisis de Inventario');
-
-                // Generar como array buffer y crear Blob
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                
-                // Crear URL del blob y asignarlo al link de descarga
-                const url = URL.createObjectURL(blob);
-                const fecha = new Date();
-                const nombreArchivo = `Analisis_Inventario_${fecha.getFullYear()}-${String(fecha.getMonth()+1).padStart(2,'0')}-${String(fecha.getDate()).padStart(2,'0')}.xlsx`;
-                
-                downloadBtn.href = url;
-                downloadBtn.download = nombreArchivo;
-                downloadBtn.textContent = '⬇️ Descargar Excel';
-                
-            } catch (error) {
-                showMessage('Error al preparar el archivo: ' + error.message, 'error');
-            }
-        }
-
-        // ========================================
-        // PROCESAR EXISTENCIAS
-        // ========================================
-        function procesarExistencias() {
-            const sheet = workbookExistencias.Sheets[workbookExistencias.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-
-            const resultado = [];
-            
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-
-                const almacen = String(row[0] || "").trim();
-                const prodConcat = normalizarProducto(row[2]);
-                const existencia = parseFloat(row[7]) || 0;
-                const barcodeId = String(row[12] || "").trim();
-                const clasificacion = String(row[13] || "").trim();
-                const precioPublico = parseFloat(row[16]) || 0;
-
-                const partes = clasificacion.split('>');
-                const departamento = partes[0] ? partes[0].trim().toUpperCase() : '';
-                const categoria = partes[1] ? partes[1].trim() : '';
-                const tipo = partes[2] ? partes[2].trim() : '';
-
-                if (departamento !== 'INNOVACION MOVIL' && departamento !== 'TECNOLOGIA MOVIL') continue;
-
-                if (prodConcat) {
-                    resultado.push({
-                        almacen,
-                        prodConcat,
-                        existencia,
-                        barcodeId,
-                        clasificacion,
-                        departamento,
-                        categoria,
-                        tipo,
-                        precioPublico
-                    });
-                }
-            }
-
-            console.log(`Existencias procesadas: ${resultado.length}`);
-            return resultado;
-        }
-
-        // ========================================
-        // PROCESAR VENTAS
-        // ========================================
-        function procesarVentas() {
-            const sheet = workbookVentas.Sheets[workbookVentas.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-
-            const resultado = [];
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-
-                const almacen = String(row[0] || "").trim();
-                const n1 = String(row[1] || "").trim();
-                const n2 = String(row[2] || "").trim();
-                const n3 = String(row[3] || "").trim();
-                const prodConcat = normalizarProducto(row[11]);
-                
-                const cantidadRaw = row[14];
-                const precioVentaRaw = row[15];
-                
-                let cantidad = 0;
-                if (cantidadRaw !== undefined && cantidadRaw !== null) {
-                    const limpio = String(cantidadRaw)
-                        .replace(",", ".")
-                        .replace(/[^\d.-]/g, "")
-                        .trim();
-                    cantidad = parseFloat(limpio);
-                    if (isNaN(cantidad)) cantidad = 0;
-                }
-                const precioVenta = parseFloat(precioVentaRaw) || 0;
-
-                const n1Upper = n1.toUpperCase();
-                if (n1Upper !== 'INNOVACION MOVIL' && n1Upper !== 'TECNOLOGIA MOVIL') continue;
-
-                if (prodConcat && cantidad > 0) {
-                    resultado.push({
-                        almacen,
-                        n1,
-                        n2,
-                        n3,
-                        prodConcat,
-                        cantidad,
-                        precioVenta,
-                        ventaTotal: cantidad * precioVenta
-                    });
-                }
-            }
-
-            console.log(`Ventas procesadas: ${resultado.length}`);
-            return resultado;
-        }
-
-        // ========================================
-        // PROCESAR COMPRAS (HOJA 2)
-        // ========================================
-        function procesarCompras() {
-            const sheetName = workbookCompras.SheetNames[1];
-            if (!sheetName) {
-                throw new Error('No se encontró la hoja 2 en el archivo de compras');
-            }
-
-            const sheet = workbookCompras.Sheets[sheetName];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-
-            const resultado = [];
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-
-                const grupoAlmacenMov = String(row[2] || "").trim().toUpperCase();
-                if (grupoAlmacenMov !== "ENTRADA") continue;
-
-                const fechaRaw = row[4];
-                const producto = normalizarProducto(row[5]);
-                const costo = parseFloat(row[6]) || 0;
-
-                let fecha = null;
-                if (fechaRaw) {
-                    if (typeof fechaRaw === 'number') {
-                        const parsed = XLSX.SSF.parse_date_code(fechaRaw);
-                        fecha = new Date(parsed.y, parsed.m - 1, parsed.d);
-                    } else {
-                        fecha = new Date(fechaRaw);
-                    }
-                }
-
-                if (producto) {
-                    resultado.push({ producto, fecha, costo });
-                }
-            }
-
-            return resultado;
-        }
-
-        // ========================================
-        // GENERAR ANÁLISIS FINAL
-        // ========================================
-        async function generarAnalisisConProgreso(existencias, ventas, compras) {
-            // ✅ FIX 3: Incluir TODOS los productos — sin filtro por categoría
-            const productosSet = new Set();
-            existencias.forEach(e => productosSet.add(e.prodConcat));
-            ventas.forEach(v => productosSet.add(v.prodConcat));
-            compras.forEach(c => productosSet.add(c.producto));
-
-            const productos = Array.from(productosSet);
-            const totalProductos = productos.length;
-
-            const almacenesSet = new Set();
-            existencias.forEach(e => almacenesSet.add(e.almacen));
-            ventas.forEach(v => almacenesSet.add(v.almacen));
-            const almacenes = Array.from(almacenesSet).filter(a => a).sort();
-
-            const resultado = [];
-            const tamañoLote = Math.max(1, Math.floor(totalProductos / 100));
-            
-            for (let i = 0; i < productos.length; i++) {
-                const producto = productos[i];
-                if (!producto) continue;
-                
-                const item = {};
-                
-                item.codigo = '';
-                item.producto = producto;
-                item.departamento = '';
-                item.categoria = '';
-                item.tipo = '';
-
-                // Obtener clasificación — priorizando ventas, luego existencias
-                const ventasProducto = ventas.filter(v => v.prodConcat === producto);
-                if (ventasProducto.length > 0) {
-                    item.departamento = ventasProducto[0].n1 || '';
-                    item.categoria = ventasProducto[0].n2 || '';
-                    item.tipo = ventasProducto[0].n3 || '';
-                } else {
-                    const existenciasProducto = existencias.filter(e => e.prodConcat === producto);
-                    if (existenciasProducto.length > 0) {
-                        item.departamento = existenciasProducto[0].departamento || '';
-                        item.categoria = existenciasProducto[0].categoria || '';
-                        item.tipo = existenciasProducto[0].tipo || '';
-                    }
-                }
-
-                // ✅ FIX 3: Solo saltar productos que NO pertenezcan a los departamentos
-                const dep = item.departamento.toUpperCase();
-                if (dep && dep !== 'INNOVACION MOVIL' && dep !== 'TECNOLOGIA MOVIL') continue;
-
-                // ✅ FIX 2: Columnas reorganizadas: PrecioPublico → CostoUltimaCompra → Utilidad → StockTotal
-
-                // Precio Público
-                const existenciasProducto2 = existencias.filter(e => e.prodConcat === producto);
-                item.precioPublico = '';
-                if (existenciasProducto2.length > 0) {
-                    const precios = existenciasProducto2.map(e => e.precioPublico).filter(p => p > 0);
-                    if (precios.length > 0) item.precioPublico = Math.max(...precios);
-                }
-
-                // Costo Última Compra
-                const comprasProducto = compras.filter(c => c.producto === producto);
-                item.ultimaCompra = '';
-                item.costoUltimaCompra = '';
-
-                let costoUltimaCompra = 0;
-                if (comprasProducto.length > 0) {
-                    comprasProducto.sort((a, b) => {
-                        if (!a.fecha) return 1;
-                        if (!b.fecha) return -1;
-                        return b.fecha - a.fecha;
-                    });
-                    const ultimaCompraObj = comprasProducto[0];
-                    if (ultimaCompraObj.fecha) {
-                        item.ultimaCompra = formatearFecha(ultimaCompraObj.fecha);
-                    }
-                    costoUltimaCompra = ultimaCompraObj.costo || 0;
-                    item.costoUltimaCompra = costoUltimaCompra;
-                }
-
-                // ✅ FIX 2 & FIX 3: Utilidad = MARGEN SOBRE PRECIO DE VENTA
-                // Fórmula: ((Precio Público - Costo) / Precio Público) * 100
-                item.utilidad = '';
-                if (item.precioPublico && item.precioPublico > 0 && costoUltimaCompra > 0) {
-                    const margen = ((item.precioPublico - costoUltimaCompra) / item.precioPublico) * 100;
-                    item.utilidad = margen.toFixed(2) + '%';
-                }
-
-                // Stock Total y Ventas por almacén
-                let stockTotalTemp = 0;
-                let ventasTotalesTemp = 0;
-                const datosPorAlmacen = {};
-
-                almacenes.forEach(almacen => {
-                    const existAlmacen = existencias.filter(e => 
-                        e.prodConcat === producto && e.almacen === almacen
-                    );
-                    
-                    let stockAlmacen = 0;
-                    if (existAlmacen.length > 0) {
-                        stockAlmacen = existAlmacen.reduce((sum, e) => sum + e.existencia, 0);
-                        if (!item.codigo && existAlmacen[0].barcodeId) {
-                            item.codigo = existAlmacen[0].barcodeId;
-                        }
-                    }
-
-                    const ventasAlmacen = ventas.filter(v => 
-                        v.prodConcat === producto && v.almacen === almacen
-                    );
-                    
-                    let ventaAlmacen = 0;
-                    if (ventasAlmacen.length > 0) {
-                        ventaAlmacen = ventasAlmacen.reduce((sum, v) => {
-                            const cant = parseFloat(v.cantidad) || 0;
-                            return sum + (cant > 0 ? cant : 0);
-                        }, 0);
-                    }
-
-                    datosPorAlmacen[almacen] = { existencias: stockAlmacen, ventas: ventaAlmacen };
-                    stockTotalTemp += stockAlmacen;
-                    ventasTotalesTemp += ventaAlmacen;
-                });
-
-                // ✅ FIX 2: stockTotal DESPUÉS de utilidad
-                item.stockTotal = stockTotalTemp;
-                item.ventasTotales = ventasTotalesTemp;
-
-                almacenes.forEach(almacen => {
-                    item[`${almacen} - Existencias`] = datosPorAlmacen[almacen].existencias;
-                    item[`${almacen} - Ventas`] = datosPorAlmacen[almacen].ventas || '';
-                });
-
-                // Prioridad y observaciones
-                item.observaciones = '';
-                item.prioridad = 'BAJA';
-
-                const diasDesdeUltimaCompra = calcularDiasDesdeCompra(comprasProducto[0]?.fecha);
-                const rotacionBaja = item.ventasTotales < 10;
-                const stockAlto = item.stockTotal > 50;
-
-                if (diasDesdeUltimaCompra > 90 && rotacionBaja && stockAlto) {
-                    item.prioridad = 'ALTA';
-                    item.observaciones = '⚠️ Venta baja, verifica el producto en almacén o considera un cambio de precio. ';
-                } else if (diasDesdeUltimaCompra <= 60 && rotacionBaja && item.stockTotal > 20) {
-                    item.prioridad = 'MEDIA';
-                    item.observaciones = '📊 Producto con compra reciente pero ventas bajas. Monitorear. ';
-                }
-
-                const sugerencias = generarSugerenciasReabasto(producto, almacenes, datosPorAlmacen);
-                if (sugerencias) item.observaciones += sugerencias;
-
-                resultado.push(item);
-
-                if (i % tamañoLote === 0 || i === productos.length - 1) {
-                    const progreso = 60 + Math.floor((i / totalProductos) * 30);
-                    actualizarProgreso(
-                        progreso, 
-                        'Analizando productos...', 
-                        `${i + 1} de ${totalProductos} productos procesados`
-                    );
-                    await sleep(0);
-                }
-            }
-
-            actualizarProgreso(90, 'Ordenando resultados...', 'Clasificando por prioridad');
-            await sleep(50);
-            
-            resultado.sort((a, b) => {
-                const prioridades = { 'ALTA': 3, 'MEDIA': 2, 'BAJA': 1 };
-                return prioridades[b.prioridad] - prioridades[a.prioridad];
+        if (!exMeta.has(e.prodConcat)) {
+            exMeta.set(e.prodConcat, {
+                codigo: e.barcodeId,
+                marca: e.marca,
+                modelo: e.modelo,
+                precioPublico: e.precioPublico,
+                departamento: e.departamento,
+                categoria: e.categoria,
+                tipo: e.tipo
             });
+        } else {
+            // actualizar precio máximo y completar campos vacíos
+            const m = exMeta.get(e.prodConcat);
+            if (e.precioPublico > m.precioPublico) m.precioPublico = e.precioPublico;
+            if (!m.codigo && e.barcodeId) m.codigo = e.barcodeId;
+            if (!m.marca  && e.marca)     m.marca   = e.marca;
+            if (!m.modelo && e.modelo)    m.modelo  = e.modelo;
+        }
+    }
 
-            return resultado;
+    // ── PRE-INDEXAR VENTAS ───────────────────────────────────
+    // vtByProd:        producto → primer registro (para n1/n2/n3)
+    // vtCantPA:        "prod||almacen" → cantidad total vendida
+    const vtMeta  = new Map();  // producto → { n1, n2, n3 }
+    const vtCantPA = new Map(); // "prod||almacen" → cantidad
+
+    for (const v of ventas) {
+        const k = `${v.prodConcat}||${v.almacen}`;
+        vtCantPA.set(k, (vtCantPA.get(k) || 0) + v.cantidad);
+        if (!vtMeta.has(v.prodConcat)) {
+            vtMeta.set(v.prodConcat, { n1: v.n1, n2: v.n2, n3: v.n3 });
+        }
+    }
+
+    // ── PRE-INDEXAR COMPRAS ──────────────────────────────────
+    // Por producto, quedarnos solo con la compra más reciente
+    // compraUC: producto → objeto de la compra más reciente
+    const compraUC = new Map();
+    for (const c of compras) {
+        if (!compraUC.has(c.producto)) {
+            compraUC.set(c.producto, c);
+        } else {
+            const actual = compraUC.get(c.producto);
+            const fechaC = c.fecha ? c.fecha.getTime() : 0;
+            const fechaA = actual.fecha ? actual.fecha.getTime() : 0;
+            if (fechaC > fechaA) compraUC.set(c.producto, c);
+        }
+    }
+
+    // ── LISTA UNIFICADA DE PRODUCTOS ─────────────────────────
+    const productosSet = new Set([
+        ...exMeta.keys(),
+        ...vtMeta.keys(),
+        ...compraUC.keys()
+    ]);
+    const productos = Array.from(productosSet);
+    const total     = productos.length;
+
+    // ── LISTA DE ALMACENES ───────────────────────────────────
+    const almacenesSet = new Set();
+    existencias.forEach(e => almacenesSet.add(e.almacen));
+    ventas.forEach(v      => almacenesSet.add(v.almacen));
+    const almacenes = Array.from(almacenesSet).filter(a => a).sort();
+
+    // FIX 2: El progreso del loop va de 15% a 93% de forma LINEAL
+    const PROG_INICIO = 15;
+    const PROG_FIN    = 93;
+    // Yield al DOM cada N productos para que la barra se mueva suavemente
+    const YIELD_CADA  = Math.max(1, Math.floor(total / 80));
+
+    const resultado = [];
+
+    for (let i = 0; i < productos.length; i++) {
+        const producto = productos[i];
+        if (!producto) continue;
+
+        // ── Clasificación
+        const vMeta = vtMeta.get(producto);
+        const eMeta = exMeta.get(producto);
+
+        let departamento = vMeta ? (vMeta.n1 || '') : (eMeta ? (eMeta.departamento || '') : '');
+        let categoria    = vMeta ? (vMeta.n2 || '') : (eMeta ? (eMeta.categoria    || '') : '');
+        let tipo         = vMeta ? (vMeta.n3 || '') : (eMeta ? (eMeta.tipo         || '') : '');
+
+        const dep = departamento.toUpperCase();
+        if (dep && dep !== 'INNOVACION MOVIL' && dep !== 'TECNOLOGIA MOVIL') continue;
+
+        const item = {
+            codigo:      eMeta?.codigo      || '',
+            producto,
+            departamento,
+            categoria,
+            tipo,
+            precioPublico: eMeta?.precioPublico || '',
+        };
+
+        // ── Última compra
+        const uc = compraUC.get(producto);
+        let costoUC = 0;
+        item.ultimaCompra           = '';
+        item.proveedor              = '';
+        item.cantidadComprada       = '';
+        item.costoUltimaCompra      = '';
+        item.costoTotalUltimaCompra = '';
+
+        if (uc) {
+            if (uc.fecha) item.ultimaCompra = formatearFecha(uc.fecha);
+            item.proveedor              = uc.proveedor  || '';
+            item.cantidadComprada       = uc.cantidad   || '';
+            costoUC                     = uc.costo      || 0;
+            item.costoUltimaCompra      = costoUC       || '';
+            item.costoTotalUltimaCompra = uc.costoTotal || '';
         }
 
-        function calcularDiasDesdeCompra(fecha) {
-            if (!fecha) return 9999;
-            const hoy = new Date();
-            const diff = hoy - fecha;
-            return Math.floor(diff / (1000 * 60 * 60 * 24));
+        // ── Marca / Modelo
+        item.marca  = eMeta?.marca  || '';
+        item.modelo = eMeta?.modelo || '';
+
+        // ── Utilidad
+        item.utilidad = '';
+        const pp = typeof item.precioPublico === 'number' ? item.precioPublico : 0;
+        if (pp > 0 && costoUC > 0) {
+            item.utilidad = (((pp - costoUC) / pp) * 100).toFixed(2) + '%';
         }
 
-        function generarSugerenciasReabasto(producto, almacenes, datosPorAlmacen) {
-            const analisisAlmacenes = [];
+        // ── Stock y Ventas por almacén (O(1) por lookup)
+        let stockTotal = 0, ventasTotal = 0;
+        const datosPorAlmacen = {};
 
-            almacenes.forEach(almacen => {
-                const stock = datosPorAlmacen[almacen].existencias;
-                const totalVentas = datosPorAlmacen[almacen].ventas;
-                analisisAlmacenes.push({ almacen, stock, ventas: totalVentas });
-            });
+        for (const almacen of almacenes) {
+            const kPA      = `${producto}||${almacen}`;
+            const stockAlm = exStockPA.get(kPA) || 0;
+            const vtaCant  = vtCantPA.get(kPA)  || 0;
+            datosPorAlmacen[almacen] = { existencias: stockAlm, ventas: vtaCant };
+            stockTotal  += stockAlm;
+            ventasTotal += vtaCant;
+        }
 
-            const necesitanStock = analisisAlmacenes.filter(a => a.ventas > 15 && a.stock < 10);
-            const donantes = analisisAlmacenes.filter(a => a.stock > 20 && a.ventas < 5);
+        item.stockTotal    = stockTotal;
+        item.ventasTotales = ventasTotal;
 
-            donantes.sort((a, b) => {
-                if (a.ventas === 0 && b.ventas !== 0) return -1;
-                if (a.ventas !== 0 && b.ventas === 0) return 1;
-                return b.stock - a.stock;
-            });
+        for (const a of almacenes) {
+            item[`${a} - Existencias`] = datosPorAlmacen[a].existencias;
+            item[`${a} - Ventas`]      = datosPorAlmacen[a].ventas || '';
+        }
 
-            let sugerencias = '';
+        // ── Prioridad y observaciones
+        item.prioridad     = 'BAJA';
+        item.observaciones = '';
 
-            if (necesitanStock.length > 0 && donantes.length > 0) {
-                necesitanStock.forEach(necesita => {
-                    const almacenNecesita = necesita.almacen;
-                    const stockActual = necesita.stock;
-                    const ventasAlmacen = necesita.ventas;
-                    const mejorDonante = donantes.find(d => d.almacen !== almacenNecesita);
-                    
-                    if (mejorDonante) {
-                        const cantidadSugerida = Math.min(10, mejorDonante.stock);
-                        sugerencias += `🔄 REABASTO: "${almacenNecesita}" (${stockActual} uds, ${ventasAlmacen} ventas) necesita stock. `;
-                        sugerencias += `Transferir ${cantidadSugerida} uds desde "${mejorDonante.almacen}" (${mejorDonante.stock} uds, ${mejorDonante.ventas} ventas). `;
-                    }
-                });
+        const diasUC   = uc?.fecha ? Math.floor((HOY - uc.fecha.getTime()) / 86400000) : 9999;
+        const rotBaja  = item.ventasTotales < 10;
+        const stockAlto = item.stockTotal > 50;
+
+        if (diasUC > 90 && rotBaja && stockAlto) {
+            item.prioridad     = 'ALTA';
+            item.observaciones = '⚠️ Venta baja, verifica el producto en almacén o considera un cambio de precio. ';
+        } else if (diasUC <= 60 && rotBaja && item.stockTotal > 20) {
+            item.prioridad     = 'MEDIA';
+            item.observaciones = '📊 Producto con compra reciente pero ventas bajas. Monitorear. ';
+        }
+
+        const sugerencias = generarSugerenciasReabasto(almacenes, datosPorAlmacen);
+        if (sugerencias) item.observaciones += sugerencias;
+
+        resultado.push(item);
+
+        // FIX 2: Progreso lineal real desde el primer producto
+        if (i % YIELD_CADA === 0 || i === productos.length - 1) {
+            const pct = PROG_INICIO + Math.floor(((i + 1) / total) * (PROG_FIN - PROG_INICIO));
+            actualizarProgreso(pct, 'Analizando productos...', `${i + 1} de ${total}`);
+            await sleep(0);  // yield al navegador para actualizar UI
+        }
+    }
+
+    actualizarProgreso(94, 'Ordenando por prioridad...', '');
+    await sleep(30);
+
+    resultado.sort((a, b) => {
+        const p = { ALTA: 3, MEDIA: 2, BAJA: 1 };
+        return p[b.prioridad] - p[a.prioridad];
+    });
+
+    return resultado;
+}
+
+// ========================================
+// SUGERENCIAS REABASTO
+// ========================================
+function generarSugerenciasReabasto(almacenes, datos) {
+    const lista     = almacenes.map(a => ({ almacen: a, stock: datos[a].existencias, ventas: datos[a].ventas }));
+    const necesitan = lista.filter(a => a.ventas > 15 && a.stock < 10);
+    const donantes  = lista.filter(a => a.stock > 20 && a.ventas < 5).sort((a, b) => b.stock - a.stock);
+    let s = '';
+    necesitan.forEach(n => {
+        const donante = donantes.find(d => d.almacen !== n.almacen);
+        if (donante) {
+            s += `🔄 REABASTO: "${n.almacen}" (${n.stock} uds, ${n.ventas} ventas) necesita stock. `;
+            s += `Transferir ${Math.min(10, donante.stock)} uds desde "${donante.almacen}" (${donante.stock} uds, ${donante.ventas} ventas). `;
+        }
+    });
+    return s;
+}
+
+// ========================================
+// DESCARGA SEGURA
+// ========================================
+function generarDescargaSegura(datos) {
+    try {
+        const wb  = XLSX.utils.book_new();
+        const ws  = XLSX.utils.json_to_sheet(datos);
+        const cols = Object.keys(datos[0]);
+        ws['!cols'] = cols.map(c => {
+            if (c === 'observaciones') return { wch: 60 };
+            if (c === 'producto')      return { wch: 28 };
+            if (c === 'proveedor')     return { wch: 22 };
+            if (c === 'marca' || c === 'modelo') return { wch: 18 };
+            return { wch: 15 };
+        });
+        XLSX.utils.book_append_sheet(wb, ws, 'Análisis de Inventario');
+
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob  = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const hoy   = new Date();
+        const nombre = `Analisis_Inventario_${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}.xlsx`;
+        downloadBtn.href        = URL.createObjectURL(blob);
+        downloadBtn.download    = nombre;
+        downloadBtn.textContent = '⬇️ Descargar Excel';
+    } catch (err) {
+        showMessage('Error al preparar el archivo: ' + err.message, 'error');
+    }
+}
+
+// ========================================
+// MOSTRAR RESULTADOS
+// ========================================
+function mostrarResultados(datos) {
+    if (!datos.length) {
+        document.getElementById('tableWrapper').innerHTML = '<p style="text-align:center;padding:20px;">No hay datos para mostrar</p>';
+        return;
+    }
+
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><h4>Total Productos</h4><div class="value">${datos.length}</div></div>
+        <div class="stat-card"><h4>Prioridad Alta</h4><div class="value">${datos.filter(d => d.prioridad === 'ALTA').length}</div></div>
+        <div class="stat-card"><h4>Prioridad Media</h4><div class="value">${datos.filter(d => d.prioridad === 'MEDIA').length}</div></div>
+        <div class="stat-card"><h4>Prioridad Baja</h4><div class="value">${datos.filter(d => d.prioridad === 'BAJA').length}</div></div>
+    `;
+
+    const cols  = Object.keys(datos[0]);
+    const parts = ['<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>'];
+
+    datos.slice(0, 100).forEach(row => {
+        parts.push(`<tr class="prioridad-${row.prioridad.toLowerCase()}">`);
+        cols.forEach(col => {
+            let val = row[col];
+            if (col === 'prioridad') {
+                parts.push(`<td><span class="badge badge-${val.toLowerCase()}">${val}</span></td>`);
+            } else if (col === 'observaciones') {
+                parts.push(`<td class="observacion-cell">${val || '-'}</td>`);
+            } else if (typeof val === 'number' && val !== 0) {
+                parts.push(`<td>${Number.isInteger(val) ? val : val.toFixed(2)}</td>`);
+            } else {
+                parts.push(`<td>${val !== '' && val !== null && val !== undefined ? val : '-'}</td>`);
             }
+        });
+        parts.push('</tr>');
+    });
 
-            return sugerencias;
-        }
+    parts.push('</tbody></table>');
+    if (datos.length > 100) {
+        parts.push(`<p style="text-align:center;padding:14px;color:var(--muted);">Mostrando 100 de ${datos.length} productos. Descarga el Excel para ver todos.</p>`);
+    }
 
-        function formatearFecha(fecha) {
-            if (!fecha) return '';
-            const d = new Date(fecha);
-            const dia = String(d.getDate()).padStart(2, '0');
-            const mes = String(d.getMonth() + 1).padStart(2, '0');
-            const anio = d.getFullYear();
-            return `${dia}/${mes}/${anio}`;
-        }
-
-        function mostrarResultados(datos) {
-            if (datos.length === 0) {
-                document.getElementById('tableWrapper').innerHTML = '<p style="text-align:center;padding:20px;">No hay datos para mostrar</p>';
-                return;
-            }
-
-            const statsHTML = `
-                <div class="stat-card">
-                    <h4>Total Productos</h4>
-                    <div class="value">${datos.length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Prioridad Alta</h4>
-                    <div class="value">${datos.filter(d => d.prioridad === 'ALTA').length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Prioridad Media</h4>
-                    <div class="value">${datos.filter(d => d.prioridad === 'MEDIA').length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Prioridad Baja</h4>
-                    <div class="value">${datos.filter(d => d.prioridad === 'BAJA').length}</div>
-                </div>
-            `;
-            document.getElementById('statsGrid').innerHTML = statsHTML;
-
-            const columnas = Object.keys(datos[0]);
-
-            let tableHTML = '<table><thead><tr>';
-            columnas.forEach(col => {
-                tableHTML += `<th>${col}</th>`;
-            });
-            tableHTML += '</tr></thead><tbody>';
-
-            const datosPreview = datos.slice(0, 100);
-
-            datosPreview.forEach(row => {
-                const prioridadClass = `prioridad-${row.prioridad.toLowerCase()}`;
-                tableHTML += `<tr class="${prioridadClass}">`;
-                
-                columnas.forEach(col => {
-                    let valor = row[col];
-                    
-                    if (col === 'prioridad') {
-                        const badgeClass = `badge-${valor.toLowerCase()}`;
-                        valor = `<span class="badge ${badgeClass}">${valor}</span>`;
-                    } else if (col === 'observaciones') {
-                        tableHTML += `<td class="observacion-cell">${valor || '-'}</td>`;
-                        return;
-                    } else if (typeof valor === 'number' && valor !== 0) {
-                        valor = Number.isInteger(valor) ? valor : valor.toFixed(2);
-                    } else if (valor === 0) {
-                        valor = 0;
-                    }
-                    
-                    tableHTML += `<td>${valor !== '' && valor !== null && valor !== undefined ? valor : '-'}</td>`;
-                });
-                
-                tableHTML += '</tr>';
-            });
-
-            tableHTML += '</tbody></table>';
-
-            if (datos.length > 100) {
-                tableHTML += `<p style="text-align:center;padding:15px;color:#718096;">Mostrando 100 de ${datos.length} productos. Descarga el Excel para ver todos.</p>`;
-            }
-
-            document.getElementById('tableWrapper').innerHTML = tableHTML;
-        }
-    </script>
+    document.getElementById('tableWrapper').innerHTML = parts.join('');
+}
+</script>
 </body>
 </html>

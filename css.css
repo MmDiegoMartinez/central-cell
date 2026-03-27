@@ -196,7 +196,7 @@ body, html {
    FORMULARIO MEJORADO
    =========================== */
 .contenedor {
-  margin-top: 550px;
+  margin-top: 925px;
   width: 400px;
   max-width: 90%;
   background: linear-gradient(145deg, #ffffff, #f1f5f9);
@@ -580,7 +580,7 @@ input[type="submit"]:active {
 
   /* Formulario */
   .contenedor {
-    margin-top: 270px;
+    margin-top: 600px;
     width: 92%;
     padding: 25px 20px;
   }
