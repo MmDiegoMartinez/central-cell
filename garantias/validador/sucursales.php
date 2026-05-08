@@ -89,11 +89,13 @@ if (isset($_GET['eliminar'])) {
         <input type="checkbox" id="menu-check">
         <span class="top"></span><span class="middle"></span><span class="bottom"></span>
       </label>
+      
       <a href="#" class="brand"><div class="logo">IM</div> Tienda - Admin</a>
       <ul id="nav-menu">
+        <li><a href="validador.php">Home</a></li>
         <li><a href="sucursales.php" class="primary-cta">Sucursales</a></li>
         <li><a href="sucursales_eliminadas.php">Eliminadas</a></li>
-        <li><a href="validador.php">Validar Mermas</a></li>
+        
       </ul>
     </div>
   </nav>

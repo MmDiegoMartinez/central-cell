@@ -45,7 +45,7 @@ require_once '../funciones.php';
 
     <nav id="menu">
         <ul>
-            <li><a href="../garantias/vendedor/garantias.php">🧾 Registrar Garantía</a></li>
+            <li><a href="../garantias/vendedor/garantias.php">🧾 Home</a></li>
             <li><a href="tabla_compatibilidades.php">⬇️ Descargar Compatibilidades</a></li>
             <li><a href="ingresar.php">📝 Ingresar Compatibilidades</a></li>
 

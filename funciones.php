@@ -389,6 +389,7 @@ function verTablavalidador(): array {
         $sql = "SELECT 
             g.id,
             g.plows, 
+             g.numero_serie,
             g.tipo,
             g.dpto,
             d.nombre  AS dpto_nombre,
@@ -404,7 +405,8 @@ function verTablavalidador(): array {
             g.fecha_validacion, 
             g.numero_ajuste, 
             g.anotaciones_validador,
-            g.id_validador, 
+            g.id_validador,
+           
             v.nombre  AS validador_nombre, 
             v.apellido AS validador_apellido,
             g.foto,
@@ -799,7 +801,25 @@ function insertarCompatibilidad(int $modelo_id, int $compatible_id, string $tipo
         throw new Exception("No se pudo insertar la compatibilidad. Intente de nuevo.");
     }
 }
-
+function editarCompatibilidad($id, $modelo_id, $compatible_id, $tipo, $nota) {
+    $pdo = conectarBD(); // <-- corregido, era conectar()
+    $stmt = $pdo->prepare("
+        UPDATE compatibilidades 
+        SET modelo_id     = :modelo_id,
+            compatible_id = :compatible_id,
+            tipo          = :tipo,
+            nota          = :nota
+        WHERE id = :id
+    ");
+    $stmt->execute([
+        ':modelo_id'     => $modelo_id,
+        ':compatible_id' => $compatible_id,
+        ':tipo'          => $tipo,
+        ':nota'          => $nota,
+        ':id'            => $id,
+    ]);
+}
+ 
 
 /**
  * Verifica si una marca existe en la base de datos
@@ -1555,12 +1575,70 @@ function columnaAIndice(string $columna): int {
 }
 
 //Procesa el archivo Excel y carga los datos en la tabla existencias
-function procesarArchivoExcel(string $rutaArchivo): array {
+function insertarExistenciasBulk(PDO $conn, array $filas): array
+{
+    if (empty($filas)) {
+        return ['insertados' => 0, 'fallidos' => []];
+    }
+ 
+    $insertados = 0;
+    $fallidos   = [];
+    $chunkSize  = 500; // filas por query INSERT
+ 
+    foreach (array_chunk($filas, $chunkSize) as $chunk) {
+        // Construir placeholders: (?,?,?,?,?,?,?)
+        $placeholders = implode(
+            ', ',
+            array_fill(0, count($chunk), '(?,?,?,?,?,?)')
+        );
+ 
+        $sql = "INSERT INTO existencias
+                    (almacen, descripcion, existencia, BarcodeId, categoria, publico_general)
+                VALUES $placeholders";
+ 
+        $params = [];
+        foreach ($chunk as $fila) {
+            $params[] = $fila['almacen'];
+            $params[] = $fila['descripcion'];
+            $params[] = $fila['existencia'];
+            $params[] = $fila['barcodeId'];
+            $params[] = $fila['categoria'];
+            $params[] = $fila['publicoGeneral'];
+        }
+ 
+        try {
+            $conn->beginTransaction();
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            $insertados += $stmt->rowCount();
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollBack();
+            // Si falla el batch completo, registrar todas las filas como fallidas
+            foreach ($chunk as $fila) {
+                $fallidos[] = [
+                    'fila'        => $fila['fila'],
+                    'almacen'     => $fila['almacenNombre'],
+                    'descripcion' => $fila['descripcion'],
+                    'motivo'      => 'Error BD (batch): ' . $e->getMessage(),
+                ];
+            }
+        }
+    }
+ 
+    return ['insertados' => $insertados, 'fallidos' => $fallidos];
+}
+ 
+/**
+ * Función principal — reemplaza la anterior procesarArchivoExcel()
+ */
+function procesarArchivoExcel(string $rutaArchivo): array
+{
     $resultado = [
-        'exito' => false,
+        'exito'               => false,
         'registros_insertados' => 0,
-        'registros_omitidos' => [],
-        'mensaje' => ''
+        'registros_omitidos'  => [],
+        'mensaje'             => '',
     ];
 
     try {
@@ -1573,128 +1651,377 @@ function procesarArchivoExcel(string $rutaArchivo): array {
             return $resultado;
         }
 
-        // Abrir el archivo .xlsx como ZIP
         $zip = new ZipArchive();
-        if ($zip->open($rutaArchivo) === true) {
-            // Leer sheet1
-            $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-            $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
-
-            // Procesar sharedStrings
-            $sharedStrings = [];
-            if ($sharedStringsXml) {
-                $xml = new SimpleXMLElement($sharedStringsXml);
-                foreach ($xml->si as $si) {
-                    $sharedStrings[] = (string)$si->t;
-                }
-            }
-
-            // Procesar filas
-            $xml = new SimpleXMLElement($sheetXml);
-            $contadorInsertados = 0;
-            $primeraFila = true;
-
-            foreach ($xml->sheetData->row as $row) {
-                if ($primeraFila) { 
-                    $primeraFila = false; 
-                    continue; 
-                }
-
-                // Crear array asociativo con las columnas usando la referencia de celda
-                $celdas = [];
-                foreach ($row->c as $c) {
-                    $ref = (string)$c['r']; // Ej: "A2", "M2", "Q2"
-                    preg_match('/^([A-Z]+)(\d+)$/', $ref, $matches);
-                    $columna = $matches[1];
-                    
-                    $v = isset($c->v) ? (string)$c->v : '';
-                    
-                    // Si es un string compartido
-                    if (isset($c['t']) && $c['t'] == 's') {
-                        $v = $sharedStrings[(int)$v] ?? '';
-                    }
-                    
-                    $celdas[$columna] = $v;
-                }
-
-                // Obtener columnas específicas por letra
-                $almacenCompleto = trim($celdas['A'] ?? '');
-                $descripcion = trim($celdas['C'] ?? '');
-                $existencia = (int)($celdas['H'] ?? 0);
-                $barcodeId = trim($celdas['M'] ?? '');
-                $nombreCategoria = trim($celdas['N'] ?? '');
-                $publicoGeneral = (float)($celdas['Q'] ?? 0);
-
-                // FILTRO SILENCIOSO 1: Omitir si el almacén es "Central Cell Almacén general"
-                if (stripos($almacenCompleto, 'Almacén general') !== false) {
-                    continue;
-                }
-
-                // FILTRO SILENCIOSO 2: Omitir si la columna N contiene "SOLUCIONES TECNICAS"
-                if (stripos($nombreCategoria, 'SOLUCIONES TECNICAS') !== false) {
-                    continue;
-                }
-
-                // FILTRO SILENCIOSO 3: Omitir si la existencia es 0
-                if ($existencia == 0) {
-                    continue;
-                }
-
-                // Validación básica
-                if (empty($almacenCompleto) || empty($descripcion)) {
-                    continue;
-                }
-
-                // Extraer nombre del almacén
-                $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0) 
-                    ? trim(substr($almacenCompleto, strlen('Central Cell '))) 
-                    : $almacenCompleto;
-
-                $idAlmacen = obtenerIDSucursal($nombreAlmacen);
-
-                // SOLO REPORTAR ERROR SI NO SE ENCUENTRA EL ALMACÉN
-                if ($idAlmacen === null) {
-                    $resultado['registros_omitidos'][] = [
-                        'fila' => (int)$row['r'],
-                        'almacen' => $almacenCompleto,
-                        'descripcion' => $descripcion,
-                        'motivo' => 'Almacén no encontrado en la base de datos'
-                    ];
-                    continue;
-                }
-
-                // SOLO REPORTAR ERROR SI FALLA LA INSERCIÓN
-                if (insertarExistencia($idAlmacen, $descripcion, $existencia, $barcodeId, $publicoGeneral)) {
-                    $contadorInsertados++;
-                } else {
-                    $resultado['registros_omitidos'][] = [
-                        'fila' => (int)$row['r'],
-                        'almacen' => $almacenCompleto,
-                        'descripcion' => $descripcion,
-                        'motivo' => 'Error al insertar en la base de datos'
-                    ];
-                }
-            }
-
-            $zip->close();
-            $resultado['exito'] = true;
-            $resultado['registros_insertados'] = $contadorInsertados;
-            
-            if (count($resultado['registros_omitidos']) > 0) {
-                $resultado['mensaje'] = "Proceso completado. $contadorInsertados registros insertados, " . count($resultado['registros_omitidos']) . " con errores.";
-            } else {
-                $resultado['mensaje'] = "Proceso completado exitosamente. $contadorInsertados registros insertados.";
-            }
-        } else {
-            $resultado['mensaje'] = "No se pudo abrir el archivo Excel";
+        if ($zip->open($rutaArchivo) !== true) {
+            $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
+            return $resultado;
         }
+
+        $sheetXml         = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        $zip->close();
+
+        // ── Shared strings ──────────────────────────────────────────
+        $sharedStrings = [];
+        if ($sharedStringsXml) {
+            $xmlSS = new SimpleXMLElement($sharedStringsXml);
+            foreach ($xmlSS->si as $si) {
+                $texto = '';
+                if (isset($si->t)) {
+                    $texto = (string) $si->t;
+                } else {
+                    foreach ($si->r as $r) {
+                        $texto .= (string) $r->t;
+                    }
+                }
+                $sharedStrings[] = $texto;
+            }
+        }
+
+        // ── Parsear hoja ─────────────────────────────────────────────
+        $xmlSheet    = new SimpleXMLElement($sheetXml);
+        $primeraFila = true;
+        $filasValidas = [];
+        $omitidos     = [];
+        $cacheAlmacen = [];
+
+        foreach ($xmlSheet->sheetData->row as $row) {
+            if ($primeraFila) {
+                $primeraFila = false;
+                continue;
+            }
+
+            $numFila = (int) $row['r'];
+
+            // ── Leer celdas ──────────────────────────────────────────
+            $celdas = [];
+            foreach ($row->c as $c) {
+                preg_match('/^([A-Z]+)/', (string) $c['r'], $m);
+                $col = $m[1];
+                $v   = isset($c->v) ? (string) $c->v : '';
+                if (isset($c['t']) && $c['t'] == 's') {
+                    $v = $sharedStrings[(int) $v] ?? '';
+                }
+                $celdas[$col] = $v;
+            }
+
+            // ── Extraer campos ───────────────────────────────────────
+            $almacenCompleto = trim($celdas['A'] ?? '');
+            $descripcion     = trim($celdas['C'] ?? '');
+            $existencia      = (int) ($celdas['H'] ?? 0);
+            $barcodeId       = trim($celdas['M'] ?? '');
+            $nombreCategoria = trim($celdas['N'] ?? '');
+            $publicoGeneral  = isset($celdas['Q']) && $celdas['Q'] !== ''
+                                   ? (float) $celdas['Q']
+                                   : null;
+
+            // ── FILTROS SILENCIOSOS (sin reportar) ───────────────────
+            if (stripos($almacenCompleto, 'Almacén general') !== false) continue;
+            if (stripos($nombreCategoria, 'SOLUCIONES TECNICAS') !== false) continue;
+            if ($existencia == 0) continue;
+
+            // ── VALIDACIONES CON REPORTE ─────────────────────────────
+            $motivo = validarFila(
+                $almacenCompleto,
+                $descripcion,
+                $existencia,
+                $barcodeId,
+                $publicoGeneral
+            );
+
+            if ($motivo !== null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto ?: '(vacío)',
+                    'descripcion' => $descripcion     ?: '(vacío)',
+                    'motivo'      => $motivo,
+                ];
+                continue;
+            }
+
+            // ── Resolver almacén ─────────────────────────────────────
+            $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0)
+                ? trim(substr($almacenCompleto, strlen('Central Cell ')))
+                : $almacenCompleto;
+
+            if (!array_key_exists($nombreAlmacen, $cacheAlmacen)) {
+                $cacheAlmacen[$nombreAlmacen] = obtenerIDSucursal($nombreAlmacen);
+            }
+            $idAlmacen = $cacheAlmacen[$nombreAlmacen];
+
+            if ($idAlmacen === null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto,
+                    'descripcion' => $descripcion,
+                    'motivo'      => 'Almacén no encontrado en la base de datos',
+                ];
+                continue;
+            }
+
+            $filasValidas[] = [
+                'fila'           => $numFila,
+                'almacen'        => $idAlmacen,
+                'almacenNombre'  => $almacenCompleto,
+                'descripcion'    => $descripcion,
+                'existencia'     => $existencia,
+                'barcodeId'      => $barcodeId,
+                'categoria'      => $nombreCategoria,
+                'publicoGeneral' => $publicoGeneral ?? 0.0,
+            ];
+        }
+
+        // ── Inserción masiva ─────────────────────────────────────────
+        $conn = conectarBD();
+        $bulk = insertarExistenciasBulk($conn, $filasValidas);
+
+        $resultado['exito']                = true;
+        $resultado['registros_insertados'] = $bulk['insertados'];
+        $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
+
+        // ── Registrar fecha/hora de actualización (hora México) ──────
+        registrarFechaExistencias($conn); // ← pasa la conexión existente
+
+        $total   = $bulk['insertados'];
+        $errores = count($resultado['registros_omitidos']);
+
+        $resultado['mensaje'] = $errores > 0
+            ? "Proceso completado. $total insertados, $errores con errores."
+            : "Proceso completado exitosamente. $total registros insertados.";
+
     } catch (Exception $e) {
-        $resultado['mensaje'] = "Error: " . $e->getMessage();
+        $resultado['mensaje'] = 'Error: ' . $e->getMessage();
     }
 
     return $resultado;
 }
+ 
+/**
+ * Valida una fila y retorna el motivo de rechazo o null si es válida.
+ */
+function validarFila(
+    string $almacen,
+    string $descripcion,
+    int    $existencia,
+    string $barcodeId,
+    ?float $publicoGeneral
+): ?string {
+    if (empty($almacen))       return 'Almacén vacío';
+    if (empty($descripcion))   return 'Descripción vacía';
+    if (empty($barcodeId))     return 'Falta código de barras (columna M)';
+    if ($existencia <= 0)      return 'Existencia inválida o cero';
+    if ($publicoGeneral === null || $publicoGeneral < 0) {
+        return 'Precio inválido o ausente (columna Q)';
+    }
+ 
+    // Descripción demasiado corta (probable basura)
+    if (strlen($descripcion) < 3) return 'Descripción demasiado corta';
+ 
+    return null; // fila válida
+}
 
+
+function registrarFechaExistencias(PDO $conn): bool
+{
+    try {
+        // Hora México via PHP (no depende de las timezone tables de MySQL)
+        $tz     = new DateTimeZone('America/Mexico_City');
+        $ahora  = (new DateTime('now', $tz))->format('Y-m-d H:i:s');
+
+        $stmt = $conn->query("SELECT id FROM fechaexistencias LIMIT 1");
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($fila) {
+            $upd = $conn->prepare(
+                "UPDATE fechaexistencias SET fecha = :fecha WHERE id = :id"
+            );
+            $upd->execute([':fecha' => $ahora, ':id' => $fila['id']]);
+        } else {
+            $ins = $conn->prepare(
+                "INSERT INTO fechaexistencias (fecha) VALUES (:fecha)"
+            );
+            $ins->execute([':fecha' => $ahora]);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log('registrarFechaExistencias error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function procesarArchivoExceltel(string $rutaArchivo): array
+{
+    $resultado = [
+        'exito'               => false,
+        'registros_insertados' => 0,
+        'registros_omitidos'  => [],
+        'mensaje'             => '',
+    ];
+
+    // ── Categorías permitidas (columna N) ────────────────────────
+    $categoriasPermitidas = [
+        'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS',
+        'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL',
+        'TECNOLOGIA MOVIL>EQUIPO BASICO',
+        'TECNOLOGIA MOVIL>SMARTWHATCH',
+    ];
+
+    try {
+        if (!eliminarExistencias()) {
+            $resultado['mensaje'] = 'Error al eliminar registros existentes';
+            return $resultado;
+        }
+        if (!reiniciarIDsExistencias()) {
+            $resultado['mensaje'] = 'Error al reiniciar IDs';
+            return $resultado;
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($rutaArchivo) !== true) {
+            $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
+            return $resultado;
+        }
+
+        $sheetXml         = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        $zip->close();
+
+        // ── Shared strings ──────────────────────────────────────────
+        $sharedStrings = [];
+        if ($sharedStringsXml) {
+            $xmlSS = new SimpleXMLElement($sharedStringsXml);
+            foreach ($xmlSS->si as $si) {
+                $texto = '';
+                if (isset($si->t)) {
+                    $texto = (string) $si->t;
+                } else {
+                    foreach ($si->r as $r) {
+                        $texto .= (string) $r->t;
+                    }
+                }
+                $sharedStrings[] = $texto;
+            }
+        }
+
+        // ── Parsear hoja ─────────────────────────────────────────────
+        $xmlSheet    = new SimpleXMLElement($sheetXml);
+        $primeraFila = true;
+        $filasValidas = [];
+        $omitidos     = [];
+        $cacheAlmacen = [];
+
+        foreach ($xmlSheet->sheetData->row as $row) {
+            if ($primeraFila) {
+                $primeraFila = false;
+                continue;
+            }
+
+            $numFila = (int) $row['r'];
+
+            // ── Leer celdas ──────────────────────────────────────────
+            $celdas = [];
+            foreach ($row->c as $c) {
+                preg_match('/^([A-Z]+)/', (string) $c['r'], $m);
+                $col = $m[1];
+                $v   = isset($c->v) ? (string) $c->v : '';
+                if (isset($c['t']) && $c['t'] == 's') {
+                    $v = $sharedStrings[(int) $v] ?? '';
+                }
+                $celdas[$col] = $v;
+            }
+
+            // ── Extraer campos ───────────────────────────────────────
+            $almacenCompleto = trim($celdas['A'] ?? '');
+            $descripcion     = trim($celdas['C'] ?? '');
+            $existencia      = (int) ($celdas['H'] ?? 0);
+            $barcodeId       = trim($celdas['M'] ?? '');
+            $nombreCategoria = trim($celdas['N'] ?? '');
+            $publicoGeneral  = isset($celdas['Q']) && $celdas['Q'] !== ''
+                                   ? (float) $celdas['Q']
+                                   : null;
+
+            // ── FILTROS SILENCIOSOS (sin reportar) ───────────────────
+            if (stripos($almacenCompleto, 'Almacén general') !== false) continue;
+            if ($existencia == 0) continue;
+
+            // ── FILTRO POR CATEGORÍA (silencioso) ────────────────────
+            if (!in_array($nombreCategoria, $categoriasPermitidas, true)) continue;
+
+            // ── VALIDACIONES CON REPORTE ─────────────────────────────
+            $motivo = validarFila(
+                $almacenCompleto,
+                $descripcion,
+                $existencia,
+                $barcodeId,
+                $publicoGeneral
+            );
+
+            if ($motivo !== null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto ?: '(vacío)',
+                    'descripcion' => $descripcion     ?: '(vacío)',
+                    'motivo'      => $motivo,
+                ];
+                continue;
+            }
+
+            // ── Resolver almacén ─────────────────────────────────────
+            $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0)
+                ? trim(substr($almacenCompleto, strlen('Central Cell ')))
+                : $almacenCompleto;
+
+            if (!array_key_exists($nombreAlmacen, $cacheAlmacen)) {
+                $cacheAlmacen[$nombreAlmacen] = obtenerIDSucursal($nombreAlmacen);
+            }
+            $idAlmacen = $cacheAlmacen[$nombreAlmacen];
+
+            if ($idAlmacen === null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto,
+                    'descripcion' => $descripcion,
+                    'motivo'      => 'Almacén no encontrado en la base de datos',
+                ];
+                continue;
+            }
+
+            $filasValidas[] = [
+                'fila'           => $numFila,
+                'almacen'        => $idAlmacen,
+                'almacenNombre'  => $almacenCompleto,
+                'descripcion'    => $descripcion,
+                'existencia'     => $existencia,
+                'barcodeId'      => $barcodeId,
+                'categoria'      => $nombreCategoria,
+                'publicoGeneral' => $publicoGeneral ?? 0.0,
+            ];
+        }
+
+        // ── Inserción masiva ─────────────────────────────────────────
+        $conn = conectarBD();
+        $bulk = insertarExistenciasBulk($conn, $filasValidas);
+
+        $resultado['exito']                = true;
+        $resultado['registros_insertados'] = $bulk['insertados'];
+        $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
+
+        registrarFechaExistencias($conn);
+
+        $total   = $bulk['insertados'];
+        $errores = count($resultado['registros_omitidos']);
+
+        $resultado['mensaje'] = $errores > 0
+            ? "Proceso completado. $total insertados, $errores con errores."
+            : "Proceso completado exitosamente. $total registros insertados.";
+
+    } catch (Exception $e) {
+        $resultado['mensaje'] = 'Error: ' . $e->getMessage();
+    }
+
+    return $resultado;
+}
 //aqui es el buscador 
 //Obtiene el nombre de un almacén por su ID
 function obtenerNombreAlmacen(int $idAlmacen): ?string {
@@ -1883,5 +2210,676 @@ function calcularMetas(float $metaDiaria, int $plantilla): array {
         ],
         'plantilla' => $plantilla
     ];
+}
+
+
+function obtenerFechaUltimaActualizacion(): ?string
+{
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->query("SELECT fecha FROM fechaexistencias LIMIT 1");
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$fila) return null;
+ 
+        $dt    = new DateTime($fila['fecha'], new DateTimeZone('America/Mexico_City'));
+        $dias  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+        $meses = [1=>'enero',2=>'febrero',3=>'marzo',4=>'abril',5=>'mayo',6=>'junio',
+                  7=>'julio',8=>'agosto',9=>'septiembre',10=>'octubre',11=>'noviembre',12=>'diciembre'];
+ 
+        return ucfirst($dias[(int)$dt->format('w')]) . ' ' . $dt->format('j') . ' de '
+             . $meses[(int)$dt->format('n')] . ' de ' . $dt->format('Y') . ', ' . $dt->format('g:i A');
+ 
+    } catch (Exception $e) {
+        error_log('obtenerFechaUltimaActualizacion: ' . $e->getMessage());
+        return null;
+    }
+}
+ 
+/**
+ * Extrae la descripción del modelo desde el campo descripcion.
+ * Patrón: CÓDIGO - COLOR - ESTADO ( DESCRIPCIÓN / MARCA / MODELO )
+ * Retorna la DESCRIPCIÓN interior (antes del primer /).
+ */
+function extraerDescripcionModelo(string $descripcion): string
+{
+    if (preg_match('/\(([^)]+)\)/', $descripcion, $m)) {
+        $partes = explode('/', trim($m[1]));
+        return trim($partes[0]);
+    }
+    return trim($descripcion);
+}
+ 
+/**
+ * Extrae la marca. Patrón: ... ( DESCRIPCIÓN / MARCA / MODELO )
+ */
+function extraerMarca(string $descripcion): string
+{
+    if (preg_match('/\(([^)]+)\)/', $descripcion, $m)) {
+        $partes = explode('/', trim($m[1]));
+        return isset($partes[1]) ? trim($partes[1]) : 'Sin marca';
+    }
+    return 'Sin marca';
+}
+ 
+/**
+ * Extrae el COLOR del campo descripcion.
+ * Patrón: CÓDIGO - COLOR - ESTADO ( ... )
+ * Ejemplo: "CSAMA26128 - NEGRO - NUEVO ( ... )" → "NEGRO"
+ */
+function extraerColor(string $descripcion): string
+{
+    // Tomar todo antes del paréntesis y dividir por " - "
+    $sinParentesis = trim(preg_replace('/\(.*\)/s', '', $descripcion));
+    $partes        = array_map('trim', explode('-', $sinParentesis));
+    // índice 0 = CÓDIGO, índice 1 = COLOR, índice 2 = ESTADO
+    return (isset($partes[1]) && $partes[1] !== '') ? strtoupper($partes[1]) : 'SIN COLOR';
+}
+ 
+/**
+ * Obtiene la URL de la imagen de un teléfono.
+ * Busca por descripcion exacta; fallback a "generaltelefono".
+ */
+function obtenerImagenTelefono(PDO $conn, string $descripcionModelo): string
+{
+    $stmt = $conn->prepare("SELECT direccion FROM imagenes WHERE descripcion = :desc LIMIT 1");
+    $stmt->execute([':desc' => $descripcionModelo]);
+    $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($fila) return $fila['direccion'];
+ 
+    $stmt2 = $conn->prepare("SELECT direccion FROM imagenes WHERE descripcion = 'generaltelefono' LIMIT 1");
+    $stmt2->execute();
+    $fila2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+    return $fila2 ? $fila2['direccion'] : '';
+}
+ 
+/**
+ * Obtiene todos los smartphones agrupados por modelo.
+ *
+ * Cada elemento:
+ * [
+ *   'descripcionModelo'    => 'SAMSUNG A26 5G 6+128 GB',
+ *   'marca'                => 'SAMSUNG',
+ *   'precio'               => 4999.00,          // mayor precio si hay inconsistencia
+ *   'precio_inconsistente' => false,             // true si colores tienen precios distintos
+ *   'precios_por_color'    => ['NEGRO'=>4999, 'BLANCO'=>4799],  // solo si hay inconsistencia
+ *   'colores'              => ['AZUL', 'NEGRO'],
+ *   'imagen'               => 'https://...',
+ *   'sucursales'           => [
+ *     ['nombre'=>'Centro', 'existencia'=>5, 'colores'=>['NEGRO','AZUL']],
+ *   ]
+ * ]
+ */
+function obtenerSmartphones(): array
+{
+    // Mapa: categoría BD → [nombre legible, orden]
+    $categoriasMapa = [
+        'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS'  => ['nombre' => 'Smartphones',   'orden' => 1],
+        'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL' => ['nombre' => 'Smartphones',   'orden' => 1],
+        'TECNOLOGIA MOVIL>EQUIPO BASICO'       => ['nombre' => 'Equipo Básico', 'orden' => 2],
+        'TECNOLOGIA MOVIL>SMARTWHATCH'         => ['nombre' => 'Smartwatch',    'orden' => 3],
+    ];
+ 
+    try {
+        $conn = conectarBD();
+ 
+        $sql = "
+            SELECT
+                e.descripcion,
+                e.existencia,
+                e.publico_general,
+                e.categoria,
+                s.nombre AS sucursal_nombre
+            FROM existencias e
+            LEFT JOIN sucursales s ON s.id = e.almacen
+            WHERE e.categoria IN (
+                'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS',
+                'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL',
+                'TECNOLOGIA MOVIL>EQUIPO BASICO',
+                'TECNOLOGIA MOVIL>SMARTWHATCH'
+            )
+            AND e.existencia > 0
+            ORDER BY e.descripcion, s.nombre
+        ";
+ 
+        $rows = $conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+ 
+        // ── Primera pasada: acumular por modelo ───────────────────
+        $intermedio = [];
+ 
+        foreach ($rows as $row) {
+            $descModelo   = extraerDescripcionModelo($row['descripcion']);
+            $marca        = extraerMarca($row['descripcion']);
+            $color        = extraerColor($row['descripcion']);
+            $precio       = (float) $row['publico_general'];
+            $sucursal     = $row['sucursal_nombre'] ?? null;
+            $categoriaRaw = $row['categoria'] ?? '';
+ 
+            // Resolver nombre legible y orden
+            $catInfo = $categoriasMapa[$categoriaRaw]
+                     ?? ['nombre' => $categoriaRaw, 'orden' => 99];
+ 
+            if (!isset($intermedio[$descModelo])) {
+                $intermedio[$descModelo] = [
+                    'descripcionModelo' => $descModelo,
+                    'marca'             => $marca,
+                    'imagen'            => obtenerImagenTelefono($conn, $descModelo),
+                    'categoria'         => $catInfo['nombre'],
+                    'categoria_orden'   => $catInfo['orden'],
+                    'precios_color'     => [],  // color => precio
+                    'sucursales_raw'    => [],  // sucursal => [color => existencia]
+                ];
+            }
+ 
+            // Guardar precio por color
+            $intermedio[$descModelo]['precios_color'][$color] = $precio;
+ 
+            // Acumular existencias por sucursal + color
+            if ($sucursal) {
+                if (!isset($intermedio[$descModelo]['sucursales_raw'][$sucursal][$color])) {
+                    $intermedio[$descModelo]['sucursales_raw'][$sucursal][$color] = 0;
+                }
+                $intermedio[$descModelo]['sucursales_raw'][$sucursal][$color] += (int) $row['existencia'];
+            }
+        }
+ 
+        // ── Segunda pasada: detectar inconsistencias y normalizar ─
+        $agrupados = [];
+ 
+        foreach ($intermedio as $descModelo => $data) {
+            $preciosColor  = $data['precios_color'];
+            $preciosUnicos = array_unique(array_values($preciosColor));
+ 
+            $inconsistente = count($preciosUnicos) > 1;
+            $precioOficial = $inconsistente ? max($preciosUnicos) : reset($preciosUnicos);
+ 
+            $colores = array_keys($preciosColor);
+            sort($colores);
+ 
+            // Normalizar sucursales
+            $sucursales = [];
+            foreach ($data['sucursales_raw'] as $nombreSuc => $coloresExist) {
+                $coloresSuc = array_keys($coloresExist);
+                sort($coloresSuc);
+                $sucursales[] = [
+                    'nombre'     => $nombreSuc,
+                    'existencia' => array_sum($coloresExist),
+                    'colores'    => $coloresSuc,
+                ];
+            }
+            usort($sucursales, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
+ 
+            $agrupados[$descModelo] = [
+                'descripcionModelo'    => $descModelo,
+                'marca'                => $data['marca'],
+                'categoria'            => $data['categoria'],
+                'categoria_orden'      => $data['categoria_orden'],
+                'precio'               => $precioOficial,
+                'precio_inconsistente' => $inconsistente,
+                'precios_por_color'    => $inconsistente ? $preciosColor : [],
+                'colores'              => $colores,
+                'imagen'               => $data['imagen'],
+                'sucursales'           => $sucursales,
+            ];
+        }
+ 
+        // ── Ordenar: categoría_orden → marca → modelo ─────────────
+        uasort($agrupados, function($a, $b) {
+            // 1. Por orden de categoría
+            $cmp = $a['categoria_orden'] <=> $b['categoria_orden'];
+            if ($cmp !== 0) return $cmp;
+            // 2. Por marca
+            $cmp = strcmp($a['marca'], $b['marca']);
+            if ($cmp !== 0) return $cmp;
+            // 3. Por nombre de modelo
+            return strcmp($a['descripcionModelo'], $b['descripcionModelo']);
+        });
+ 
+        return array_values($agrupados);
+ 
+    } catch (Exception $e) {
+        error_log('obtenerSmartphones: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/** MODULO COLABORADORES */
+
+/** CRUD BASICO */
+
+/*
+ Obtiene todos los colaboradores ordenados.
+ Incluye indicador de si tienen garantias.
+
+ Retorna lista de colaboradores.
+ */
+function obtenerColab(): array
+{
+    try {
+        $conn = conectarBD();
+
+        $sql = "
+            SELECT
+                c.*,
+                (SELECT COUNT(*) FROM garantia WHERE apasionado = c.id) AS tiene_garantias
+            FROM colaboradores c
+            ORDER BY
+                CASE WHEN c.payjoy_int = 3 THEN 1 ELSE 0 END ASC,
+                CASE WHEN c.fecha_ingreso IS NULL THEN 1 ELSE 0 END ASC,
+                c.fecha_ingreso DESC,
+                c.nombre ASC
+        ";
+
+        $stmt = $conn->query($sql);
+        $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $conn = null;
+
+        return $resultado;
+
+    } catch (Exception $e) {
+        error_log("Error en obtenerColab: " . $e->getMessage());
+        return [];
+    }
+}
+/*
+ Inserta un nuevo colaborador.
+
+ Parametros:
+ nombre
+ fecha_ingreso
+
+ Retorna:
+ ok, mensaje, id
+ */
+function crearColaborador(string $nombre, string $fecha_ingreso): array
+{
+    $nombre        = normalizarNombre2($nombre);
+    $fecha_ingreso = normalizarFecha($fecha_ingreso);
+
+    if (empty($nombre)) {
+        return ['ok' => false, 'mensaje' => 'El nombre no puede estar vacío.', 'id' => null];
+    }
+    if (!$fecha_ingreso) {
+        return ['ok' => false, 'mensaje' => 'La fecha de ingreso no es válida.', 'id' => null];
+    }
+
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->prepare("INSERT INTO colaboradores (nombre, fecha_ingreso, fecha_capacitacion, payjoy_int) VALUES (?, ?, NULL, 0)");
+
+        $stmt->execute([$nombre, $fecha_ingreso]);
+        $id = $conn->lastInsertId();
+
+        $conn = null;
+
+        return ['ok' => true, 'mensaje' => 'Colaborador creado correctamente.', 'id' => $id];
+
+    } catch (Exception $e) {
+        error_log("Error en crearColaborador: " . $e->getMessage());
+        return ['ok' => false, 'mensaje' => 'Error al crear el colaborador.', 'id' => null];
+    }
+}
+/** Actualiza colaborador: id, nombre, fecha_ingreso, fecha_capacitacion, payjoy_int. Retorna ok y mensaje */
+
+function actualizarColab(int $id, string $nombre, ?string $fecha_ingreso, ?string $fecha_capacitacion, int $payjoy_int): array
+{
+    $nombre             = normalizarNombre2($nombre);
+    $fecha_capacitacion = $fecha_capacitacion ? normalizarFecha($fecha_capacitacion) : null;
+    $payjoy_int         = (int) $payjoy_int;
+
+    if (empty($nombre)) {
+        return ['ok' => false, 'mensaje' => 'El nombre no puede estar vacío.'];
+    }
+
+    // Fecha de ingreso solo obligatoria si no es "ya no labora"
+    if ($payjoy_int !== 3) {
+        $fecha_ingreso = normalizarFecha($fecha_ingreso ?? '');
+        if (!$fecha_ingreso) {
+            return ['ok' => false, 'mensaje' => 'La fecha de ingreso no es válida.'];
+        }
+    } else {
+        $fecha_ingreso = ($fecha_ingreso && trim($fecha_ingreso) !== '')
+            ? normalizarFecha($fecha_ingreso)
+            : null;
+    }
+
+    try {
+        $conn = conectarBD();
+        $stmt = $conn->prepare("
+            UPDATE colaboradores 
+            SET nombre = ?, fecha_ingreso = ?, fecha_capacitacion = ?, payjoy_int = ? 
+            WHERE id = ?
+        ");
+
+        $stmt->execute([$nombre, $fecha_ingreso, $fecha_capacitacion, $payjoy_int, $id]);
+
+        $conn = null;
+
+        return ['ok' => true, 'mensaje' => 'Colaborador actualizado correctamente.'];
+
+    } catch (Exception $e) {
+        error_log("Error en actualizarColab: " . $e->getMessage());
+        return ['ok' => false, 'mensaje' => 'Error al actualizar el colaborador.'];
+    }
+}
+
+/** Elimina colaborador por id. Retorna ok y mensaje */
+function eliminarColaborador(int $id): array
+{
+    try {
+        $conn = conectarBD();
+
+        // Verificar si tiene garantías vinculadas
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
+        $stmt->execute([$id]);
+        $total = (int) $stmt->fetchColumn();
+
+        if ($total > 0) {
+            return [
+                'ok'      => false,
+                'mensaje' => "No se puede eliminar: el colaborador tiene $total garantía(s) vinculada(s). Usa la fusión para reasignarlas primero."
+            ];
+        }
+
+        $stmt = $conn->prepare("DELETE FROM colaboradores WHERE id = ?");
+        $stmt->execute([$id]);
+
+        $conn = null;
+
+        return ['ok' => true, 'mensaje' => 'Colaborador eliminado correctamente.'];
+
+    } catch (Exception $e) {
+        error_log("Error en eliminarColaborador: " . $e->getMessage());
+        return ['ok' => false, 'mensaje' => 'Error al eliminar el colaborador.'];
+    }
+}
+
+/** Importa Excel y sincroniza colaboradores (filtra puestos validos). Retorna insertados, actualizados, sin_cambios y errores */
+function importarColaboradoresDesdeExcel(string $ruta_archivo): array
+{
+    $puestos_validos = [
+        'apasionado de la telefonía',
+        'encargado de sucursal',
+    ];
+
+    $resultado = ['insertados' => 0, 'actualizados' => 0, 'sin_cambios' => 0, 'errores' => []];
+
+    try {
+        $zip = new ZipArchive();
+        if ($zip->open($ruta_archivo) !== true) {
+            $resultado['errores'][] = 'No se pudo abrir el archivo xlsx.';
+            return $resultado;
+        }
+
+        $shared_strings = [];
+        $ss_xml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($ss_xml) {
+            $ss = simplexml_load_string($ss_xml);
+            if ($ss === false) {
+                $resultado['errores'][] = 'Error al parsear sharedStrings.xml.';
+                $zip->close();
+                return $resultado;
+            }
+            foreach ($ss->si as $si) {
+                if (isset($si->t)) {
+                    $shared_strings[] = (string) $si->t;
+                } else {
+                    $texto = '';
+                    foreach ($si->r as $r) {
+                        $texto .= (string) $r->t;
+                    }
+                    $shared_strings[] = $texto;
+                }
+            }
+        }
+
+        $sheet_xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+
+        if (!$sheet_xml) {
+            $resultado['errores'][] = 'No se encontró la hoja de cálculo.';
+            return $resultado;
+        }
+
+        $sheet = simplexml_load_string($sheet_xml);
+        if ($sheet === false) {
+            $resultado['errores'][] = 'Error al parsear la hoja de cálculo.';
+            return $resultado;
+        }
+
+        $filas = [];
+        foreach ($sheet->sheetData->row as $row) {
+            $num_fila = (int) $row['r'];
+            foreach ($row->c as $cell) {
+                $ref   = (string) $cell['r'];
+                $col   = preg_replace('/[0-9]/', '', $ref);
+                $tipo  = (string) $cell['t'];
+                $valor = isset($cell->v) ? (string) $cell->v : '';
+
+                if ($tipo === 's') {
+                    $valor = $shared_strings[(int) $valor] ?? '';
+                }
+
+                $filas[$num_fila][$col] = $valor;
+            }
+        }
+
+        $colaboradores_bd = obtenerColab();
+
+        // Índice por nombre normalizado para búsqueda exacta O(1)
+        $indice_nombres = [];
+        foreach ($colaboradores_bd as $col) {
+            $clave = mb_strtolower(trim($col['nombre']));
+            $indice_nombres[$clave] = $col;
+        }
+
+        foreach ($filas as $num_fila => $cols) {
+            // Las primeras 4 filas son encabezados del formato del archivo
+            if ($num_fila < 5) continue;
+
+            $nombre_excel = trim($cols['B'] ?? '');
+            $puesto_excel = trim($cols['E'] ?? '');
+            $fecha_raw    = trim($cols['H'] ?? '');
+
+            if (empty($nombre_excel)) continue;
+            if (!in_array(mb_strtolower($puesto_excel), $puestos_validos, true)) continue;
+
+            $fecha_ingreso = null;
+            if (is_numeric($fecha_raw)) {
+                $ts = ($fecha_raw - 25569) * 86400;
+                $fecha_ingreso = gmdate('Y-m-d', $ts); // gmdate evita desfase por timezone del servidor
+            } else {
+                $fecha_ingreso = normalizarFecha($fecha_raw);
+            }
+
+            if (!$fecha_ingreso) {
+                $resultado['errores'][] = "Fila $num_fila: fecha inválida para '$nombre_excel'.";
+                continue;
+            }
+
+            $clave_excel   = mb_strtolower(trim($nombre_excel));
+            $col_existente = $indice_nombres[$clave_excel] ?? null;
+
+            if ($col_existente === null) {
+                // No existe → crear
+                $res = crearColaborador($nombre_excel, $fecha_ingreso);
+                if ($res['ok']) {
+                    $resultado['insertados']++;
+                    $nuevo = [
+                        'id'                 => $res['id'],
+                        'nombre'             => $nombre_excel,
+                        'fecha_ingreso'      => $fecha_ingreso,
+                        'fecha_capacitacion' => null,
+                        'payjoy_int'         => 0,
+                        'tiene_garantias'    => 0,
+                    ];
+                    $colaboradores_bd[]           = $nuevo;
+                    $indice_nombres[$clave_excel] = $nuevo;
+                } else {
+                    $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
+                }
+            } elseif ($col_existente['fecha_ingreso'] === $fecha_ingreso) {
+                // Nombre y fecha idénticos → sin cambios
+                $resultado['sin_cambios']++;
+            } else {
+                // Nombre exacto pero fecha diferente → actualizar solo fecha
+                $res = actualizarColab(
+                    (int) $col_existente['id'],
+                    $col_existente['nombre'],
+                    $fecha_ingreso,
+                    $col_existente['fecha_capacitacion'],
+                    (int) $col_existente['payjoy_int']
+                );
+                if ($res['ok']) {
+                    $resultado['actualizados']++;
+                } else {
+                    $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
+                }
+            }
+        }
+
+    } catch (Exception $e) {
+        error_log("Error en importarColaboradoresDesdeExcel: " . $e->getMessage());
+        $resultado['errores'][] = 'Error inesperado durante la importación.';
+    }
+
+    return $resultado;
+}
+
+
+/** Fusiona colaboradores: pasa garantias de origen a destino. Retorna ok, mensaje y garantias_reasignadas */
+function fusionarColaboradores(int $id_origen, int $id_destino): array
+{
+    if ($id_origen === $id_destino) {
+        return ['ok' => false, 'mensaje' => 'El origen y el destino no pueden ser el mismo.', 'garantias_reasignadas' => 0];
+    }
+
+    try {
+        $conn = conectarBD();
+
+        // Verificar que el colaborador destino exista
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM colaboradores WHERE id = ?");
+        $stmt->execute([$id_destino]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            return ['ok' => false, 'mensaje' => 'El colaborador destino no existe.', 'garantias_reasignadas' => 0];
+        }
+
+        $conn->beginTransaction();
+
+        // Contar garantías del origen
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
+        $stmt->execute([$id_origen]);
+        $total = (int) $stmt->fetchColumn();
+
+        // Reasignar: mover el id_origen al id_destino en el campo apasionado
+        $stmt = $conn->prepare("UPDATE garantia SET apasionado = ? WHERE apasionado = ?");
+        $stmt->execute([$id_destino, $id_origen]);
+
+        $conn->commit();
+        $conn = null;
+
+        return [
+            'ok'                    => true,
+            'mensaje'               => "Fusión completada. $total garantías reasignadas.",
+            'garantias_reasignadas' => $total,
+        ];
+
+    } catch (Exception $e) {
+        if (isset($conn) && $conn->inTransaction()) {
+            $conn->rollBack();
+        }
+        error_log("Error en fusionarColaboradores: " . $e->getMessage());
+        return ['ok' => false, 'mensaje' => 'Error al fusionar los colaboradores.', 'garantias_reasignadas' => 0];
+    }
+}
+/** Normaliza nombre (trim y formato). Retorna nombre limpio */
+function normalizarNombre2(string $nombre): string
+{
+    return trim($nombre);
+}
+
+/** Valida y formatea fecha a Y-m-d. Retorna fecha o false */
+function normalizarFecha(string $fecha): string|false
+{
+    $fecha = trim($fecha);
+
+    // Intentar parsear con DateTime para varios formatos
+    $formatos = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'm/d/Y'];
+
+    foreach ($formatos as $formato) {
+        $dt = \DateTime::createFromFormat($formato, $fecha);
+        if ($dt && $dt->format($formato) === $fecha) {
+            return $dt->format('Y-m-d');
+        }
+    }
+
+    // Último intento con strtotime (gmdate evita desfase por timezone del servidor)
+    $ts = strtotime($fecha);
+    if ($ts !== false) {
+        return gmdate('Y-m-d', $ts);
+    }
+
+    return false;
+}
+
+/** Convierte fecha de Excel a Y-m-d. Retorna fecha o false */
+function parsearFechaExcel(mixed $valor_celda): string|false
+{
+    if ($valor_celda === null || $valor_celda === '') {
+        return false;
+    }
+
+    // Si es número serial de Excel
+    if (is_numeric($valor_celda)) {
+        try {
+            $fecha = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valor_celda);
+            return $fecha->format('Y-m-d');
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    return normalizarFecha((string) $valor_celda);
+}
+
+/** Calcula estado PayJoy segun valor y fecha_ingreso. Retorna etiqueta y clase_css */
+function calcularEstadoPayjoy(int $payjoy_int, ?string $fecha_ingreso): array
+{
+    switch ($payjoy_int) {
+        case 1:
+            return ['etiqueta' => 'ACTIVO', 'clase_css' => 'badge-activo'];
+
+        case 2:
+            return ['etiqueta' => 'BLOQUEADA', 'clase_css' => 'badge-bloqueada'];
+
+        case 3:
+            return ['etiqueta' => 'YA NO LABORA', 'clase_css' => 'badge-inactivo'];
+
+        case 0:
+            if ($fecha_ingreso === null || $fecha_ingreso === '') {
+                return ['etiqueta' => 'SIN FECHA', 'clase_css' => 'badge-sin-fecha'];
+            }
+
+            try {
+                $hoy     = new DateTime();
+                $ingreso = new DateTime($fecha_ingreso);
+                $diff    = (int) $hoy->diff($ingreso)->days;
+            } catch (\Exception $e) {
+                return ['etiqueta' => 'SIN FECHA', 'clase_css' => 'badge-sin-fecha'];
+            }
+
+            if ($diff < 30) {
+                $faltan = 30 - $diff;
+                return [
+                    'etiqueta'  => "Faltan $faltan día" . ($faltan === 1 ? '' : 's'),
+                    'clase_css' => 'badge-pendiente',
+                ];
+            }
+
+            return ['etiqueta' => 'NO TIENE CUENTA', 'clase_css' => 'badge-sin-cuenta'];
+
+        default:
+            return ['etiqueta' => 'DESCONOCIDO', 'clase_css' => 'badge-desconocido'];
+    }
 }
 ?>

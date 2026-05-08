@@ -60,34 +60,144 @@
 </head>
 <body>
 
-<nav style="background:#0F5476; padding:10px;">
-    <input type="checkbox" id="check">
-    <h1 id="nombre">Tabla de Garantías</h1>
-    <label class="bar" for="check">
-        <span class="top"></span>
-        <span class="middle"></span>
-        <span class="bottom"></span>
-    </label>
-    <ul id="menu">
-        <li>
-            <a href="garantias.php">
-                <span style="display:inline-flex;width:40px;height:40px;background:white;border-radius:50%;justify-content:center;align-items:center;">
-                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>"
-                         alt="Logo" style="width:30px;height:30px;object-fit:contain;" />
-                </span>
-                Home
-            </a>
-        </li>
-        <li>
-            <a href="tabla.php">
-                <img src="../../recursos/img/merma.png" alt="Garantías" style="width:40px;height:40px;object-fit:contain;" />
-                Garantías / Mermas
-            </a>
-        </li>
-    </ul>
-</nav>
-<hr>
+<nav style="background:#0F5476; padding:10px 15px; position:fixed; top:0; left:0; width:100%; z-index:1000; display:flex; align-items:center; gap:8px; box-sizing:border-box;">
 
+  <h1 id="nombre">­ </h1>
+
+  <button id="hamburger" onclick="toggleMenu()" style="
+    display:none; background:none; border:none; cursor:pointer;
+    flex-direction:column; justify-content:center; gap:5px;
+    width:36px; height:36px; flex-shrink:0; padding:4px;
+  ">
+    <span class="hb-bar"></span>
+    <span class="hb-bar"></span>
+    <span class="hb-bar"></span>
+  </button>
+
+  <div id="menu-overlay" onclick="cerrarMenu()" style="
+    display:none; position:fixed; top:0; left:0;
+    width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:998;
+  "></div>
+
+  <button id="nav-prev" onclick="scrollMenu(-1)" style="
+    display:none; background:rgba(255,255,255,0.15); border:none; color:#fff;
+    width:28px; height:36px; cursor:pointer; font-size:1.3em; border-radius:4px;
+    align-items:center; justify-content:center; flex-shrink:0;
+  ">&#8249;</button>
+
+  <div id="menu-scroll" style="overflow:hidden; flex:1;">
+    <ul id="menu" style="display:flex; flex-direction:row; flex-wrap:nowrap; margin:0; padding:0; list-style:none; gap:4px;">
+      <li>
+        <a href="garantias.php" style="display:flex;align-items:center;gap:8px;white-space:nowrap;">
+          <span style="display:inline-flex;width:40px;height:40px;background:#fff;border-radius:50%;justify-content:center;align-items:center;">
+            <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>"
+                 style="width:30px;height:30px;object-fit:contain;" alt="Logo">
+          </span>Home
+        </a>
+      </li>
+      
+    </ul>
+  </div>
+
+  <button id="nav-next" onclick="scrollMenu(1)" style="
+    display:none; background:rgba(255,255,255,0.15); border:none; color:#fff;
+    width:28px; height:36px; cursor:pointer; font-size:1.3em; border-radius:4px;
+    align-items:center; justify-content:center; flex-shrink:0;
+  ">&#8250;</button>
+
+</nav>
+
+<style>
+.hb-bar {
+  display: block;
+  width: 22px;
+  height: 3px;
+  background: #fff;
+  border-radius: 3px;
+  transition: 0.3s;
+}
+
+@media (max-width: 600px) {
+  #hamburger { display: flex !important; }
+  #nav-prev, #nav-next { display: none !important; }
+
+  #menu-scroll {
+    position: fixed !important;
+    top: 0 !important;
+    right: -290px !important;
+    width: 280px !important;
+    height: 100vh !important;
+    background: #155e75 !important;
+    z-index: 999 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transition: right 0.35s cubic-bezier(0.68,-0.55,0.265,1.55) !important;
+    padding-top: 70px !important;
+  }
+
+  #menu-scroll.abierto { right: 0 !important; }
+
+  #menu {
+    flex-direction: column !important;
+    flex-wrap: wrap !important;
+    gap: 0 !important;
+    padding: 10px 15px 30px !important;
+  }
+
+  #menu li { width: 100%; margin-bottom: 6px; }
+
+  #menu a {
+    font-size: 15px !important;
+    padding: 11px 14px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    display: flex !important;
+    white-space: normal !important;
+  }
+}
+</style>
+
+<script>
+function toggleMenu() {
+  const scroll  = document.getElementById('menu-scroll');
+  const overlay = document.getElementById('menu-overlay');
+  const abierto = scroll.classList.toggle('abierto');
+  overlay.style.display = abierto ? 'block' : 'none';
+}
+function cerrarMenu() {
+  document.getElementById('menu-scroll').classList.remove('abierto');
+  document.getElementById('menu-overlay').style.display = 'none';
+}
+function checkMenuOverflow() {
+  if (window.innerWidth <= 600) return;
+  const wrap = document.getElementById('menu-scroll');
+  const ul   = document.getElementById('menu');
+  const prev = document.getElementById('nav-prev');
+  const next = document.getElementById('nav-next');
+  if (!wrap || !ul) return;
+  const overflows = ul.scrollWidth > wrap.clientWidth + 2;
+  prev.style.display = overflows ? 'flex' : 'none';
+  next.style.display = overflows ? 'flex' : 'none';
+  updateArrows();
+}
+function scrollMenu(dir) {
+  document.getElementById('menu-scroll').scrollBy({ left: dir * 160, behavior: 'smooth' });
+  setTimeout(updateArrows, 350);
+}
+function updateArrows() {
+  const wrap = document.getElementById('menu-scroll');
+  const prev = document.getElementById('nav-prev');
+  const next = document.getElementById('nav-next');
+  if (!wrap) return;
+  prev.style.opacity = wrap.scrollLeft <= 0 ? '0.35' : '1';
+  next.style.opacity = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 1 ? '0.35' : '1';
+}
+document.getElementById('menu-scroll')?.addEventListener('scroll', updateArrows);
+window.addEventListener('resize', () => { cerrarMenu(); checkMenuOverflow(); });
+document.addEventListener('DOMContentLoaded', () => { checkMenuOverflow(); setTimeout(checkMenuOverflow, 300); });
+window.addEventListener('load', checkMenuOverflow);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
+</script>
 <div class="container">
     <h2>Historial de Garantías y Mermas</h2>
 

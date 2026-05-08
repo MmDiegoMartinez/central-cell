@@ -383,3 +383,27 @@ main {
         margin: 2rem 0;
     }
 }
+/* === Badges de área === */
+.area-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.badge-general {
+    background: #E6F1FB;
+    color: #0C447C;
+    border: 1px solid #85B7EB;
+}
+.badge-telefonia {
+    background: #E1F5EE;
+    color: #085041;
+    border: 1px solid #5DCAA5;
+}
+.badge-accesorios {
+    background: #FAEEDA;
+    color: #633806;
+    border: 1px solid #EF9F27;
+}

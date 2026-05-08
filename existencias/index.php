@@ -1,4 +1,10 @@
 <?php session_start();
+include_once '../../funciones.php';
+
+if (!isset($_SESSION['validador_id'])) {
+    header('Location: loginvalidador.php');
+    exit;
+}
 
 if (!isset($_SESSION['validador_id'])) {
     header('Location: loginvalidador.php');
@@ -16,9 +22,11 @@ $validador_id = $_SESSION['validador_id'];
     <title>Gestión de Existencias</title>
 
     <!-- Hoja de estilos -->
-    <link rel="stylesheet" href="css.css">
+   
+    <link rel="stylesheet" href="css.css?v=<?php echo time(); ?>">
 </head>
 <body>
+    
 
     <div class="container">
 
@@ -28,16 +36,31 @@ $validador_id = $_SESSION['validador_id'];
         </p>
 
         <div style="display: flex; gap: 20px; margin-top: 40px; flex-wrap: wrap;">
+            <a href="../garantias/validador/validador.php" style="flex:1; text-decoration: none;">
+                <button class="btn-primary">
+                    🏠 Home
+                </button>
+            </a>
 
             <a href="subir_existencias.php" style="flex:1; text-decoration: none;">
                 <button class="btn-primary">
-                    📤 Actualizar Existencias
+                    📤 Act. Existencias Full
+                </button>
+            </a>
+            <a href="subir_tel.php" style="flex:1; text-decoration: none;">
+                <button class="btn-primary">
+                    📤 Act. Existencias Cel
                 </button>
             </a>
 
             <a href="buscador.php" style="flex:1; text-decoration: none;">
                 <button class="btn-primary">
                     🔍 Consultar Existencias
+                </button>
+            </a>
+            <a href="catalogo.php" style="flex:1; text-decoration: none;">
+                <button class="btn-primary">
+                    🔍 Catalogo Telefonos
                 </button>
             </a>
 

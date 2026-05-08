@@ -56,12 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
 
             <ul id="nav-menu">
                 <li>
-        <a href="index.php" class="menu-link">
+        <a href="../garantias/validador/validador.php" class="menu-link">
           <span class="logo-container">
-            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
-
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
           </span>
           Home
+        </a>
+      </li>
+      <li>
+        <a href="index.php" class="menu-link">
+          
+          Panel KPIs
         </a>
       </li>
             </ul>

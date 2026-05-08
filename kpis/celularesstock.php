@@ -48,9 +48,21 @@ button{padding:8px 14px;background:#2f6fa6;color:white;border:none;border-radius
         <span class="top"></span><span class="middle"></span><span class="bottom"></span>
       </label>
       <ul id="nav-menu">
-        <li><a href="index.php">Home</a></li>
+        <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
+          Home
+        </a>
+      </li>
+      <li>
+        <a href="index.php" class="menu-link">
+          📊 Panel KPIs
+        </a>
+      </li>
         <li><a href="ventascelulares.php">🛍️ Ventas por Modelo</a></li>
-        <li><a href="analisis_celulares_ventas_existencias.php">📊 Análisis Ventas vs Existencias</a></li>
+        <li><a href="analisis_celulares_ventas_existencias.php">📊 Ventas vs Existencias</a></li>
       </ul>
     </div>
   </nav>

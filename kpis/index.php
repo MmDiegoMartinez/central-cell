@@ -18,10 +18,15 @@
             </label>
 
             <ul id="nav-menu">
-                <li><a href="#">Inicio</a></li>
-                <li><a href="../compatibilidades/consultar.php">Compatibilidades</a></li>
-                <li><a href="../capacitados/capa.php">Capacitaciones</a></li>
-                <li><a href="../garantias/validador/validador.php">Validar Mermas</a></li>
+               <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
+          Home
+        </a>
+      </li>
+               
             </ul>
         </div>
     </nav>
