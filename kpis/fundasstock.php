@@ -90,13 +90,22 @@ button{
             </label>
 
             <ul id="nav-menu">
-                 <li> <a href="index.php">
-          
+                 <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
           Home
-        </a></li>
-            <a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a>
-            <a href="ventasfundas.php">Ventas Por Modelo Fundas</a>
-            <a href="analisis_fundas.php">Ventas Por Marca Fundas</a>
+        </a>
+      </li>
+      <li>
+        <a href="index.php" class="menu-link">
+          📊 Panel KPIs
+        </a>
+      </li>
+            <a href="analisis_fundas_ventas_existencias.php">📦💰 Ventas vs Existencias</a>
+            <a href="ventasfundas.php">📱📊 Ventas Por Modelo</a>
+            <a href="analisis_fundas.php">🏷️📊Ventas Por Marca</a>
             </ul>
         </div>
     </nav>

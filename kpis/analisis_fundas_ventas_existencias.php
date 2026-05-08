@@ -227,12 +227,23 @@ input[type=file] {
             </label>
 
             <ul id="nav-menu">
-                 <li> <a href="index.php">
-          
+                <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
           Home
-        </a></li>
+        </a>
+      </li>
+      <li>
+        <a href="index.php" class="menu-link">
+          
+          Panel KPIs
+        </a>
+      </li>
       <li><a href="fundasstock.php">📦 Distribución Fundas</a></li>
       <li><a href="ventasfundas.php">🛍️ Ventas por Modelo</a></li>
+      <li><a href="analisis_fundas.php">🏷️Ventas Por Marca</a></li>
             </ul>
         </div>
     </nav>

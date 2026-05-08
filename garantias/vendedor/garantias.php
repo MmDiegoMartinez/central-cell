@@ -316,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
    <nav>
-    <h1 id="nombre">Innovación Móvil</h1>
+    <h1 id="nombre">Soluciones Móviles</h1>
     <input type="checkbox" id="check">
     <label class="bar" for="check">
         <span class="top"></span><span class="middle"></span><span class="bottom"></span>
@@ -333,7 +333,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <li>
             <a href="metas.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/Metas.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
-                Metas IM
+                Metas
+            </a>
+        </li>
+         <li>
+            <a href="../../existencias/catalogo.php" style="display:flex;align-items:center;gap:12px;">
+                <img src="../../recursos/img/cata.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
+                Catalogo
             </a>
         </li>
         <li>
@@ -349,15 +355,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </li>
         <li>
-            <a href="../../Evaluacion/mermas.php" style="display:flex;align-items:center;gap:12px;">
+            <a href="../../Evaluacion/material.html" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/tuto.png" alt="Tutorial" style="width:40px;height:40px;object-fit:contain;" />
-                Cómo Enviar
+                Capacitación
             </a>
         </li>
         <li>
             <a href="tabla.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/merma.png" alt="Mermas" style="width:40px;height:40px;object-fit:contain;" />
-                Garantías / Mermas
+                Gts / Mms
             </a>
         </li>
     </ul>
@@ -541,6 +547,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
     });
+    
     </script>
+    <footer style="text-align:center;padding:16px;margin-top:50px;">
+  <a href="../../existencias/buscador.php" style="
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    text-decoration:none;
+    color:var(--muted, #6b7280);
+    font-size:.78rem;
+    padding:6px 14px;
+    border-radius:20px;
+    border:1px solid #d1d5db;
+    transition:all 220ms ease;
+    background:transparent;
+  "
+  onmouseover="this.style.color='var(--primary-400,#16729a)';this.style.borderColor='var(--primary-400,#16729a)'"
+  onmouseout="this.style.color='var(--muted,#6b7280)';this.style.borderColor='#d1d5db'"
+  >
+    📦 Existencias
+  </a>
+</footer>
 </body>
 </html>

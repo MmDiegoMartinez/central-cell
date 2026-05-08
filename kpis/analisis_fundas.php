@@ -89,13 +89,23 @@ select {
             </label>
 
             <ul id="nav-menu">
-                 <li> <a href="index.php">
-          
+                 <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
           Home
-        </a></li>
-           <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
-        <li><a href="fundasstock.php">Distribucion Por Modelo Fundas</a></li>
-        <li><a href="ventasfundas.php">Ventas Por Modelo Fundas</a></li>
+        </a>
+      </li>
+      <li>
+        <a href="index.php" class="menu-link">
+          
+          📊Panel KPIs
+        </a>
+      </li>
+           <li><a href="analisis_fundas_ventas_existencias.php">📦💰Ventas vs Existencias</a></li>
+        <li><a href="fundasstock.php">📦Distribución de fundas</a></li>
+        <li><a href="ventasfundas.php">📱📊Ventas Por Modelo</a></li>
             </ul>
         </div>
     </nav>

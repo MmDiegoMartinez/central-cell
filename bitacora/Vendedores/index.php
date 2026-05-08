@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <nav>
-    <h1 id="nombre">Productos Negados</h1>
+    <h1 id="nombre">Bitácora de almacén</h1>
     
     <!-- Checkbox PRIMERO (importante para el CSS) -->
     <input type="checkbox" id="check">
@@ -125,20 +125,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>"
                          style="width:30px;height:30px;"/>
                 </span>
-                Registrar Garantía
+                Home
             </a>
         </li>
-        <li>
-            <a href="index.php" style="display:flex;align-items:center;gap:12px;">
-                <img src="../../recursos/img/productosNegados.png" style="width:40px;height:40px;"/>
-                Registrar Negado
-            </a>
-        </li>
+        
 
         <li>
             <a href="tabla.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/merma.png" style="width:40px;height:40px;"/>
-                Producto
+                Ver Productos Negados
             </a>
         </li>
     </ul>
@@ -147,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="contenedor">
     <div class="formulario">
 
-        <h1>Bitácora de almacén</h1><br>
+        <h1>Productos Negados</h1><br>
 
         <?php if ($mensaje): ?>
             <p><?= htmlspecialchars($mensaje) ?></p>

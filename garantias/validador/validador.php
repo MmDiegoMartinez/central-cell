@@ -112,21 +112,35 @@ $validador_id = $_SESSION['validador_id'];
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <body>
 
-<nav style="background:#0F5476; padding:10px; position:relative; display:flex; align-items:center; gap:4px;">
+<nav style="background:#0F5476; padding:10px 15px; position:fixed; top:0; left:0; width:100%; z-index:1000; display:flex; align-items:center; gap:8px; box-sizing:border-box;">
+  
   <h1 id="nombre">­ </h1>
-  <input type="checkbox" id="check">
-  <label class="bar" for="check">
-    <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-  </label>
 
-  <!-- Flecha izquierda -->
+  <!-- Hamburguesa (solo visible en móvil via CSS) -->
+  <button id="hamburger" onclick="toggleMenu()" style="
+    display:none; background:none; border:none; cursor:pointer;
+    flex-direction:column; justify-content:center; gap:5px;
+    width:36px; height:36px; flex-shrink:0; padding:4px;
+  ">
+    <span class="hb-bar"></span>
+    <span class="hb-bar"></span>
+    <span class="hb-bar"></span>
+  </button>
+
+  <!-- Overlay oscuro (móvil) -->
+  <div id="menu-overlay" onclick="cerrarMenu()" style="
+    display:none; position:fixed; top:0; left:0;
+    width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:998;
+  "></div>
+
+  <!-- Flecha izquierda (desktop) -->
   <button id="nav-prev" onclick="scrollMenu(-1)" style="
     display:none; background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:28px; height:36px; cursor:pointer; font-size:1.3em; border-radius:4px;
     align-items:center; justify-content:center; flex-shrink:0;
   ">&#8249;</button>
 
-  <!-- Contenedor scrolleable -->
+  <!-- Contenedor del menú -->
   <div id="menu-scroll" style="overflow:hidden; flex:1;">
     <ul id="menu" style="display:flex; flex-direction:row; flex-wrap:nowrap; margin:0; padding:0; list-style:none; gap:4px;">
       <li>
@@ -137,45 +151,113 @@ $validador_id = $_SESSION['validador_id'];
           </span>Home
         </a>
       </li>
-      <li><a href="../vendedor/garantias.php" style="white-space:nowrap;">👨🏻‍💼 Apdo. Vendedor</a></li>
-      <li><a href="anotarmermassinregistrar.php" style="white-space:nowrap;">⚠️ Anot Mer.</a></li>
-      <li><a href="tabla.php" style="white-space:nowrap;">📌 Mermas sin reg.</a></li>
-      <li><a href="../../Evaluacion/lista_colaboradores.php" style="white-space:nowrap;">📘 Capacit.</a></li>
-      <li><a href="../../compatibilidades/consultar.php" style="white-space:nowrap;">🔗 Compatibilidades</a></li>
-      <li><a href="../../kpis/index.php" style="white-space:nowrap;">📈 KPIs</a></li>
-      <li><a href="guardar_imagen.php" style="white-space:nowrap;">🖼️ Imagenes</a></li>
-      <li><a href="sucursales.php" style="white-space:nowrap;">🏬 Sucursales</a></li>
-      <li><a href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing" style="white-space:nowrap;">📑 Bitacora</a></li>
-      <li><a href="Validadores.php" style="white-space:nowrap;">🆕 Validador</a></li>
-      <li><a href="../../existencias/index.php" style="white-space:nowrap;">📦 Existencias</a></li>
+      <li><a href="../vendedor/garantias.php">👨🏻‍💼 Apdo. Vendedor</a></li>
+      <li><a href="../../existencias/index.php">📦 Existencias</a></li>
+      <li><a href="../../kpis/index.php">📈 KPIs</a></li>
+      <li><a href="../../capacitados/capa.php">📘 Capacit.</a></li>
+      <li><a href="colaboradores.php">👨🏻‍💼 Empleados</a></li>
+      <li><a href="guardar_imagen.php">🖼️ Imagenes</a></li>
+      <li><a href="../../compatibilidades/consultar.php">🔗 Compatibilidades</a></li>
+      <li><a href="anotarmermassinregistrar.php">⚠️ Anot Mer.</a></li>
+      <li><a href="tabla.php">📌 Mermas sin reg.</a></li>
+      <li><a href="sucursales.php">🏬 Sucursales</a></li>
+      <li><a href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing">📑 Bitacora</a></li>
+      <li><a href="Validadores.php">🆕 Validador</a></li>
+      
     </ul>
   </div>
 
-  <!-- Flecha derecha -->
+  <!-- Flecha derecha (desktop) -->
   <button id="nav-next" onclick="scrollMenu(1)" style="
     display:none; background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:28px; height:36px; cursor:pointer; font-size:1.3em; border-radius:4px;
     align-items:center; justify-content:center; flex-shrink:0;
   ">&#8250;</button>
+
 </nav>
 
+<style>
+.hb-bar {
+  display: block;
+  width: 22px;
+  height: 3px;
+  background: #fff;
+  border-radius: 3px;
+  transition: 0.3s;
+}
+
+@media (max-width: 600px) {
+  #hamburger { display: flex !important; }
+  #nav-prev, #nav-next { display: none !important; }
+
+  #menu-scroll {
+    position: fixed !important;
+    top: 0 !important;
+    right: -290px !important;        /* ← oculto por defecto */
+    width: 280px !important;
+    height: 100vh !important;
+    background: #155e75 !important;
+    z-index: 999 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transition: right 0.35s cubic-bezier(0.68,-0.55,0.265,1.55) !important;
+    padding-top: 70px !important;
+  }
+
+  #menu-scroll.abierto {
+    right: 0 !important;             /* ← solo cuando se abre */
+  }
+
+  #menu {
+    flex-direction: column !important;
+    flex-wrap: wrap !important;
+    gap: 0 !important;
+    padding: 10px 15px 30px !important;
+  }
+
+  #menu li { width: 100%; margin-bottom: 6px; }
+
+  #menu a {
+    font-size: 15px !important;
+    padding: 11px 14px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    display: flex !important;
+    white-space: normal !important;
+  }
+}
+</style>
+
+
 <script>
+function toggleMenu() {
+  const scroll   = document.getElementById('menu-scroll');
+  const overlay  = document.getElementById('menu-overlay');
+  const abierto  = scroll.classList.toggle('abierto');
+  overlay.style.display = abierto ? 'block' : 'none';
+}
+
+function cerrarMenu() {
+  document.getElementById('menu-scroll').classList.remove('abierto');
+  document.getElementById('menu-overlay').style.display = 'none';
+}
+
+/* ── Flechas desktop ── */
 function checkMenuOverflow() {
+  if (window.innerWidth <= 600) return; // en móvil las flechas no aplican
   const wrap = document.getElementById('menu-scroll');
   const ul   = document.getElementById('menu');
   const prev = document.getElementById('nav-prev');
   const next = document.getElementById('nav-next');
   if (!wrap || !ul) return;
-
-  const overflows = ul.scrollWidth > wrap.clientWidth;
+  const overflows = ul.scrollWidth > wrap.clientWidth + 2;
   prev.style.display = overflows ? 'flex' : 'none';
   next.style.display = overflows ? 'flex' : 'none';
   updateArrows();
 }
 
 function scrollMenu(dir) {
-  const wrap = document.getElementById('menu-scroll');
-  wrap.scrollBy({ left: dir * 160, behavior: 'smooth' });
+  document.getElementById('menu-scroll').scrollBy({ left: dir * 160, behavior: 'smooth' });
   setTimeout(updateArrows, 350);
 }
 
@@ -189,8 +271,12 @@ function updateArrows() {
 }
 
 document.getElementById('menu-scroll')?.addEventListener('scroll', updateArrows);
-window.addEventListener('resize', checkMenuOverflow);
-document.addEventListener('DOMContentLoaded', checkMenuOverflow);
+window.addEventListener('resize', () => { cerrarMenu(); checkMenuOverflow(); });
+document.addEventListener('DOMContentLoaded', () => { checkMenuOverflow(); setTimeout(checkMenuOverflow, 300); });
+window.addEventListener('load', checkMenuOverflow);
+
+// Cerrar con tecla Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
 </script>
 
 <div class="fila-usuario">
@@ -286,7 +372,7 @@ document.addEventListener('DOMContentLoaded', checkMenuOverflow);
       <table border="1" cellpadding="0" cellspacing="0" id="garantias-table">
         <thead>
           <tr style="background:#ddd;">
-            <th>PLOWS</th><th>Depto</th><th>Tipo</th><th>Causa</th><th>Piezas</th>
+            <th>PLOWS</th><th>No. Serie</th><th>Depto</th><th>Tipo</th><th>Causa</th><th>Piezas</th>
             <th>Sucursal</th><th>Colaborador</th><th>Fecha de Registro</th>
             <th>Estatus</th><th>Acciones</th><th>Validador</th>
             <th>Piezas Validadas</th><th>Número de Ajuste</th>
@@ -332,6 +418,7 @@ document.addEventListener('DOMContentLoaded', checkMenuOverflow);
               data-validador="<?= $g['validador_nombre'] ? htmlspecialchars($g['validador_nombre'].' '.$g['validador_apellido']) : 'No validado' ?>">
 
             <td><?= htmlspecialchars($g['plows']) ?></td>
+            <td><?= htmlspecialchars($g['numero_serie'] ?? '---') ?></td>
             <td><span class="badge-dpto <?= $badgeClass ?>"><?= htmlspecialchars($dptoNombre) ?></span></td>
             <td><?= htmlspecialchars($g['tipo']) ?></td>
             <td><?= htmlspecialchars($g['causa']) ?></td>
@@ -600,6 +687,7 @@ async function cargarDatos() {
 
       tr.innerHTML = `
         <td>${g.plows   || ''}</td>
+        <td>${g.numero_serie || '---'}</td>
         <td><span class="badge-dpto ${badgeClass}">${dptoNombre}</span></td>
         <td>${g.tipo    || ''}</td>
         <td>${g.causa   || ''}</td>
@@ -651,43 +739,66 @@ document.getElementById('btn-descargar').addEventListener('click', descargarExce
 async function descargarExcel() {
   if (filteredRows.length === 0) { alert('No hay datos para descargar.'); return; }
   const wb = XLSX.utils.book_new();
-  const enc = ["PLOWS","Depto","Tipo","Causa","Piezas","Sucursal","Colaborador","Fecha de Registro",
-               "Estatus","Validador","Piezas Validadas","Número de Ajuste",
-               "Anotación del Validador","Hora de Validación","Fecha de Validación","Anotación del Vendedor"];
+
+  const enc = [
+    "PLOWS", "No. Serie", "Depto", "Tipo", "Causa", "Piezas",
+    "Sucursal", "Colaborador", "Fecha de Registro",
+    "Estatus", "Validador", "Piezas Validadas", "Número de Ajuste",
+    "Anotación del Validador", "Hora de Validación",
+    "Fecha de Validación", "Anotación del Vendedor"
+  ];
+
   const data = [enc];
   filteredRows.forEach(row => {
+    const cells = row.querySelectorAll('td');
     data.push([
-      row.dataset.plows, row.dataset.dpto, row.dataset.tipo, row.dataset.causa, row.dataset.piezas,
-      row.dataset.sucursal, row.dataset.colaborador, row.dataset.fecha, row.dataset.estatus,
-      row.dataset.validador,
-      row.querySelector('input[name^="piezas_validadas"]').value,
-      row.querySelector('input[name^="numero_ajuste"]').value,
-      row.querySelector('input[name^="anotaciones_validador"]').value,
-      row.querySelector('td:nth-last-child(4)').textContent.trim(),
-      row.querySelector('td:nth-last-child(3)').textContent.trim(),
-      row.querySelector('td:nth-last-child(2)').textContent.trim(),
+      row.dataset.plows,                                                        // PLOWS
+      cells[1].textContent.trim(),                                              // No. Serie
+      row.dataset.dpto,                                                         // Depto
+      row.dataset.tipo,                                                         // Tipo
+      row.dataset.causa,                                                        // Causa
+      row.dataset.piezas,                                                       // Piezas
+      row.dataset.sucursal,                                                     // Sucursal
+      row.dataset.colaborador,                                                  // Colaborador
+      row.dataset.fecha,                                                        // Fecha de Registro
+      row.dataset.estatus,                                                      // Estatus
+      row.dataset.validador,                                                    // Validador
+      row.querySelector('input[name^="piezas_validadas"]')?.value || '',       // Piezas Validadas
+      row.querySelector('input[name^="numero_ajuste"]')?.value || '',          // Número de Ajuste
+      row.querySelector('input[name^="anotaciones_validador"]')?.value || '',  // Anotación Validador
+      cells[cells.length - 4].textContent.trim(),                              // Hora de Validación
+      cells[cells.length - 3].textContent.trim(),                              // Fecha de Validación
+      cells[cells.length - 2].textContent.trim(),                              // Anotación del Vendedor
     ]);
   });
+
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'Tabla Completa');
-  const sucursales = [...new Set(filteredRows.map(r=>r.dataset.sucursal))].sort();
-  const causas     = [...new Set(filteredRows.map(r=>r.dataset.causa))].sort();
+
+  // Hojas por sucursal
+  const sucursales = [...new Set(filteredRows.map(r => r.dataset.sucursal))].sort();
+  const causas     = [...new Set(filteredRows.map(r => r.dataset.causa))].sort();
   sucursales.forEach(suc => {
-    const d=[["Causa de Merma","Total Piezas"]]; let tot=0;
+    const d = [["Causa de Merma", "Total Piezas"]]; let tot = 0;
     causas.forEach(cau => {
-      const s=filteredRows.filter(r=>r.dataset.sucursal===suc&&r.dataset.causa===cau).reduce((a,r)=>a+(parseInt(r.dataset.piezas)||0),0);
-      if(s>0){d.push([cau,s]);tot+=s;}
+      const s = filteredRows.filter(r => r.dataset.sucursal === suc && r.dataset.causa === cau)
+                            .reduce((a, r) => a + (parseInt(r.dataset.piezas) || 0), 0);
+      if (s > 0) { d.push([cau, s]); tot += s; }
     });
-    d.push(["Total",tot]);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(d),suc.substring(0,30));
+    d.push(["Total", tot]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(d), suc.substring(0, 30));
   });
-  const res=[["Causa de Merma","Total Piezas"]];
-  causas.forEach(cau=>{
-    const s=filteredRows.filter(r=>r.dataset.causa===cau).reduce((a,r)=>a+(parseInt(r.dataset.piezas)||0),0);
-    if(s>0)res.push([cau,s]);
+
+  // Hoja resumen total
+  const res = [["Causa de Merma", "Total Piezas"]];
+  causas.forEach(cau => {
+    const s = filteredRows.filter(r => r.dataset.causa === cau)
+                          .reduce((a, r) => a + (parseInt(r.dataset.piezas) || 0), 0);
+    if (s > 0) res.push([cau, s]);
   });
-  res.push(["Total",res.slice(1).reduce((a,r)=>a+r[1],0)]);
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(res),'Resumen Total');
-  XLSX.writeFile(wb,'garantias_filtradas.xlsx');
+  res.push(["Total", res.slice(1).reduce((a, r) => a + r[1], 0)]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(res), 'Resumen Total');
+
+  XLSX.writeFile(wb, 'garantias_filtradas.xlsx');
 }
 
 /* ── Modal Fotos ── */

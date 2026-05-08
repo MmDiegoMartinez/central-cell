@@ -54,21 +54,21 @@ function seedPreguntas(PDO $conn): void {
 
     $preguntas = [
         [
-            'texto' => '¿Cuál es la función principal del Departamento de Innovación Móvil en CentralCell?',
+            'texto' => '¿Cuál es la función principal del Departamento de Innovación y Tecnología Móvil en CentralCell?',
             'opciones' => [
                 ['A) Atender a los clientes en mostrador', 0],
-                ['B) Surtir todos los accesorios a las sucursales', 1],
+                ['B) Surtir de mercancía a las sucursales', 1],
                 ['C) Realizar mantenimiento de redes', 0],
                 ['D) Desarrollar software interno', 0],
             ],
         ],
         [
-            'texto' => '¿Qué tipo de carga proporcionan los cargadores V8?',
+            'texto' => '¿Qué se necesita para cotizar un financiamiento con PayJoy?',
             'opciones' => [
-                ['A) Carga rápida', 0],
-                ['B) Carga lenta', 0],
-                ['C) Carga normal', 1],
-                ['D) Carga ultrarrápida', 0],
+                ['A) Estados de cuenta bancarios de los últimos 6 meses', 0],
+                ['B) Tener tarjeta de crédito y comprobante de domicilio', 0],
+                ['C) Identificación oficial, una línea celular activa y una selfie', 1],
+                ['D) Tener un aval con propiedad a su nombre', 0],
             ],
         ],
         [
@@ -99,12 +99,12 @@ function seedPreguntas(PDO $conn): void {
             ],
         ],
         [
-            'texto' => '¿En qué sucursales se pueden cortar hidrogel de tablet hasta 12.9 pulgadas?',
+            'texto' => 'En smartphones, ¿qué gama de teléfonos manejamos en tienda?',
             'opciones' => [
-                ['A) Reforma y Bella', 1],
-                ['B) Reforma y Boon', 0],
-                ['C) Boon y Bella', 0],
-                ['D) Todas las sucursales', 0],
+                ['A) Baja, media baja y media', 1],
+                ['B) Alta, premium y de lujo', 0],
+                ['C) Solo gama alta', 0],
+                ['D) Baja, media y alta', 0],
             ],
         ],
         [
@@ -117,7 +117,7 @@ function seedPreguntas(PDO $conn): void {
             ],
         ],
         [
-            'texto' => '¿Cuál es la garantía de todos los accesorios de CentralCell?',
+            'texto' => '¿Cuál es la garantía de los productos de CentralCell?',
             'opciones' => [
                 ['A) 1 mes', 0],
                 ['B) 2 meses', 0],
@@ -311,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $("#nombre").autocomplete({
             source: function(request, response){
                 $.ajax({
-                    url: "../capacitados/buscar_colaborador.php",
+                    url: "../garantias/vendedor/buscar_colaborador.php",
                     dataType: "json",
                     data: { term: request.term },
                     success: function(data){
@@ -352,8 +352,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </label>
         <ul id="menu">
             
-            <li><a href="index.php">Inicio Capacitados</a></li>
-            <li><a href="material.php" >Material</a></li>
+            <li><a href="index.html">Inicio Capacitados</a></li>
+            <li><a href="material.html" >Material</a></li>
             <li><a href="examen.php">Cuestionario</a></li>
         </ul>
     </nav>

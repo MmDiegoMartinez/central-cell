@@ -10,16 +10,24 @@
 
 <style>
   :root {
-    --bg: #0d0f14;
-    --surface: #161921;
-    --surface2: #1e2230;
-    --accent: #00e5a0;
-    --accent2: #0099ff;
-    --warn: #ff6b35;
-    --text: #eef0f6;
-    --muted: #7a8099;
-    --border: rgba(255,255,255,0.07);
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --surface2: #eef1f6;
+    --muted: #6b7280;
+    --text: #0f1724;
+    --primary-600: #0f5476;
+    --primary-400: #16729a;
+    --accent: #1f9a8a;
+    --accent2: #16729a;
+    --warn: #e05c2a;
+    --glass: rgba(15, 23, 36, 0.04);
+    --border: rgba(15, 23, 36, 0.08);
+    --radius-lg: 14px;
+    --radius-md: 10px;
     --radius: 16px;
+    --shadow-sm: 0 6px 18px rgba(12, 18, 26, 0.06);
+    --shadow-md: 0 10px 30px rgba(12, 18, 26, 0.09);
+    --transition-fast: 220ms cubic-bezier(.2, .9, .2, 1);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,19 +37,86 @@
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
-    padding: 40px 20px 80px;
+    padding: 0 0 80px;
+  }
+
+  /* ── NAV HEADER ── */
+  .top-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 24px;
+    height: 56px;
+  }
+  .nav-inner ul {
+    list-style: none;
+    display: flex;
+    gap: 4px;
+    padding: 0;
+    margin: 0;
+  }
+  .menu-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    white-space: nowrap;
+  }
+  .menu-link:hover {
+    background: rgba(15, 84, 118, 0.07);
+    color: var(--primary-600);
+  }
+  .menu-link.active {
+    background: rgba(15, 84, 118, 0.1);
+    color: var(--primary-600);
+    font-weight: 600;
+  }
+  .logo-container {
+    display: flex;
+    align-items: center;
+  }
+  .logo { border-radius: 4px; }
+  .nav-divider {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    margin: 0 6px;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 0;
   }
 
   /* ── HEADER ── */
   .header {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 40px;
   }
   .header h1 {
     font-family: 'Syne', sans-serif;
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
     font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    background: linear-gradient(135deg, var(--primary-600), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -55,24 +130,31 @@
 
   /* ── DROP ZONE ── */
   .drop-zone {
-    border: 2px dashed rgba(0,229,160,.3);
+    border: 2px dashed rgba(15, 84, 118, 0.25);
     border-radius: var(--radius);
     padding: 52px 32px;
     text-align: center;
     cursor: pointer;
     transition: all .3s;
     background: var(--surface);
+    box-shadow: var(--shadow-sm);
     max-width: 560px;
-    margin: 0 auto 40px;
+    margin: 0 auto 32px;
     position: relative;
   }
   .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(0,229,160,.04);
+    border-color: var(--primary-400);
+    background: rgba(15, 84, 118, 0.03);
+    box-shadow: var(--shadow-md);
   }
   .drop-zone input { display: none; }
   .drop-icon { font-size: 3rem; margin-bottom: 16px; }
-  .drop-zone h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: 6px; }
+  .drop-zone h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
   .drop-zone p  { color: var(--muted); font-size: .88rem; }
   .file-name {
     margin-top: 12px;
@@ -84,34 +166,36 @@
   /* ── BTN GENERAR ── */
   .btn-generar {
     display: block;
-    margin: 0 auto 48px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #0d0f14;
+    margin: 0 auto 40px;
+    background: linear-gradient(135deg, var(--primary-600), var(--accent));
+    color: #ffffff;
     font-family: 'Syne', sans-serif;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1rem;
     border: none;
     border-radius: 50px;
     padding: 14px 48px;
     cursor: pointer;
-    transition: opacity .2s, transform .15s;
+    box-shadow: 0 4px 16px rgba(15, 84, 118, 0.25);
+    transition: opacity .2s, transform .15s, box-shadow .2s;
     letter-spacing: .3px;
   }
-  .btn-generar:hover   { opacity: .88; transform: translateY(-2px); }
+  .btn-generar:hover   { opacity: .9; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 84, 118, 0.3); }
   .btn-generar:active  { transform: scale(.97); }
-  .btn-generar:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-generar:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
 
   /* ── STATS BAR ── */
   .stats-bar {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
-    margin-bottom: 40px;
+    margin-bottom: 36px;
   }
   .stat-chip {
     background: var(--surface);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     border-radius: 50px;
     padding: 10px 22px;
     font-size: .85rem;
@@ -125,6 +209,7 @@
     overflow-x: auto;
     border-radius: var(--radius);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 48px;
     background: var(--surface);
   }
@@ -139,9 +224,10 @@
     color: var(--muted);
     text-transform: uppercase;
     white-space: nowrap;
+    border-bottom: 1px solid var(--border);
   }
   tbody tr { border-top: 1px solid var(--border); transition: background .15s; }
-  tbody tr:hover { background: rgba(255,255,255,.025); }
+  tbody tr:hover { background: rgba(15, 84, 118, 0.03); }
   tbody td { padding: 11px 18px; color: var(--text); white-space: nowrap; }
   .badge {
     display: inline-block;
@@ -150,8 +236,8 @@
     font-size: .78rem;
     font-weight: 600;
   }
-  .badge-contado { background: rgba(0,229,160,.15); color: var(--accent); }
-  .badge-credito { background: rgba(0,153,255,.15); color: var(--accent2); }
+  .badge-contado { background: rgba(31, 154, 138, 0.12); color: var(--accent); }
+  .badge-credito { background: rgba(22, 114, 154, 0.12); color: var(--accent2); }
 
   /* sección dentro de tarjeta */
   .vc-section-label {
@@ -164,14 +250,14 @@
     padding-left: 4px;
   }
 
-  /* ── GALERÍA DE TARJETAS DESCARGABLES ── */
+  /* ── GALERÍA DE TARJETAS ── */
   .gallery-title {
     font-family: 'Syne', sans-serif;
     font-size: 1.3rem;
     font-weight: 800;
     margin-bottom: 24px;
     text-align: center;
-    color: var(--accent);
+    color: var(--primary-600);
   }
   .cards-grid {
     display: grid;
@@ -180,15 +266,12 @@
     margin-bottom: 40px;
     justify-content: center;
   }
-  /* Cada card-wrap ocupa toda la altura de su fila → tarjetas iguales */
   .card-wrap {
     position: relative;
     display: flex;
     flex-direction: column;
   }
-  .card-wrap .vendor-card {
-    flex: 1;
-  }
+  .card-wrap .vendor-card { flex: 1; }
   .btn-dl {
     display: block;
     width: 100%;
@@ -203,38 +286,34 @@
     cursor: pointer;
     transition: background .2s;
   }
-  .btn-dl:hover { background: var(--surface); }
+  .btn-dl:hover { background: #e2e7ef; }
 
   /* ══════════════════════════════════════
-     TARJETA DESCARGABLE (render interno)
+     TARJETA VENDEDOR — paleta clara
   ══════════════════════════════════════ */
   .vendor-card {
     width: 380px;
-    background: #0e111a;
+    background: #ffffff;
     border-radius: 22px;
     overflow: hidden;
     font-family: 'DM Sans', sans-serif;
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    border: 1px solid rgba(15,23,36,.09);
+    box-shadow: var(--shadow-md);
     position: relative;
     display: flex;
     flex-direction: column;
   }
-
   .vc-body {
     padding: 26px 28px 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
   }
-
-  /* banda superior de color */
   .vc-header { height: 6px; }
-  .vc-header.contado { background: linear-gradient(90deg, #00e5a0, #00c887); }
-  .vc-header.credito { background: linear-gradient(90deg, #0099ff, #006fd6); }
-  .vc-header.empate  { background: linear-gradient(90deg, #ff6b35, #ff9a35); }
+  .vc-header.contado { background: linear-gradient(90deg, #1f9a8a, #17b89e); }
+  .vc-header.credito { background: linear-gradient(90deg, #16729a, #0f5476); }
+  .vc-header.empate  { background: linear-gradient(90deg, #e05c2a, #f0833a); }
 
-  /* avatar + nombre */
   .vc-seller {
     display: flex;
     align-items: center;
@@ -250,21 +329,20 @@
     font-weight: 800;
     flex-shrink: 0;
   }
-  .vc-avatar.contado { background: rgba(0,229,160,.18); color: #00e5a0; }
-  .vc-avatar.credito { background: rgba(0,153,255,.18); color: #0099ff; }
-  .vc-avatar.empate  { background: rgba(255,107,53,.18); color: #ff6b35; }
+  .vc-avatar.contado { background: rgba(31,154,138,.15); color: #1f9a8a; }
+  .vc-avatar.credito { background: rgba(22,114,154,.15); color: #16729a; }
+  .vc-avatar.empate  { background: rgba(224,92,42,.15); color: #e05c2a; }
 
   .vc-name {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
     font-size: 1.1rem;
-    color: #eef0f6;
+    color: #0f1724;
     line-height: 1.1;
     text-transform: capitalize;
   }
-  .vc-subtitle { font-size: .78rem; color: #7a8099; margin-top: 3px; }
+  .vc-subtitle { font-size: .78rem; color: #6b7280; margin-top: 3px; }
 
-  /* banner felicitación */
   .vc-congrats {
     border-radius: 10px;
     padding: 10px 14px;
@@ -273,13 +351,13 @@
     margin-bottom: 18px;
     line-height: 1.45;
   }
-  .vc-congrats.contado { background: rgba(0,229,160,.09); color: #00e5a0; border-left: 3px solid #00e5a0; }
-  .vc-congrats.credito { background: rgba(0,153,255,.09); color: #0099ff; border-left: 3px solid #0099ff; }
-  .vc-congrats.empate  { background: rgba(255,107,53,.09); color: #ff6b35; border-left: 3px solid #ff6b35; }
+  .vc-congrats.contado { background: rgba(31,154,138,.08); color: #167a6c; border-left: 3px solid #1f9a8a; }
+  .vc-congrats.credito { background: rgba(22,114,154,.08); color: #0f5476; border-left: 3px solid #16729a; }
+  .vc-congrats.empate  { background: rgba(224,92,42,.08);  color: #b84a1e; border-left: 3px solid #e05c2a; }
 
-  /* lista de ventas */
   .vc-sale {
-    background: #161921;
+    background: #f5f7fa;
+    border: 1px solid rgba(15,23,36,.06);
     border-radius: 10px;
     padding: 10px 14px;
     margin-bottom: 8px;
@@ -288,7 +366,7 @@
     justify-content: space-between;
     gap: 10px;
   }
-  .vc-model { font-size: .84rem; color: #c8ccdb; font-weight: 500; flex: 1; }
+  .vc-model { font-size: .84rem; color: #374151; font-weight: 500; flex: 1; }
   .vc-pill {
     font-size: .72rem;
     font-weight: 700;
@@ -297,14 +375,21 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .vc-pill.contado { background: rgba(0,229,160,.15); color: #00e5a0; }
-  .vc-pill.credito { background: rgba(0,153,255,.15); color: #0099ff; }
+  .vc-pill.contado { background: rgba(31,154,138,.12); color: #167a6c; }
+  .vc-pill.credito { background: rgba(22,114,154,.12); color: #0f5476; }
 
-  /* foto de BD — eliminada, ahora la foto va en el avatar */
+  .vc-section-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin: 14px 0 6px;
+    padding-left: 4px;
+  }
 
-  /* footer de tarjeta */
   .vc-footer {
-    border-top: 1px solid rgba(255,255,255,.06);
+    border-top: 1px solid rgba(15,23,36,.07);
     margin-top: auto;
     padding-top: 12px;
     display: flex;
@@ -316,11 +401,11 @@
     font-size: 1.5rem;
     font-weight: 800;
   }
-  .vc-total.contado { color: #00e5a0; }
-  .vc-total.credito { color: #0099ff; }
-  .vc-total.empate  { color: #ff6b35; }
-  .vc-total-label { font-size: .74rem; color: #7a8099; margin-top: 2px; }
-  .vc-date { font-size: .78rem; color: #7a8099; text-align: right; }
+  .vc-total.contado { color: #1f9a8a; }
+  .vc-total.credito { color: #16729a; }
+  .vc-total.empate  { color: #e05c2a; }
+  .vc-total-label { font-size: .74rem; color: #6b7280; margin-top: 2px; }
+  .vc-date { font-size: .78rem; color: #6b7280; text-align: right; }
 
   /* ── HIDDEN RENDER CONTAINER ── */
   #render-zone { position: fixed; left: -9999px; top: 0; z-index: -1; }
@@ -336,57 +421,84 @@
   /* scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(15,23,36,.15); border-radius: 3px; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📱 Reporte · Smartphones Vendidos</h1>
-  <p>Sube tu archivo Excel de ventas para generar las tarjetas por vendedor</p>
-</div>
-
-<!-- DROP ZONE -->
-<div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-  <div class="drop-icon">📂</div>
-  <h3>Arrastra tu archivo .xlsx aquí</h3>
-  <p>o haz clic para seleccionarlo</p>
-  <div class="file-name" id="fileName"></div>
-  <input type="file" id="fileInput" accept=".xlsx,.xls">
-</div>
-
-<button class="btn-generar" id="btnGenerar" disabled onclick="procesar()">
-  ✨ Generar Reporte
-</button>
-
-<!-- STATS -->
-<div class="stats-bar" id="statsBar" style="display:none"></div>
-
-<!-- TABLA PREVIEW -->
-<div id="tablaWrap" style="display:none">
-  <div class="preview-wrap">
-    <table id="tablaPreview">
-      <thead>
-        <tr>
-          <th>Vendedor</th>
-          <th>Modelo</th>
-          <th>Modalidad</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody id="tablaBody"></tbody>
-    </table>
+<!-- ══════════════════════ NAV HEADER ══════════════════════ -->
+<nav class="top-nav">
+  <div class="nav-inner">
+    <ul>
+      <li>
+        <a href="../garantias/validador/validador.php" class="menu-link">
+          <span class="logo-container">
+            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
+          </span>
+          Home
+        </a>
+      </li>
+      <div class="nav-divider"></div>
+      <li>
+        <a href="index.php" class="menu-link">
+          Panel KPIs
+        </a>
+      </li>
+    </ul>
   </div>
-</div>
+</nav>
 
-<!-- TARJETAS -->
-<div id="galeria" style="display:none">
-  <div class="gallery-title">🎉 Tarjetas por Vendedor</div>
-  <button class="btn-generar" id="btnDescargarTodo" onclick="descargarTodo()" style="margin-bottom:32px;background:linear-gradient(135deg,#ff6b35,#ff9a35);display:none">
-    ⬇️ Descargar imagen completa
+<!-- ══════════════════════ MAIN ══════════════════════ -->
+<div class="main-content">
+
+  <div class="header">
+    <h1>📱 Reporte · Smartphones Vendidos</h1>
+    <p>Sube tu archivo Excel de ventas para generar las tarjetas por vendedor</p>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="drop-icon">📂</div>
+    <h3>Arrastra tu archivo .xlsx aquí</h3>
+    <p>o haz clic para seleccionarlo</p>
+    <div class="file-name" id="fileName"></div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+
+  <button class="btn-generar" id="btnGenerar" disabled onclick="procesar()">
+    ✨ Generar Reporte
   </button>
-  <div class="cards-grid" id="cardsGrid"></div>
-</div>
+
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar" style="display:none"></div>
+
+  <!-- TABLA PREVIEW -->
+  <div id="tablaWrap" style="display:none">
+    <div class="preview-wrap">
+      <table id="tablaPreview">
+        <thead>
+          <tr>
+            <th>Vendedor</th>
+            <th>Modelo</th>
+            <th>Modalidad</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TARJETAS -->
+  <div id="galeria" style="display:none">
+    <div class="gallery-title">🎉 Tarjetas por Vendedor</div>
+    <button class="btn-generar" id="btnDescargarTodo" onclick="descargarTodo()" style="margin-bottom:32px;background:linear-gradient(135deg,#0f5476,#1f9a8a);display:none">
+      ⬇️ Descargar imagen completa
+    </button>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+
+</div><!-- /main-content -->
 
 <!-- ZONA DE RENDER OCULTO PARA html2canvas -->
 <div id="render-zone"></div>
@@ -402,7 +514,6 @@ const MESES_ES = {
 };
 
 function parsearFecha(str) {
-  // "Mar 13 2026 10:54AM"  →  solo fecha
   if (!str) return null;
   const m = String(str).match(/(\w{3})\s+(\d+)\s+(\d{4})/);
   if (!m) return null;
@@ -473,7 +584,6 @@ async function procesar() {
 
   if (rows.length < 2) { alert('El archivo no tiene datos.'); return; }
 
-  // Detectar índices por encabezado (fila 0)
   const headers = rows[0].map(h => String(h).trim());
   const idx = {
     N1:       headers.indexOf('N1'),
@@ -484,8 +594,6 @@ async function procesar() {
     Fecha:    headers.indexOf('Fecha'),
   };
 
-  // Fallback por posición si no encuentra por nombre
-  // (B=1, C=2, J=9, I=8, L=11, H=7 — índice base 0)
   if (idx.N1       < 0) idx.N1       = 1;
   if (idx.N2       < 0) idx.N2       = 2;
   if (idx.Vendedor < 0) idx.Vendedor = 9;
@@ -520,7 +628,6 @@ async function procesar() {
     return;
   }
 
-  // Cargar fotos desde BD antes de renderizar
   await cargarFotosBD();
 
   renderTabla();
@@ -583,10 +690,8 @@ function agruparPorVendedor() {
 }
 
 // ══════════════════════════════════════════════════════
-//  IMÁGENES DE LA BD  (tabla `imagenes`, col `direccion`)
+//  IMÁGENES DE LA BD
 // ══════════════════════════════════════════════════════
-// imagen-1 → vendedor con más ventas PayJoy (crédito)
-// imagen-2 → vendedor con más ventas al contado
 const IMAGENES_BD = {
   'imagen-1': 'https://i.ibb.co/GvLkyFYR/2179f406fcaa.png',
   'imagen-2': 'https://i.ibb.co/mCnBf5xb/10819118cb0e.png',
@@ -613,7 +718,7 @@ function inicialAvatar(nombre) {
 }
 
 // ══════════════════════════════════════════════════════
-//  BANCO DE FRASES ALEATORIAS  (3 por tipo × variedad)
+//  FRASES
 // ══════════════════════════════════════════════════════
 const FRASES = {
   credito: [
@@ -647,67 +752,60 @@ function mensajeFelicitacion(nombre, total, tipo, rango, contado, credito) {
 }
 
 // ══════════════════════════════════════════════════════
-//  CSS INLINE PARA EL RENDER  (html2canvas)
+//  CSS PARA RENDER html2canvas (tarjetas siempre oscuras)
 // ══════════════════════════════════════════════════════
 const CARD_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
-  .vendor-card { width:380px; background:#0e111a; border-radius:22px; overflow:hidden;
-    font-family:'DM Sans',sans-serif; border:1px solid rgba(255,255,255,.08); }
+  .vendor-card { width:380px; background:#ffffff; border-radius:22px; overflow:hidden;
+    font-family:'DM Sans',sans-serif; border:1px solid rgba(15,23,36,.09);
+    box-shadow:0 10px 30px rgba(12,18,26,.09); }
   .vc-header { height:6px; }
-  .vc-header.contado { background:linear-gradient(90deg,#00e5a0,#00c887); }
-  .vc-header.credito { background:linear-gradient(90deg,#0099ff,#006fd6); }
-  .vc-header.empate  { background:linear-gradient(90deg,#ff6b35,#ff9a35); }
+  .vc-header.contado { background:linear-gradient(90deg,#1f9a8a,#17b89e); }
+  .vc-header.credito { background:linear-gradient(90deg,#16729a,#0f5476); }
+  .vc-header.empate  { background:linear-gradient(90deg,#e05c2a,#f0833a); }
   .vc-body { padding:26px 28px 20px; }
   .vc-seller { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
   .vc-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center;
     justify-content:center; font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; }
-  .vc-avatar.contado { background:rgba(0,229,160,.18); color:#00e5a0; }
-  .vc-avatar.credito { background:rgba(0,153,255,.18); color:#0099ff; }
-  .vc-avatar.empate  { background:rgba(255,107,53,.18); color:#ff6b35; }
+  .vc-avatar.contado { background:rgba(31,154,138,.15); color:#1f9a8a; }
+  .vc-avatar.credito { background:rgba(22,114,154,.15); color:#16729a; }
+  .vc-avatar.empate  { background:rgba(224,92,42,.15); color:#e05c2a; }
   .vc-name { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
-    color:#eef0f6; line-height:1.1; text-transform:capitalize; }
-  .vc-subtitle { font-size:.78rem; color:#7a8099; margin-top:3px; }
+    color:#0f1724; line-height:1.1; text-transform:capitalize; }
+  .vc-subtitle { font-size:.78rem; color:#6b7280; margin-top:3px; }
   .vc-congrats { border-radius:10px; padding:10px 14px; font-size:.82rem;
     font-weight:500; margin-bottom:18px; line-height:1.45; }
-  .vc-congrats.contado { background:rgba(0,229,160,.09); color:#00e5a0; border-left:3px solid #00e5a0; }
-  .vc-congrats.credito { background:rgba(0,153,255,.09); color:#0099ff; border-left:3px solid #0099ff; }
-  .vc-congrats.empate  { background:rgba(255,107,53,.09); color:#ff6b35; border-left:3px solid #ff6b35; }
-  .vc-sale { background:#161921; border-radius:10px; padding:10px 14px; margin-bottom:8px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  .vc-model { font-size:.84rem; color:#c8ccdb; font-weight:500; flex:1; }
+  .vc-congrats.contado { background:rgba(31,154,138,.08); color:#167a6c; border-left:3px solid #1f9a8a; }
+  .vc-congrats.credito { background:rgba(22,114,154,.08); color:#0f5476; border-left:3px solid #16729a; }
+  .vc-congrats.empate  { background:rgba(224,92,42,.08);  color:#b84a1e; border-left:3px solid #e05c2a; }
+  .vc-sale { background:#f5f7fa; border:1px solid rgba(15,23,36,.06); border-radius:10px;
+    padding:10px 14px; margin-bottom:8px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; }
+  .vc-model { font-size:.84rem; color:#374151; font-weight:500; flex:1; }
   .vc-pill { font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
-  .vc-pill.contado { background:rgba(0,229,160,.15); color:#00e5a0; }
-  .vc-pill.credito { background:rgba(0,153,255,.15); color:#0099ff; }
+  .vc-pill.contado { background:rgba(31,154,138,.12); color:#167a6c; }
+  .vc-pill.credito { background:rgba(22,114,154,.12); color:#0f5476; }
   .vc-section-label { font-size:.72rem; font-weight:700; letter-spacing:.6px;
-    text-transform:uppercase; color:#7a8099; margin:14px 0 6px; padding-left:4px; }
-  .vc-footer { border-top:1px solid rgba(255,255,255,.06); margin-top:auto; padding-top:12px;
+    text-transform:uppercase; color:#6b7280; margin:14px 0 6px; padding-left:4px; }
+  .vc-footer { border-top:1px solid rgba(15,23,36,.07); margin-top:auto; padding-top:12px;
     display:flex; justify-content:space-between; align-items:center; }
   .vc-total { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
-  .vc-total.contado { color:#00e5a0; }
-  .vc-total.credito { color:#0099ff; }
-  .vc-total.empate  { color:#ff6b35; }
-  .vc-total-label { font-size:.74rem; color:#7a8099; margin-top:2px; }
-  .vc-date { font-size:.78rem; color:#7a8099; text-align:right; }
+  .vc-total.contado { color:#1f9a8a; }
+  .vc-total.credito { color:#16729a; }
+  .vc-total.empate  { color:#e05c2a; }
+  .vc-total-label { font-size:.74rem; color:#6b7280; margin-top:2px; }
+  .vc-date { font-size:.78rem; color:#6b7280; text-align:right; }
 `;
 
 // ══════════════════════════════════════════════════════
-//  MAPA DE FOTOS DE VENDEDORES  (tabla imagenes, descripcion = nombre vendedor)
-//  Se llena en renderTarjetas() con los datos de IMAGENES_BD
+//  FOTOS DE VENDEDORES
 // ══════════════════════════════════════════════════════
-// Aquí guardamos: nombreVendedorNormalizado → url de foto
 const FOTOS_VENDEDORES = {};
 
-// Registra todas las imágenes cuya descripción coincida con algún vendedor
-// Se llama ANTES de renderizar, pasando el mapa de vendedores ya conocidos
 function mapearFotosVendedores(vendedoresUnicos) {
-  // Limpia el mapa
   Object.keys(FOTOS_VENDEDORES).forEach(k => delete FOTOS_VENDEDORES[k]);
-
-  // Las fotos disponibles en la BD están en IMAGENES_BD_VENDEDORES
-  // Cada entry: { descripcion: 'nombre vendedor', url: '...' }
   for (const { descripcion, url } of IMAGENES_BD_VENDEDORES) {
     const desc = normalizar(descripcion);
-    // Buscar coincidencia exacta o parcial con algún vendedor del Excel
     for (const v of vendedoresUnicos) {
       const vNorm = normalizar(v);
       if (vNorm === desc || vNorm.includes(desc) || desc.includes(vNorm)) {
@@ -724,8 +822,6 @@ function normalizar(str) {
     .replace(/\s+/g, ' ').trim();
 }
 
-// ── Fotos de vendedores: se cargan dinámicamente desde la BD ──
-// El array se llena al llamar cargarFotosBD() antes de renderizar
 let IMAGENES_BD_VENDEDORES = [];
 
 async function cargarFotosBD() {
@@ -735,7 +831,7 @@ async function cargarFotosBD() {
     IMAGENES_BD_VENDEDORES = await res.json();
   } catch(e) {
     console.warn('No se pudieron cargar fotos de la BD:', e.message);
-    IMAGENES_BD_VENDEDORES = []; // si falla, todos quedan con iniciales
+    IMAGENES_BD_VENDEDORES = [];
   }
 }
 
@@ -748,7 +844,6 @@ function buildCardHTML(vendedor, data, msgOverride) {
   const msg   = msgOverride || mensajeFelicitacion(vendedor, data.ventas.length, tipo, rango || 'el período', data.contado, data.credito);
   const inits = inicialAvatar(vendedor);
 
-  // Avatar: foto si existe en BD, si no iniciales
   const fotoVendedor = FOTOS_VENDEDORES[vendedor];
   const avatarEl = fotoVendedor
     ? `<div class="vc-avatar ${tipo}" style="overflow:hidden;padding:0;">
@@ -758,7 +853,6 @@ function buildCardHTML(vendedor, data, msgOverride) {
        </div>`
     : `<div class="vc-avatar ${tipo}">${inits}</div>`;
 
-  // ── Separar ventas en dos grupos ──
   const ventasContado = data.ventas.filter(v => v.modalidad === 'contado');
   const ventasCredito = data.ventas.filter(v => v.modalidad === 'credito');
 
@@ -770,7 +864,6 @@ function buildCardHTML(vendedor, data, msgOverride) {
       </div>`).join('');
   }
 
-  // Mostrar primero el grupo dominante, luego el otro
   let ventasHTML = '';
   if (tipo === 'contado' || (tipo === 'empate' && ventasContado.length)) {
     if (ventasContado.length) ventasHTML += `<div class="vc-section-label">💵 Al contado (${ventasContado.length})</div>` + ventaItems(ventasContado, 'contado');
@@ -816,11 +909,13 @@ async function renderTarjetas() {
   document.getElementById('galeria').style.display = '';
   tarjetasData = [];
 
-  // Mapear fotos de vendedores desde la BD
   const vendedoresUnicos = Object.keys(map);
   mapearFotosVendedores(vendedoresUnicos);
 
-  for (const [vendedor, data] of Object.entries(map)) {
+  // Ordenar de mayor a menor por total de ventas
+  const entradasOrdenadas = Object.entries(map).sort((a, b) => b[1].ventas.length - a[1].ventas.length);
+
+  for (const [vendedor, data] of entradasOrdenadas) {
     const tipo  = tipoVendedor(data.contado, data.credito);
     const rango = rangoFechas(data.fechas);
     const msg   = mensajeFelicitacion(vendedor, data.ventas.length, tipo, rango || 'el período', data.contado, data.credito);
@@ -834,46 +929,6 @@ async function renderTarjetas() {
   }
 
   document.getElementById('btnDescargarTodo').style.display = '';
-}
-
-// ══════════════════════════════════════════════════════
-//  FUNCIÓN INTERNA DE CAPTURA (no se usa directamente, se captura por grupo)
-// ══════════════════════════════════════════════════════
-async function capturarTarjeta(vendedor, data, msg) {
-  const renderZone = document.getElementById('render-zone');
-  renderZone.innerHTML = '';
-
-  const style = document.createElement('style');
-  style.textContent = CARD_CSS;
-  renderZone.appendChild(style);
-
-  const cardEl = document.createElement('div');
-  cardEl.innerHTML = buildCardHTML(vendedor, data, msg);
-  renderZone.appendChild(cardEl.firstElementChild);
-
-  // Esperar que cargue la imagen de la BD
-  const img = renderZone.querySelector('img');
-  if (img) {
-    await new Promise(r => {
-      if (img.complete && img.naturalWidth > 0) { r(); return; }
-      img.onload  = r;
-      img.onerror = r;
-      setTimeout(r, 4000); // timeout máximo 4s
-    });
-  }
-  await new Promise(r => setTimeout(r, 200));
-
-  const canvas = await html2canvas(renderZone.querySelector('.vendor-card'), {
-    scale: 2,
-    backgroundColor: '#0e111a',
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    imageTimeout: 5000,
-  });
-
-  renderZone.innerHTML = '';
-  return canvas;
 }
 
 // ══════════════════════════════════════════════════════
@@ -899,7 +954,7 @@ async function descargarTodo() {
     const style = document.createElement('style');
     style.textContent = CARD_CSS + `
       .render-wrapper {
-        background: #0d0f14;
+        background: #f5f7fa;
         padding: 40px 36px 48px;
         width: fit-content;
       }
@@ -909,7 +964,7 @@ async function descargarTodo() {
         font-weight: 800;
         text-align: center;
         margin-bottom: 8px;
-        background: linear-gradient(135deg,#00e5a0,#0099ff);
+        background: linear-gradient(135deg,#0f5476,#1f9a8a);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -917,19 +972,18 @@ async function descargarTodo() {
       .render-subtitulo {
         font-family: 'DM Sans', sans-serif;
         font-size: .82rem;
-        color: #7a8099;
+        color: #6b7280;
         text-align: center;
         margin-bottom: 32px;
       }
       .render-pag {
         font-family: 'DM Sans', sans-serif;
         font-size: .75rem;
-        color: #3a4055;
+        color: #9ca3af;
         text-align: center;
         margin-top: 28px;
         letter-spacing: .4px;
       }
-      /* ── CLAVE: grid con filas de igual altura para html2canvas ── */
       .render-grid {
         display: grid;
         grid-template-columns: repeat(3, 380px);
@@ -980,7 +1034,6 @@ async function descargarTodo() {
       cardEl.innerHTML = buildCardHTML(vendedor, data, msg);
       const card = cardEl.firstElementChild;
       grid.appendChild(card);
-      // Recolectar fotos de avatar si existen
       card.querySelectorAll('img').forEach(img => imgs.push(img));
     }
 
@@ -995,7 +1048,6 @@ async function descargarTodo() {
 
     renderZone.appendChild(wrapper);
 
-    // Esperar avatares/fotos
     await Promise.all(imgs.map(img => new Promise(r => {
       if (img.complete && img.naturalWidth > 0) { r(); return; }
       img.onload  = r;
@@ -1003,39 +1055,31 @@ async function descargarTodo() {
       setTimeout(r, 5000);
     })));
 
-    // Dejar que el DOM calcule alturas naturales
     await new Promise(r => setTimeout(r, 300));
 
-    // ── Igualar altura de todas las tarjetas al más alto del grupo ──
     const cards = Array.from(grid.querySelectorAll('.vendor-card'));
-    // Resetear cualquier height previa para medir natural
     cards.forEach(c => { c.style.height = ''; });
     await new Promise(r => setTimeout(r, 50));
     const maxH = Math.max(...cards.map(c => c.getBoundingClientRect().height));
     cards.forEach(c => { c.style.height = maxH + 'px'; });
 
-    // Pausa final para que el repaint termine
     await new Promise(r => setTimeout(r, 200));
 
     try {
       const canvas = await html2canvas(wrapper, {
-        scale: 4,              // 4× → resolución ~5000px de ancho, suficiente para WhatsApp HD
-        backgroundColor: '#0d0f14',
+        scale: 4,
+        backgroundColor: '#f5f7fa',
         useCORS: true,
         allowTaint: true,
         logging: false,
         imageTimeout: 15000,
       });
 
-      // PNG sin pérdida (toDataURL image/png no tiene parámetro de calidad,
-      // ya es lossless por spec — obtenemos el máximo posible)
       const dataURL = canvas.toDataURL('image/png');
-
-      // Verificar tamaño: si es muy pequeño forzar JPEG alta calidad como fallback
       const byteSize = Math.round((dataURL.length * 3) / 4);
       const finalURL = byteSize > 300_000
-        ? dataURL                                         // PNG ya es grande → úsalo
-        : canvas.toDataURL('image/jpeg', 1.0);           // fallback JPEG 100%
+        ? dataURL
+        : canvas.toDataURL('image/jpeg', 1.0);
 
       const link = document.createElement('a');
       const sufijo = numImagenes > 1 ? `-${g+1}de${numImagenes}` : '';
