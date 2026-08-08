@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Cell · Análisis de Transferencias</title>
+
+<link rel="stylesheet" href="../styles.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntico al resto de herramientas) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  .tag{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+    background:rgba(0,131,143,0.12);color:#00838F;
+    margin-left:8px;vertical-align:middle;
+  }
+
+  /* Tarjetas de carga de archivo */
+  .upload-section{
+    display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);
+    margin-bottom:var(--space-md);
+  }
+  @media (max-width:700px){ .upload-section{grid-template-columns:1fr;} }
+
+  .file-card{
+    position:relative;
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    transition:all .15s ease;
+  }
+  .file-card.loaded{border-color:#00838F;background:var(--surface);}
+  .file-card h3{
+    display:flex;align-items:center;gap:8px;
+    margin:0 0 4px;font-size:15px;color:var(--on-surface);
+  }
+  .file-card h3 .material-symbols-outlined{font-size:20px;color:var(--primary);}
+  .file-card > p{margin:0 0 var(--space-sm);font-size:13px;color:var(--on-surface-variant);}
+  .check-icon{
+    display:none;
+    position:absolute;top:14px;right:14px;
+    color:#00838F;
+  }
+  .check-icon .material-symbols-outlined{font-size:22px;}
+  .file-card.loaded .check-icon{display:block;}
+
+  .file-input-wrapper{position:relative;}
+  .file-input-wrapper input[type="file"]{
+    position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;
+  }
+  .file-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:10px 16px;border-radius:var(--radius-lg);
+    border:1px solid var(--outline-variant);
+    background:var(--surface);color:var(--on-surface);
+    font-size:13px;font-weight:600;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .file-btn:hover{border-color:var(--primary);color:var(--primary);}
+  .file-name{margin-top:8px;font-size:12px;color:var(--on-surface-variant);word-break:break-all;}
+  .file-name .material-symbols-outlined{font-size:14px;vertical-align:middle;color:#00838F;margin-right:2px;}
+
+  .process-section{display:flex;justify-content:center;margin:var(--space-md) 0;}
+  .process-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:12px 28px;border-radius:var(--radius-lg);
+    border:1px solid var(--primary);
+    background:var(--primary);color:var(--on-primary,#fff);
+    font-size:15px;font-weight:700;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .process-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .process-btn:not(:disabled):hover{filter:brightness(1.05);}
+
+  /* Loader / progreso */
+  .loader-container{
+    display:none;align-items:center;gap:var(--space-md);
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    margin-bottom:var(--space-md);
+  }
+  .loader-container.show{display:flex;}
+  @media (max-width:600px){ .loader-container{flex-direction:column;} }
+
+  .loader{
+    width:36px;height:36px;flex:none;
+    border:4px solid var(--outline-variant);
+    border-top-color:var(--primary);
+    border-radius:50%;
+    animation:cc-spin 0.9s linear infinite;
+  }
+  @keyframes cc-spin{to{transform:rotate(360deg);}}
+
+  .progress-wrapper{flex:1;width:100%;}
+  .progress-bar-container{
+    width:100%;height:18px;border-radius:var(--radius-full,999px);
+    background:var(--outline-variant);overflow:hidden;
+  }
+  .progress-bar{
+    height:100%;background:var(--primary);
+    display:flex;align-items:center;justify-content:flex-end;
+    padding-right:8px;box-sizing:border-box;
+    transition:width .2s ease;
+  }
+  .progress-bar span{font-size:11px;font-weight:700;color:var(--on-primary,#fff);}
+  .progress-text{margin-top:8px;font-size:13px;font-weight:600;color:var(--on-surface);}
+  .progress-details{margin-top:2px;font-size:12px;color:var(--on-surface-variant);}
+
+  /* Mensajes de estado */
+  .status-message{
+    display:none;align-items:center;gap:8px;
+    padding:12px 14px;border-radius:var(--radius-lg);
+    font-size:13px;margin-bottom:var(--space-md);
+  }
+  .status-message.show{display:flex;}
+  .status-message.success{background:rgba(0,131,143,0.10);color:#00838F;}
+  .status-message.error{background:rgba(192,57,43,0.10);color:#C0392B;}
+  .status-message.info{background:rgba(31,58,60,0.08);color:var(--on-surface);}
+
+  /* Resultados */
+  .results-section{display:none;}
+  .results-section.show{display:block;}
+
+  .stats-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:900px){ .stats-grid{grid-template-columns:1fr 1fr;} }
+
+  .stat-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    text-align:center;
+  }
+  .stat-card h4{margin:0;font-size:11px;font-weight:700;color:var(--on-surface-variant);text-transform:uppercase;letter-spacing:.03em;}
+  .stat-card .value{margin-top:6px;font-size:22px;font-weight:700;color:var(--on-surface);}
+
+  .download-section{
+    text-align:center;
+    padding:var(--space-lg);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    margin-bottom:var(--space-lg);
+  }
+  .download-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:12px 24px;border-radius:var(--radius-lg);
+    background:#B5651D;color:#fff;
+    font-size:14px;font-weight:700;text-decoration:none;
+    transition:all .15s ease;
+  }
+  .download-btn:hover{background:#96541a;}
+
+  .table-wrapper{
+    overflow-x:auto;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+  }
+  .table-wrapper table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap;}
+  .table-wrapper thead th{
+    text-align:left;padding:10px 14px;
+    background:var(--surface-container-low);
+    color:var(--on-surface-variant);
+    font-size:12px;text-transform:uppercase;letter-spacing:.03em;
+    border-bottom:1px solid var(--outline-variant);
+    position:sticky;top:0;
+  }
+  .table-wrapper tbody td{
+    padding:9px 14px;border-bottom:1px solid var(--outline-variant);
+    color:var(--on-surface);
+  }
+  .table-wrapper tbody tr:last-child td{border-bottom:none;}
+  .table-wrapper td.num-cell{text-align:right;font-variant-numeric:tabular-nums;}
+  .table-wrapper td.td-left{text-align:left;}
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Análisis de Transferencias</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Herramientas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Sistema de Análisis de <span>Transferencias</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">sync_alt</span> Análisis de movimientos y costos por producto y almacén <span class="tag">+IVA 16%</span></span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+        <div>
+          <h3 style="margin:0">Sube tus dos archivos y genera el reporte</h3>
+          <p>Central Cell — el sistema cruza movimientos, detalle de productos, series y existencias para calcular costos proveedor (con IVA) y precios al público por movimiento.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga tus archivos</h3>
+        </div>
+
+        <div class="upload-section">
+          <div class="file-card" id="card1">
+            <span class="check-icon"><span class="material-symbols-outlined">check_circle</span></span>
+            <h3><span class="material-symbols-outlined">description</span>Archivo 1: TRANSFERENCIAS</h3>
+            <p>Hoja 1: Movimientos · Hoja 2: Detalle · Hoja 3: Series</p>
+            <div class="file-input-wrapper">
+              <input type="file" id="fileTransferencias" accept=".xlsx,.xls,.csv">
+              <label for="fileTransferencias" class="file-btn">
+                <span class="material-symbols-outlined" style="font-size:16px">upload_file</span>
+                Seleccionar Archivo
+              </label>
+            </div>
+            <div class="file-name" id="name1"></div>
+          </div>
+          <div class="file-card" id="card2">
+            <span class="check-icon"><span class="material-symbols-outlined">check_circle</span></span>
+            <h3><span class="material-symbols-outlined">inventory_2</span>Archivo 2: EXISTENCIAS</h3>
+            <p>Stock, precios y departamentos</p>
+            <div class="file-input-wrapper">
+              <input type="file" id="fileExistencias" accept=".xlsx,.xls,.csv">
+              <label for="fileExistencias" class="file-btn">
+                <span class="material-symbols-outlined" style="font-size:16px">upload_file</span>
+                Seleccionar Archivo
+              </label>
+            </div>
+            <div class="file-name" id="name2"></div>
+          </div>
+        </div>
+
+        <div class="process-section">
+          <button class="process-btn" id="processBtn" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span>
+            PROCESAR ANÁLISIS
+          </button>
+        </div>
+
+        <div class="loader-container" id="loader">
+          <div class="loader"></div>
+          <div class="progress-wrapper">
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progressBar" style="width:0%">
+                <span id="progressPercent">0%</span>
+              </div>
+            </div>
+            <div class="progress-text" id="progressText">Iniciando...</div>
+            <div class="progress-details" id="progressDetails"></div>
+          </div>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+      </section>
+
+      <section class="step-section results-section" id="resultsSection">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Resultados</h3>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="download-section">
+          <h3 style="margin-bottom:14px;color:var(--on-surface);">Descargar Reporte Completo</h3>
+          <a id="downloadBtn" class="download-btn" download="Analisis_Transferencias.xlsx">
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Descargar Excel
+          </a>
+        </div>
+
+        <div class="tbl-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;font-size:15px;color:var(--on-surface);margin:var(--space-lg) 0 var(--space-sm);">
+          Vista Previa — Resumen por Movimiento <span class="tag">Costos con IVA 16%</span>
+        </div>
+        <div class="table-wrapper" id="tableResumen"></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// GLOBALS
+// ============================================================
+const IVA = 1.16; // Factor IVA 16%
+
+let wbTransferencias = null, wbExistencias = null;
+let yaFueProcesado = false;
+let hoja1Data = [];
+
+const processBtn = document.getElementById('processBtn');
+const loader     = document.getElementById('loader');
+const statusMsg  = document.getElementById('statusMessage');
+const resultsSection = document.getElementById('resultsSection');
+const progressBar    = document.getElementById('progressBar');
+const progressPct    = document.getElementById('progressPercent');
+const progressText   = document.getElementById('progressText');
+const progressDetail = document.getElementById('progressDetails');
+
+const PROCESS_BTN_ICON_DEFAULT = '<span class="material-symbols-outlined" style="font-size:18px">rocket_launch</span> PROCESAR ANÁLISIS';
+const PROCESS_BTN_ICON_BUSY    = '<span class="material-symbols-outlined" style="font-size:18px">hourglass_top</span> Procesando...';
+const PROCESS_BTN_ICON_DONE    = '<span class="material-symbols-outlined" style="font-size:18px">check_circle</span> Completado';
+
+// ============================================================
+// UTILS
+// ============================================================
+function norm(s){ return String(s||'').trim().toUpperCase().replace(/\s+/g,' '); }
+function prog(p,t,d=''){ progressBar.style.width=p+'%'; progressPct.textContent=Math.round(p)+'%'; progressText.textContent=t; progressDetail.textContent=d; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fmtNum(n){ return typeof n==='number'&&!isNaN(n) ? n.toFixed(2) : '-'; }
+function fmtInt(n){ return typeof n==='number'&&!isNaN(n) ? Math.round(n) : '-'; }
+function fmtMXN(n){ return typeof n==='number'&&!isNaN(n) ? '$'+n.toFixed(2) : '-'; }
+
+const STATUS_ICONS = { success:'check_circle', error:'error', info:'info' };
+
+function showMsg(txt,type){
+    const icon = STATUS_ICONS[type] || 'info';
+    statusMsg.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px">${icon}</span>${txt}`;
+    statusMsg.className=`status-message ${type} show`;
+    setTimeout(()=>statusMsg.classList.remove('show'),6000);
+}
+
+function abrevDep(dep){
+    dep = String(dep||'').trim().toUpperCase();
+    if (dep.includes('INNOVACION MOVIL') || dep.includes('INNOVACIÓN MOVIL')) return 'IM';
+    if (dep.includes('TECNOLOGIA MOVIL') || dep.includes('TECNOLOGÍA MOVIL'))  return 'TM';
+    if (dep.includes('SOLUCIONES TECNICAS') || dep.includes('SOLUCIONES TÉCNICAS')) return 'ST';
+    if (dep.includes('ADMINISTRACION') || dep.includes('ADMINISTRACIÓN')) return 'ADM';
+    if (dep.includes('PROMOCIONES')) return 'PROM';
+    if (dep.includes('N/A')) return 'N/A';
+    return dep.split(' ').map(w=>w[0]||'').join('').slice(0,4);
+}
+
+// ============================================================
+// FILE HANDLING
+// ============================================================
+document.getElementById('fileTransferencias').addEventListener('change', e => loadFile(e,1,'transferencias'));
+document.getElementById('fileExistencias').addEventListener('change',    e => loadFile(e,2,'existencias'));
+processBtn.addEventListener('click', procesarTodo);
+
+function loadFile(event, cardNum, tipo){
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+            if (tipo==='transferencias') wbTransferencias = wb;
+            if (tipo==='existencias')    wbExistencias    = wb;
+            document.getElementById(`card${cardNum}`).classList.add('loaded');
+            document.getElementById(`name${cardNum}`).innerHTML = `<span class="material-symbols-outlined">check_circle</span> ${file.name}`;
+            if (yaFueProcesado){ yaFueProcesado=false; processBtn.disabled=false; processBtn.innerHTML=PROCESS_BTN_ICON_DEFAULT; }
+            checkReady();
+        } catch(err){ showMsg('Error al leer archivo: '+err.message,'error'); }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function checkReady(){
+    if (wbTransferencias && wbExistencias && !yaFueProcesado){
+        processBtn.disabled=false;
+        showMsg('Todos los archivos cargados. ¡Listo para procesar!','success');
+    }
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+async function procesarTodo(){
+    processBtn.disabled=true; processBtn.innerHTML=PROCESS_BTN_ICON_BUSY;
+    loader.classList.add('show'); resultsSection.classList.remove('show');
+    showMsg('Procesando archivos...','info');
+    prog(0,'Iniciando...');
+
+    try {
+        await sleep(60);
+
+        prog(5,'Leyendo Hoja 1 — Movimientos...');
+        await sleep(30);
+        const { movimientos, fechaMin, fechaMax } = leerMovimientos();
+        prog(12,'Leyendo Hoja 2 — Detalle de productos...', `${movimientos.length} movimientos filtrados`);
+        await sleep(30);
+        const detalleNormal = leerDetalleNormal();
+        prog(20,'Leyendo Hoja 3 — Series...', `${detalleNormal.length} productos`);
+        await sleep(30);
+        const detalleSeries = leerDetalleSeries();
+        prog(28,'Hojas leídas', `${detalleSeries.length} series`);
+        await sleep(30);
+
+        prog(35,'Indexando existencias...');
+        await sleep(30);
+        const exMap = leerExistencias();
+        prog(50,'Existencias indexadas', `${exMap.size} productos`);
+        await sleep(30);
+
+        const movSet = new Set(movimientos.map(m=>norm(m.noMov)));
+
+        prog(55,'Cruzando movimientos y productos...');
+        await sleep(30);
+        const todoDetalle = [
+            ...detalleNormal.filter(d=>movSet.has(norm(d.noMov))),
+            ...detalleSeries.filter(d=>movSet.has(norm(d.noMov)))
+        ];
+
+        const movInfo = new Map();
+        movimientos.forEach(m=> movInfo.set(norm(m.noMov),{ origen:m.almacenOrigen, destino:m.almacenDestino, fecha:m.fecha }));
+
+        prog(60,'Enriqueciendo productos con precios y departamentos...', `${todoDetalle.length} líneas`);
+        await sleep(30);
+        const YIELD_CADA = Math.max(1, Math.floor(todoDetalle.length/60));
+
+        for (let i=0; i<todoDetalle.length; i++){
+            const d = todoDetalle[i];
+            const exInfo = buscarEnMap(exMap, norm(d.producto));
+            d.precioPublico      = exInfo ? (exInfo.precioPublico||0) : 0;
+            d.departamento       = exInfo ? exInfo.departamento : '';
+            d.barcode            = exInfo ? exInfo.barcode : '';
+            d.precioPublicoTotal = d.precioPublico * d.cantidad;
+
+            const mi = movInfo.get(norm(d.noMov));
+            d.almacenOrigen  = mi ? mi.origen  : '';
+            d.almacenDestino = mi ? mi.destino : '';
+            d.fecha          = mi ? mi.fecha   : '';
+
+            if (i%YIELD_CADA===0){ prog(60+Math.floor((i/todoDetalle.length)*25),'Enriqueciendo...', `${i+1} / ${todoDetalle.length}`); await sleep(0); }
+        }
+
+        prog(87,'Generando resumen por movimiento...');
+        await sleep(30);
+        hoja1Data = generarHoja1(todoDetalle, movimientos, fechaMin, fechaMax);
+
+        prog(93,'Renderizando vista previa...');
+        await sleep(30);
+        renderResumen(hoja1Data);
+        renderStats(todoDetalle, hoja1Data);
+
+        prog(97,'Preparando Excel...');
+        await sleep(30);
+        generarExcel(hoja1Data, fechaMin, fechaMax);
+
+        prog(100,'Completado',`${todoDetalle.length} líneas procesadas`);
+        await sleep(500);
+
+        loader.classList.remove('show');
+        resultsSection.classList.add('show');
+        showMsg(`Análisis completado. ${movimientos.length} movimientos, ${todoDetalle.length} productos.`,'success');
+        yaFueProcesado=true;
+        processBtn.innerHTML=PROCESS_BTN_ICON_DONE;
+
+    } catch(err){
+        loader.classList.remove('show');
+        processBtn.disabled=false; processBtn.innerHTML=PROCESS_BTN_ICON_DEFAULT;
+        showMsg('Error: '+err.message,'error');
+        console.error(err);
+    }
+}
+
+// ============================================================
+// LEER MOVIMIENTOS — Hoja 1
+// ============================================================
+function leerMovimientos(){
+    const sheet = wbTransferencias.Sheets[wbTransferencias.SheetNames[0]];
+    const rows  = XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+
+    let headerRow = rows[0]||[];
+    let idxFecha=0, idxNoMov=1, idxEstatus=2;
+    let idxAlmOrigen=-1, idxAlmDestino=-1;
+
+    for(let c=0;c<headerRow.length;c++){
+        const h = norm(String(headerRow[c]||''));
+        if (h==='ALMACEN DESTINO' || h.includes('DESTINO')) idxAlmOrigen=c;
+        else if (h==='ALMACEN') idxAlmDestino=c;
+    }
+    if (idxAlmOrigen<0) idxAlmOrigen=5;
+    if (idxAlmDestino<0){
+        for(let c=6;c<headerRow.length;c++){
+            if(norm(String(headerRow[c]||'')).includes('ALMACEN')){ idxAlmDestino=c; break; }
+        }
+        if(idxAlmDestino<0) idxAlmDestino=6;
+    }
+
+    const resultado = [];
+    const fechas = [];
+
+    for(let i=1;i<rows.length;i++){
+        const row = rows[i];
+        if(!row||!row[idxNoMov]) continue;
+        const almOrigen = norm(String(row[idxAlmOrigen]||''));
+        if(!almOrigen.includes('CENTRAL CELL')) continue;
+
+        const fechaRaw = row[idxFecha];
+        let fecha = '';
+        if(fechaRaw){
+            if(typeof fechaRaw==='number'){
+                const p=XLSX.SSF.parse_date_code(fechaRaw);
+                fecha=`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
+            } else { fecha=String(fechaRaw).trim(); }
+        }
+        if(fecha) fechas.push(fecha);
+
+        resultado.push({
+            fecha,
+            noMov:          String(row[idxNoMov]||'').trim(),
+            estatus:        String(row[idxEstatus]||'').trim(),
+            almacenOrigen:  String(row[idxAlmOrigen]||'').trim(),
+            almacenDestino: String(row[idxAlmDestino]||'').trim()
+        });
+    }
+
+    fechas.sort();
+    return {
+        movimientos: resultado,
+        fechaMin: fechas[0]||'',
+        fechaMax: fechas[fechas.length-1]||''
+    };
+}
+
+// ============================================================
+// LEER DETALLE NORMAL — Hoja 2
+// Col G (idx 6) = Costo SIN IVA → se multiplica × 1.16
+// Col H (idx 7) = CostoTotal SIN IVA → se multiplica × 1.16
+// Col I (idx 8) = Cantidad
+// Si costoTotal viene en 0, se recalcula como costo * cantidad
+// ============================================================
+function leerDetalleNormal(){
+    const sName = wbTransferencias.SheetNames[1];
+    if(!sName) throw new Error('No se encontró Hoja 2 en el archivo de transferencias');
+    const sheet = wbTransferencias.Sheets[sName];
+    const rows  = XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    const res=[];
+    for(let i=1;i<rows.length;i++){
+        const row=rows[i];
+        if(!row||!row[1]) continue;
+        const prod=String(row[5]||'').trim();
+        if(!prod) continue;
+
+        const costoSinIVA    = parseFloat(String(row[6]||'').replace(',','.'))||0;
+        const costoTotSinIVA = parseFloat(String(row[7]||'').replace(',','.'))||0;
+        const cantidad       = parseFloat(String(row[8]||'').replace(',','.'))||0;
+        if(cantidad<=0) continue;
+
+        // Aplicar IVA 16% al costo unitario
+        const costo = costoSinIVA * IVA;
+
+        // Aplicar IVA 16% al costo total:
+        // Si la columna H tiene valor, se usa con IVA; si no, se recalcula desde costo+IVA × cantidad
+        const costoTotal = costoTotSinIVA > 0
+            ? costoTotSinIVA * IVA
+            : costo * cantidad;
+
+        res.push({ noMov:String(row[1]||'').trim(), producto:prod, costo, costoTotal, cantidad, esSerie:false });
+    }
+    return res;
+}
+
+// ============================================================
+// LEER DETALLE SERIES — Hoja 3
+// Col G (idx 6) = Costo SIN IVA → se multiplica × 1.16
+// Cantidad siempre = 1 por serie
+// ============================================================
+function leerDetalleSeries(){
+    const sName = wbTransferencias.SheetNames[2];
+    if(!sName) return [];
+    const sheet = wbTransferencias.Sheets[sName];
+    const rows  = XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    const res=[];
+    for(let i=1;i<rows.length;i++){
+        const row=rows[i];
+        if(!row||!row[1]) continue;
+        const prod=String(row[5]||'').trim();
+        if(!prod) continue;
+
+        const costoSinIVA = parseFloat(String(row[6]||'').replace(',','.'))||0;
+
+        // Aplicar IVA 16% al costo unitario (cantidad = 1, así que costoTotal = costo con IVA)
+        const costo = costoSinIVA * IVA;
+        const costoTotal = costo; // cantidad = 1
+
+        res.push({ noMov:String(row[1]||'').trim(), producto:prod, costo, costoTotal, cantidad:1, esSerie:true });
+    }
+    return res;
+}
+
+// ============================================================
+// LEER EXISTENCIAS
+// ============================================================
+function leerExistencias(){
+    const sheet = wbExistencias.Sheets[wbExistencias.SheetNames[0]];
+    const rows  = XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+    const mapa  = new Map();
+    for(let i=1;i<rows.length;i++){
+        const row=rows[i];
+        if(!row||!row[2]) continue;
+        const prod = norm(String(row[2]||''));
+        if(!prod) continue;
+        const nombreN = String(row[13]||'').trim();
+        const departamento = nombreN.includes('>') ? nombreN.split('>')[0].trim() : nombreN.trim();
+        const info = {
+            precioPublico: parseFloat(String(row[16]||'').replace(',','.'))||0,
+            departamento,
+            barcode: String(row[12]||'').trim()
+        };
+        if(!mapa.has(prod)){
+            mapa.set(prod,info);
+        } else {
+            const ex=mapa.get(prod);
+            if(info.precioPublico>ex.precioPublico) ex.precioPublico=info.precioPublico;
+            if(!ex.barcode&&info.barcode) ex.barcode=info.barcode;
+            if(!ex.departamento&&info.departamento) ex.departamento=info.departamento;
+        }
+    }
+    return mapa;
+}
+
+// ============================================================
+// BUSCAR EN MAP con coincidencia parcial
+// ============================================================
+function buscarEnMap(mapa, normProd){
+    if(mapa.has(normProd)) return mapa.get(normProd);
+    for(const [k,v] of mapa){
+        if(k.includes(normProd)||normProd.includes(k)) return v;
+    }
+    return null;
+}
+
+// ============================================================
+// GENERAR HOJA 1 — Resumen por movimiento
+// ============================================================
+function generarHoja1(detalle, movimientos, fechaMin, fechaMax){
+    const byMov = new Map();
+    for(const d of detalle){
+        const k=norm(d.noMov);
+        if(!byMov.has(k)) byMov.set(k,[]);
+        byMov.get(k).push(d);
+    }
+
+    const depsSet = new Set();
+    for(const d of detalle) if(d.departamento) depsSet.add(d.departamento);
+    const deps = Array.from(depsSet).sort();
+
+    const rows=[];
+    const depProvTotal={}, depPubTotal={};
+    deps.forEach(d=>{ depProvTotal[d]=0; depPubTotal[d]=0; });
+
+    for(const mov of movimientos){
+        const k=norm(mov.noMov);
+        const prods=byMov.get(k)||[];
+        let totProv=0, totPub=0;
+        const depProv={}, depPub={};
+        deps.forEach(d=>{ depProv[d]=0; depPub[d]=0; });
+
+        for(const p of prods){
+            // costoTotal ya incluye IVA (calculado en leerDetalleNormal / leerDetalleSeries)
+            const prov = p.costoTotal;
+            const pub  = p.precioPublicoTotal;
+            totProv+=prov;
+            totPub +=pub;
+            if(p.departamento){
+                depProv[p.departamento]=(depProv[p.departamento]||0)+prov;
+                depPub[p.departamento] =(depPub[p.departamento] ||0)+pub;
+                depProvTotal[p.departamento]=(depProvTotal[p.departamento]||0)+prov;
+                depPubTotal[p.departamento] =(depPubTotal[p.departamento] ||0)+pub;
+            }
+        }
+
+        const row={
+            'Almacen de Envio':mov.almacenDestino,
+            'Almacen Destino':  mov.almacenOrigen,
+            'No. Movimiento':   mov.noMov,
+            'Fecha':            mov.fecha,
+            'Estatus':          mov.estatus,
+            'Total Proveedor (c/IVA)': totProv,
+            'Total Publico':           totPub
+        };
+        deps.forEach(d=>{
+            const ab=abrevDep(d);
+            row[`${ab} - Proveedor (c/IVA)`]=depProv[d]||0;
+            row[`${ab} - Publico`]          =depPub[d] ||0;
+        });
+        rows.push(row);
+    }
+
+    const depsConDatos = deps.filter(d=>(depProvTotal[d]||0)+(depPubTotal[d]||0)>0);
+    const depsVacios   = deps.filter(d=>!depsConDatos.includes(d));
+    if(depsVacios.length>0){
+        rows.forEach(row=>{
+            depsVacios.forEach(d=>{
+                const ab=abrevDep(d);
+                delete row[`${ab} - Proveedor (c/IVA)`];
+                delete row[`${ab} - Publico`];
+            });
+        });
+    }
+
+    return rows;
+}
+
+// ============================================================
+// GENERAR EXCEL
+// ============================================================
+function generarExcel(hoja1, fechaMin, fechaMax){
+    try {
+        const wb = XLSX.utils.book_new();
+        const titulo=`Transferencias ${fechaMin} al ${fechaMax}`;
+        const ws=XLSX.utils.json_to_sheet(hoja1);
+        const cols=hoja1.length>0?Object.keys(hoja1[0]):[];
+        ws['!cols']=cols.map(c=>{
+            if(c.includes('Almacen')||c.includes('Movimiento')) return {wch:30};
+            if(c.includes('Proveedor')||c.includes('Publico'))  return {wch:22};
+            return {wch:14};
+        });
+        XLSX.utils.book_append_sheet(wb,ws,titulo.slice(0,31));
+        const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+        const blob=new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const nombre=`Transferencias_${fechaMin}_${fechaMax}.xlsx`;
+        const btn=document.getElementById('downloadBtn');
+        btn.href=URL.createObjectURL(blob);
+        btn.download=nombre;
+        btn.innerHTML='<span class="material-symbols-outlined" style="font-size:18px">download</span> Descargar Excel';
+    } catch(err){ showMsg('Error al preparar Excel: '+err.message,'error'); }
+}
+
+// ============================================================
+// RENDER STATS
+// ============================================================
+function renderStats(detalle, h1){
+    const totProv   = h1.reduce((s,r)=>s+(r['Total Proveedor (c/IVA)']||0),0);
+    const totPub    = h1.reduce((s,r)=>s+(r['Total Publico']||0),0);
+    const totPiezas = detalle.reduce((s,d)=>s+d.cantidad,0);
+    document.getElementById('statsGrid').innerHTML=`
+        <div class="stat-card"><h4>Movimientos</h4><div class="value">${h1.length}</div></div>
+        <div class="stat-card"><h4>Productos (líneas)</h4><div class="value">${detalle.length}</div></div>
+        <div class="stat-card"><h4>Total Piezas</h4><div class="value">${totPiezas}</div></div>
+        <div class="stat-card" style="background:rgba(0,131,143,0.10)"><h4>Total Proveedor (c/IVA)</h4><div class="value" style="font-size:1.1em">$${totProv.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        <div class="stat-card" style="background:rgba(181,101,29,0.12)"><h4>Total Publico</h4><div class="value" style="font-size:1.1em">$${totPub.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    `;
+}
+
+// ============================================================
+// RENDER TABLA RESUMEN
+// ============================================================
+function renderResumen(data){
+    if(!data.length){ document.getElementById('tableResumen').innerHTML='<p style="padding:20px;text-align:center">Sin datos</p>'; return; }
+    const cols=Object.keys(data[0]);
+    const parts=['<table><thead><tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr></thead><tbody>'];
+    data.forEach(row=>{
+        parts.push('<tr>');
+        cols.forEach(c=>{
+            const v=row[c];
+            if(typeof v==='number'){
+                parts.push(`<td class="num-cell">${v===0?'-':'$'+v.toFixed(2)}</td>`);
+            } else {
+                parts.push(`<td class="${c==='Almacen Destino'||c==='Almacen de Envio'?'td-left':''}">${v||'-'}</td>`);
+            }
+        });
+        parts.push('</tr>');
+    });
+    parts.push('</tbody></table>');
+    document.getElementById('tableResumen').innerHTML=parts.join('');
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

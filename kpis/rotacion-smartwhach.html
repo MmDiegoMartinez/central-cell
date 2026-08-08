@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotación de Inventario - Smartwatches</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (mismo patrón usado en el resto de herramientas) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary);cursor:default;}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Utilidad para ocultar/mostrar bloques (usada por el JS original) */
+  .hidden{display:none !important;}
+
+  /* Tarjetas de carga de archivo */
+  .upload-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:700px){ .upload-grid{grid-template-columns:1fr;} }
+  .file-card{
+    display:flex;flex-direction:column;gap:8px;
+    padding:var(--space-lg);
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    transition:border-color .15s ease;
+  }
+  .file-card:focus-within,
+  .file-card:hover{border-color:var(--primary);}
+  .file-card-label{
+    display:flex;align-items:center;gap:8px;
+    font-size:14px;font-weight:700;color:var(--on-surface);
+  }
+  .file-card-label .material-symbols-outlined{color:var(--primary);font-size:20px;}
+  .file-card input[type="file"]{
+    font-family:inherit;font-size:13px;color:var(--on-surface-variant);
+    padding:8px 0 0;
+  }
+
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-lg);}
+
+  #status{
+    display:none;
+    align-items:center;
+    padding:12px 16px;margin-bottom:var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    font-size:13px;color:var(--on-surface-variant);
+  }
+  #status:not(:empty){display:flex;}
+
+  /* Paneles de resultados (contenedores genéricos que rellena el JS) */
+  .panel{
+    padding:var(--space-lg);
+    margin-bottom:var(--space-lg);
+    background:var(--surface-container-lowest);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    font-size:14px;color:var(--on-surface-variant);
+  }
+  .panel p{margin:0 0 8px;}
+  .panel p:last-child{margin-bottom:0;}
+  .panel p b{color:var(--on-surface);}
+
+  /* Tablas dentro de los paneles (el JS genera <table> sin clases) */
+  .panel .table-scroll{overflow-x:auto;margin-top:var(--space-sm);}
+  .panel table{
+    width:100%;border-collapse:collapse;font-size:13px;
+    background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;
+  }
+  .panel table:not(:last-child){margin-bottom:var(--space-md);}
+  .panel thead th{
+    background:var(--primary);color:var(--on-primary);font-weight:700;
+    padding:10px 12px;text-align:left;white-space:nowrap;
+  }
+  .panel tbody td{
+    padding:8px 12px;border-bottom:1px solid var(--outline-variant);
+  }
+  .panel tbody tr:nth-child(even){background:var(--surface-container-low);}
+
+  /* Etiquetas de clasificación de sucursales */
+  .tag-verde, .tag-rojo, .tag-amarillo{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full);
+    font-size:12px;font-weight:700;
+  }
+  .tag-verde{background:rgba(0,131,143,0.14);color:var(--secondary);}
+  .tag-rojo{background:var(--error-container);color:var(--on-error-container);}
+  .tag-amarillo{background:rgba(0,65,145,0.10);color:var(--tertiary);}
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Rotación de Inventario</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+    <a href="#" class="navbar-link " aria-current="page">
+      <span class="material-symbols-outlined">sync_alt</span>
+      Rotación de Inventario
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Inventario</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Rotación de <span>Smartwatches</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">watch</span> Analiza ventas y existencias para proponer traspasos entre sucursales</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+        <div>
+          <h3 style="margin:0">Sube tus dos archivos y obtén la propuesta de rotación</h3>
+          <p>Carga el Excel de ventas y el de existencias de Smartwatches para detectar automáticamente déficits, excedentes y la propuesta de movimientos entre sucursales.</p>
+        </div>
+      </div>
+
+      <!-- ===================== PASO 1: CARGA DE ARCHIVOS ===================== -->
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga tus archivos</h3>
+        </div>
+
+        <div class="upload-grid">
+          <label class="file-card" for="fileVentas">
+            <span class="file-card-label"><span class="material-symbols-outlined">point_of_sale</span> Archivo de VENTAS</span>
+            <input type="file" id="fileVentas" accept=".xlsx,.xls,.csv">
+          </label>
+          <label class="file-card" for="fileExistencias">
+            <span class="file-card-label"><span class="material-symbols-outlined">inventory_2</span> Archivo de EXISTENCIAS</span>
+            <input type="file" id="fileExistencias" accept=".xlsx,.xls,.csv">
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btnProcesar">
+            <span class="material-symbols-outlined">play_arrow</span>
+            Procesar y analizar
+          </button>
+          <button class="btn btn-outline hidden" id="btnDescargar">
+            <span class="material-symbols-outlined">download</span>
+            Descargar análisis en Excel
+          </button>
+        </div>
+
+        <div id="status"></div>
+      </section>
+
+      <!-- ===================== PASO 2: RESULTADOS ===================== -->
+      <div id="resultados" class="hidden">
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">2</div>
+            <h3 class="step-title text-headline-sm">Periodo de ventas detectado</h3>
+          </div>
+          <div class="panel" id="panelPeriodo"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">3</div>
+            <h3 class="step-title text-headline-sm">Resumen de ventas</h3>
+          </div>
+          <div class="panel" id="panelResumenVentas"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">4</div>
+            <h3 class="step-title text-headline-sm">Sucursales — clasificación</h3>
+          </div>
+          <div class="panel" id="panelClasificacionSucursales"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">5</div>
+            <h3 class="step-title text-headline-sm">Modelos — rotación</h3>
+          </div>
+          <div class="panel" id="panelModelos"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">6</div>
+            <h3 class="step-title text-headline-sm">Propuesta de movimientos de inventario</h3>
+          </div>
+          <div class="panel" id="panelMovimientos"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">7</div>
+            <h3 class="step-title text-headline-sm">Faltantes sin excedente interno</h3>
+          </div>
+          <div class="lesson-meta" style="margin-bottom:8px">
+            <span>Requieren compra a proveedor</span>
+          </div>
+          <div class="panel" id="panelFaltantes"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">8</div>
+            <h3 class="step-title text-headline-sm">Cruce completo</h3>
+          </div>
+          <div class="lesson-meta" style="margin-bottom:8px">
+            <span>Sucursal + Modelo + Ventas + Existencias</span>
+          </div>
+          <div class="panel" id="panelCruce"></div>
+        </section>
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">9</div>
+            <h3 class="step-title text-headline-sm">Resultado final por sucursal</h3>
+          </div>
+          <div class="lesson-meta" style="margin-bottom:8px">
+            <span>Proyección después de aplicar la propuesta</span>
+          </div>
+          <div class="panel" id="panelResultadoFinal"></div>
+        </section>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+
+<script>
+/* ==================== UTILIDADES ==================== */
+
+const MESES = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+function normStr(v){
+  return (v===undefined||v===null) ? '' : String(v).trim();
+}
+function normUpper(v){
+  return normStr(v).toUpperCase();
+}
+function normKey(v){
+  // normaliza para comparar ProdConcat (ignora may/min, colapsa espacios múltiples)
+  return normUpper(v).replace(/\s+/g,' ').trim();
+}
+function toNumber(v){
+  if(v===undefined||v===null||v==='') return 0;
+  const n = parseFloat(String(v).replace(/,/g,'').trim());
+  return isNaN(n) ? 0 : n;
+}
+
+// Parsea fecha tipo "Jul  1 2026  2:24PM" o similar, o fecha numérica de Excel.
+// Solo nos interesa la parte de fecha (día), ignoramos hora para el cálculo de días.
+function parseFechaVenta(raw){
+  if(raw===undefined||raw===null||raw==='') return null;
+
+  // Caso: valor numérico (fecha serial de Excel)
+  if(typeof raw === 'number'){
+    const d = XLSX.SSF.parse_date_code(raw);
+    if(!d) return null;
+    return new Date(d.y, d.m-1, d.d);
+  }
+
+  const s = String(raw).trim();
+  // Regex: MES(3 letras) + espacios + DIA + espacios + AÑO  (ignora el resto, incluida la hora)
+  const m = s.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+  if(!m) return null;
+  const mesTxt = m[1].toLowerCase();
+  const mesIdx = MESES[mesTxt];
+  if(mesIdx===undefined) return null;
+  const dia = parseInt(m[2],10);
+  const anio = parseInt(m[3],10);
+  return new Date(anio, mesIdx, dia);
+}
+
+function fmtFecha(d){
+  if(!d) return '';
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function leerHoja(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        resolve(rows);
+      }catch(err){ reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Detecta si la primera fila es encabezado buscando texto típico en la columna A
+function esEncabezado(fila){
+  const a = normUpper(fila[0]);
+  return a === 'ALMACEN' || a === 'ALMACÉN';
+}
+
+/* ==================== PROCESAMIENTO VENTAS ==================== */
+// Columnas: A=0 Almacen, B=1 N1, C=2 N2, H=7 Fecha, L=11 ProdConcat, O=14 Cantidad
+function procesarVentas(rows){
+  let start = 0;
+  if(rows.length && esEncabezado(rows[0])) start = 1;
+
+  const ventasDetalle = []; // {almacen, prodKey, prodDisplay, cantidad, fecha}
+  const fechasValidas = [];
+
+  for(let i=start;i<rows.length;i++){
+    const fila = rows[i];
+    if(!fila || fila.length===0) continue;
+
+    const almacen = normStr(fila[0]);
+    const n1 = normUpper(fila[1]);
+    const n2 = normUpper(fila[2]);
+    if(!almacen) continue;
+    if(n1 !== 'TECNOLOGIA MOVIL') continue;
+    if(n2 !== 'SMARTWHATCH') continue;
+
+    const fechaRaw = fila[7];
+    const prodRaw = normStr(fila[11]);
+    const cantidad = toNumber(fila[14]);
+
+    if(!prodRaw) continue;
+
+    const fecha = parseFechaVenta(fechaRaw);
+    if(fecha) fechasValidas.push(fecha);
+
+    ventasDetalle.push({
+      almacen,
+      prodKey: normKey(prodRaw),
+      prodDisplay: prodRaw,
+      cantidad,
+      fecha
+    });
+  }
+
+  // Periodo
+  let fechaMin=null, fechaMax=null, dias=0;
+  if(fechasValidas.length){
+    fechasValidas.sort((a,b)=>a-b);
+    fechaMin = fechasValidas[0];
+    fechaMax = fechasValidas[fechasValidas.length-1];
+    dias = Math.round((fechaMax - fechaMin)/(1000*60*60*24)) + 1;
+  }
+
+  // Agregación Sucursal+Modelo
+  const ventasAgg = {}; // key = almacen|prodKey -> {almacen, prodKey, prodDisplay, cantidad}
+  for(const v of ventasDetalle){
+    const key = v.almacen + '||' + v.prodKey;
+    if(!ventasAgg[key]){
+      ventasAgg[key] = {almacen:v.almacen, prodKey:v.prodKey, prodDisplay:v.prodDisplay, cantidad:0};
+    }
+    ventasAgg[key].cantidad += v.cantidad;
+  }
+
+  return {ventasAgg, fechaMin, fechaMax, dias, totalRegistros: ventasDetalle.length};
+}
+
+/* ==================== PROCESAMIENTO EXISTENCIAS ==================== */
+// Columnas: A=0 Almacen, C=2 ProdConcat, H=7 Existencia, N=13 Nombre
+function procesarExistencias(rows){
+  let start = 0;
+  if(rows.length && esEncabezado(rows[0])) start = 1;
+
+  const existAgg = {}; // key = almacen|prodKey -> {almacen, prodKey, prodDisplay, existencia}
+
+  for(let i=start;i<rows.length;i++){
+    const fila = rows[i];
+    if(!fila || fila.length===0) continue;
+
+    const almacen = normStr(fila[0]);
+    const prodRaw = normStr(fila[2]);
+    const existencia = toNumber(fila[7]);
+    const nombre = normUpper(fila[13]);
+
+    if(!almacen || !prodRaw) continue;
+    if(nombre !== 'TECNOLOGIA MOVIL>SMARTWHATCH') continue;
+    if(existencia < 1) continue; // eliminar existencia 0
+
+    const key = almacen + '||' + normKey(prodRaw);
+    if(!existAgg[key]){
+      existAgg[key] = {almacen, prodKey:normKey(prodRaw), prodDisplay:prodRaw, existencia:0};
+    }
+    existAgg[key].existencia += existencia;
+  }
+
+  return existAgg;
+}
+
+/* ==================== CRUCE Y ANALISIS ==================== */
+
+function construirCruce(ventasAgg, existAgg, dias){
+  // set de todas las combinaciones sucursal+modelo presentes en ventas o existencias
+  const claves = new Set([...Object.keys(ventasAgg), ...Object.keys(existAgg)]);
+  const cruce = [];
+  for(const key of claves){
+    const v = ventasAgg[key];
+    const e = existAgg[key];
+    const almacen = v ? v.almacen : e.almacen;
+    const prodKey = v ? v.prodKey : e.prodKey;
+    const prodDisplay = e ? e.prodDisplay : v.prodDisplay; // preferimos nombre desde existencias
+    const ventas = v ? v.cantidad : 0;
+    const existencia = e ? e.existencia : 0;
+    const rotacionDiaria = dias>0 ? (ventas/dias) : 0;
+
+    let recomendacion = 'Sin cambios';
+    if(ventas > existencia) recomendacion = 'Necesita reposición';
+    else if(existencia > ventas && ventas === 0) recomendacion = 'Candidata a retirar (rotación nula)';
+    else if(existencia > ventas) recomendacion = 'Posible excedente';
+
+    cruce.push({almacen, prodKey, prodDisplay, ventas, existencia, dias, rotacionDiaria, recomendacion});
+  }
+  cruce.sort((a,b)=> a.almacen.localeCompare(b.almacen) || a.prodDisplay.localeCompare(b.prodDisplay));
+  return cruce;
+}
+
+function analizarModelos(cruce){
+  const modelos = {}; // prodKey -> {prodDisplay, totalVentas, totalExistencia, sucursalesVenta:Set, sucursalesExistencia:Set}
+  for(const r of cruce){
+    if(!modelos[r.prodKey]){
+      modelos[r.prodKey] = {prodDisplay:r.prodDisplay, totalVentas:0, totalExistencia:0, sucursalesVenta:new Set(), sucursalesExistencia:new Set()};
+    }
+    const m = modelos[r.prodKey];
+    m.totalVentas += r.ventas;
+    m.totalExistencia += r.existencia;
+    if(r.ventas>0) m.sucursalesVenta.add(r.almacen);
+    if(r.existencia>0) m.sucursalesExistencia.add(r.almacen);
+  }
+  const lista = Object.values(modelos).map(m=>{
+    let clase;
+    if(m.totalVentas >= 3) clase = 'Alta rotación';
+    else if(m.totalVentas >= 1) clase = 'Baja rotación';
+    else clase = 'Rotación nula';
+    return {...m, clase};
+  });
+  lista.sort((a,b)=> b.totalVentas - a.totalVentas);
+  return lista;
+}
+
+// Genera movimientos de rotación por modelo, cruzando sucursales con déficit vs superávit
+function generarMovimientos(cruce){
+  // agrupar por modelo
+  const porModelo = {};
+  for(const r of cruce){
+    if(!porModelo[r.prodKey]) porModelo[r.prodKey] = {prodDisplay:r.prodDisplay, filas:[]};
+    porModelo[r.prodKey].filas.push(r);
+  }
+
+  const movimientos = [];
+  const faltantes = []; // deficits que no se pudieron cubrir con excedente interno
+
+  for(const prodKey in porModelo){
+    const {prodDisplay, filas} = porModelo[prodKey];
+
+    const deficits = filas
+      .filter(f=> f.ventas > f.existencia)
+      .map(f=>({almacen:f.almacen, faltan: f.ventas - f.existencia, ventas:f.ventas, existencia:f.existencia}))
+      .sort((a,b)=> b.faltan - a.faltan);
+
+    const superavits = filas
+      .filter(f=> f.existencia > f.ventas)
+      .map(f=>{
+        const surplusPorVentas = f.existencia - f.ventas; // no bajar del nivel de su propia demanda
+        // Regla de inventario mínimo:
+        // - Si la existencia es exactamente 1, se puede transferir esa unidad (puede quedar en 0).
+        // - Si la existencia es 2 o más, se debe conservar siempre 1 unidad de seguridad.
+        const topeInventarioMinimo = (f.existencia === 1) ? f.existencia : (f.existencia - 1);
+        const disponible = Math.max(0, Math.min(surplusPorVentas, topeInventarioMinimo));
+        return {almacen:f.almacen, disponible, ventas:f.ventas, existencia:f.existencia};
+      })
+      .filter(f=> f.disponible > 0)
+      .sort((a,b)=> a.ventas - b.ventas || b.disponible - a.disponible); // prioriza donar desde quien menos vendió
+
+    for(const d of deficits){
+      let faltan = d.faltan;
+      for(const s of superavits){
+        if(faltan<=0) break;
+        if(s.disponible<=0) continue;
+        if(s.almacen === d.almacen) continue;
+        const qty = Math.min(faltan, s.disponible);
+        if(qty<=0) continue;
+
+        const notaMinimo = (s.existencia >= 2)
+          ? ` Se conserva al menos 1 unidad de inventario de seguridad en ${s.almacen}.`
+          : ` Al tener únicamente 1 unidad, ${s.almacen} puede quedar en 0 de este modelo.`;
+
+        movimientos.push({
+          origen: s.almacen,
+          destino: d.almacen,
+          modelo: prodDisplay,
+          cantidad: qty,
+          motivo: `${d.almacen} vendió ${d.ventas} unidad(es) de este modelo en julio y actualmente tiene ${d.existencia} en existencia (déficit de ${d.faltan}). ${s.almacen} vendió ${s.ventas} y cuenta con ${s.existencia} en existencia; puede ceder ${qty} sin quedar por debajo de su propia demanda de julio.${notaMinimo}`
+        });
+
+        s.disponible -= qty;
+        faltan -= qty;
+      }
+      if(faltan>0){
+        faltantes.push({almacen:d.almacen, modelo:prodDisplay, ventas:d.ventas, existencia:d.existencia, faltante:faltan});
+      }
+    }
+  }
+
+  return {movimientos, faltantes};
+}
+
+function clasificarSucursales(cruce, movimientos){
+  const recibido = {};
+  const enviado = {};
+  for(const m of movimientos){
+    recibido[m.destino] = (recibido[m.destino]||0) + m.cantidad;
+    enviado[m.origen] = (enviado[m.origen]||0) + m.cantidad;
+  }
+
+  const sucursales = new Set(cruce.map(r=>r.almacen));
+  const resumenSucursal = {}; // almacen -> {ventasTotales, existenciaTotal}
+  for(const r of cruce){
+    if(!resumenSucursal[r.almacen]) resumenSucursal[r.almacen] = {ventasTotales:0, existenciaTotal:0};
+    resumenSucursal[r.almacen].ventasTotales += r.ventas;
+    resumenSucursal[r.almacen].existenciaTotal += r.existencia;
+  }
+
+  const verdes=[], rojos=[], amarillos=[];
+  for(const s of sucursales){
+    const rec = recibido[s]||0;
+    const env = enviado[s]||0;
+    const res = resumenSucursal[s] || {ventasTotales:0, existenciaTotal:0};
+    const item = {almacen:s, ventasTotales:res.ventasTotales, existenciaTotal:res.existenciaTotal, recibido:rec, enviado:env};
+    if(rec>0) verdes.push(item);
+    else if(env>0) rojos.push(item);
+    else amarillos.push(item);
+  }
+  verdes.sort((a,b)=> b.recibido - a.recibido);
+  rojos.sort((a,b)=> b.enviado - a.enviado);
+  amarillos.sort((a,b)=> a.almacen.localeCompare(b.almacen));
+
+  return {verdes, rojos, amarillos};
+}
+
+// Calcula, por sucursal, cuánto tenía, cuánto se le retira, cuánto se le agrega
+// y con cuánto termina, sumando TODOS los modelos.
+function calcularResultadoFinalSucursales(cruce, movimientos){
+  const existenciaActual = {}; // almacen -> existencia total actual (suma de todos los modelos)
+  for(const r of cruce){
+    existenciaActual[r.almacen] = (existenciaActual[r.almacen]||0) + r.existencia;
+  }
+
+  const retirado = {};
+  const agregado = {};
+  for(const m of movimientos){
+    retirado[m.origen] = (retirado[m.origen]||0) + m.cantidad;
+    agregado[m.destino] = (agregado[m.destino]||0) + m.cantidad;
+  }
+
+  const sucursales = new Set([
+    ...Object.keys(existenciaActual),
+    ...Object.keys(retirado),
+    ...Object.keys(agregado)
+  ]);
+
+  const resultado = [];
+  for(const s of sucursales){
+    const actual = existenciaActual[s] || 0;
+    const ret = retirado[s] || 0;
+    const agr = agregado[s] || 0;
+    const final = actual - ret + agr;
+    resultado.push({almacen:s, existenciaActual:actual, unidadesRetiradas:ret, unidadesAgregadas:agr, existenciaFinal:final});
+  }
+  resultado.sort((a,b)=> a.almacen.localeCompare(b.almacen));
+  return resultado;
+}
+
+/* ==================== RENDER ==================== */
+
+let ULTIMO_ANALISIS = null; // guardamos todo para exportar a Excel
+
+function tabla(headers, rows){
+  let html = '<div class="table-scroll"><table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  for(const r of rows){
+    html += '<tr>' + r.map(c=>`<td>${c}</td>`).join('') + '</tr>';
+  }
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderResultados(a){
+  document.getElementById('resultados').classList.remove('hidden');
+
+  // Periodo
+  document.getElementById('panelPeriodo').innerHTML = `
+    <p><b>Fecha inicial detectada:</b> ${fmtFecha(a.fechaMin)}</p>
+    <p><b>Fecha final detectada:</b> ${fmtFecha(a.fechaMax)}</p>
+    <p><b>Días del periodo:</b> ${a.dias}</p>
+    <p><b>Registros de venta procesados (Smartwatches):</b> ${a.totalRegistros}</p>
+  `;
+
+  // Resumen ventas
+  const totalUnidadesVendidas = a.cruce.reduce((s,r)=>s+r.ventas,0);
+  const numSucursales = new Set(a.cruce.map(r=>r.almacen)).size;
+  const numModelos = new Set(a.cruce.map(r=>r.prodKey)).size;
+  document.getElementById('panelResumenVentas').innerHTML = `
+    <p><b>Total de unidades vendidas en el periodo:</b> ${totalUnidadesVendidas}</p>
+    <p><b>Sucursales analizadas:</b> ${numSucursales}</p>
+    <p><b>Modelos analizados:</b> ${numModelos}</p>
+  `;
+
+  // Clasificación sucursales
+  const {verdes, rojos, amarillos} = a.clasificacion;
+  let htmlClas = '<p>🟢 <span class="tag-verde">Necesitan recibir mercancía</span></p>';
+  htmlClas += tabla(['Sucursal','Ventas julio','Existencia actual','Unidades a recibir (según propuesta)'],
+    verdes.map(v=>[v.almacen, v.ventasTotales, v.existenciaTotal, v.recibido]));
+  htmlClas += '<p>🔴 <span class="tag-rojo">Conviene retirarles mercancía</span></p>';
+  htmlClas += tabla(['Sucursal','Ventas julio','Existencia actual','Unidades a retirar (según propuesta)'],
+    rojos.map(v=>[v.almacen, v.ventasTotales, v.existenciaTotal, v.enviado]));
+  htmlClas += '<p>🟡 <span class="tag-amarillo">Se mantienen sin cambios</span></p>';
+  htmlClas += tabla(['Sucursal','Ventas julio','Existencia actual'],
+    amarillos.map(v=>[v.almacen, v.ventasTotales, v.existenciaTotal]));
+  document.getElementById('panelClasificacionSucursales').innerHTML = htmlClas;
+
+  // Modelos
+  let htmlMod = '<p>📦 <b>Alta rotación</b></p>';
+  htmlMod += tabla(['Modelo','Ventas totales','Existencia total','Sucursales que venden','Sucursales con existencia'],
+    a.modelos.filter(m=>m.clase==='Alta rotación').map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesVenta.size, m.sucursalesExistencia.size]));
+  htmlMod += '<p>⚠️ <b>Baja rotación</b></p>';
+  htmlMod += tabla(['Modelo','Ventas totales','Existencia total','Sucursales que venden','Sucursales con existencia'],
+    a.modelos.filter(m=>m.clase==='Baja rotación').map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesVenta.size, m.sucursalesExistencia.size]));
+  htmlMod += '<p>⚠️ <b>Rotación nula</b> (existencia sin ventas en el periodo)</p>';
+  htmlMod += tabla(['Modelo','Ventas totales','Existencia total','Sucursales con existencia'],
+    a.modelos.filter(m=>m.clase==='Rotación nula').map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesExistencia.size]));
+  document.getElementById('panelModelos').innerHTML = htmlMod;
+
+  // Movimientos
+  document.getElementById('panelMovimientos').innerHTML = a.movimientos.length
+    ? tabla(['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
+        a.movimientos.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo]))
+    : '<p>No se detectaron movimientos recomendados con los datos cargados.</p>';
+
+  // Faltantes
+  document.getElementById('panelFaltantes').innerHTML = a.faltantes.length
+    ? tabla(['Sucursal','Modelo','Ventas julio','Existencia actual','Unidades faltantes'],
+        a.faltantes.map(f=>[f.almacen, f.modelo, f.ventas, f.existencia, f.faltante]))
+    : '<p>No hay déficits sin cubrir: todo el excedente interno alcanzó para cubrir la demanda detectada.</p>';
+
+  // Cruce completo
+  document.getElementById('panelCruce').innerHTML = tabla(
+    ['Sucursal','Modelo','Unidades vendidas','Existencia actual','Días del periodo','Rotación diaria','Recomendación'],
+    a.cruce.map(r=>[r.almacen, r.prodDisplay, r.ventas, r.existencia, r.dias, r.rotacionDiaria.toFixed(3), r.recomendacion])
+  );
+
+  // Resultado final por sucursal
+  document.getElementById('panelResultadoFinal').innerHTML = tabla(
+    ['Sucursal','Existencia actual (total)','Unidades retiradas','Unidades agregadas','Existencia final (proyectada)'],
+    a.resultadoFinalSucursales.map(r=>[r.almacen, r.existenciaActual, r.unidadesRetiradas, r.unidadesAgregadas, r.existenciaFinal])
+  );
+}
+
+/* ==================== EXPORTACION A EXCEL ==================== */
+
+function descargarExcel(a){
+  const wb = XLSX.utils.book_new();
+
+  // Hoja 1 - Resumen
+  const totalUnidadesVendidas = a.cruce.reduce((s,r)=>s+r.ventas,0);
+  const numSucursales = new Set(a.cruce.map(r=>r.almacen)).size;
+  const numModelos = new Set(a.cruce.map(r=>r.prodKey)).size;
+  const resumenRows = [
+    ['Periodo de ventas detectado', `${fmtFecha(a.fechaMin)} - ${fmtFecha(a.fechaMax)}`],
+    ['Fecha inicial', fmtFecha(a.fechaMin)],
+    ['Fecha final', fmtFecha(a.fechaMax)],
+    ['Días de venta', a.dias],
+    ['Total de unidades vendidas', totalUnidadesVendidas],
+    ['Número de sucursales analizadas', numSucursales],
+    ['Número de modelos analizados', numModelos],
+  ];
+  const wsResumen = XLSX.utils.aoa_to_sheet([['Concepto','Valor'], ...resumenRows]);
+  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+  // Hoja 2 - Propuesta de rotación
+  const wsMov = XLSX.utils.aoa_to_sheet([
+    ['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
+    ...a.movimientos.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsMov, 'Propuesta de rotacion');
+
+  // Hoja 3 - Sucursales que necesitan mercancia
+  const necesitanRows = [];
+  for(const f of a.faltantes){
+    necesitanRows.push([f.almacen, f.modelo, f.ventas, f.existencia, f.faltante, 'Sin excedente interno suficiente; requiere compra a proveedor']);
+  }
+  for(const m of a.movimientos){
+    necesitanRows.push([m.destino, m.modelo, '', '', m.cantidad, `Recibe desde ${m.origen}: ${m.motivo}`]);
+  }
+  const wsNecesitan = XLSX.utils.aoa_to_sheet([
+    ['Sucursal','Modelo','Ventas','Existencia actual','Cantidad sugerida','Motivo'],
+    ...necesitanRows
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsNecesitan, 'Necesitan mercancia');
+
+  // Hoja 4 - Sucursales de las que conviene retirar
+  const retirarRows = a.movimientos.map(m=>[m.origen, m.modelo, '', '', m.cantidad, `Cede hacia ${m.destino}: ${m.motivo}`]);
+  const wsRetirar = XLSX.utils.aoa_to_sheet([
+    ['Sucursal','Modelo','Ventas','Existencia actual','Cantidad sugerida para retirar','Motivo'],
+    ...retirarRows
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsRetirar, 'Conviene retirar');
+
+  // Hoja 5 - Analisis de modelos
+  const wsModelos = XLSX.utils.aoa_to_sheet([
+    ['Modelo','Ventas totales','Existencia total','Sucursales donde se vende','Sucursales donde existe inventario','Clasificacion de rotacion'],
+    ...a.modelos.map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesVenta.size, m.sucursalesExistencia.size, m.clase])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsModelos, 'Analisis de modelos');
+
+  // Hoja 6 - Inventario y ventas por sucursal
+  const wsCruce = XLSX.utils.aoa_to_sheet([
+    ['Sucursal','Modelo','Unidades vendidas','Existencia actual','Dias del periodo','Rotacion diaria','Recomendacion'],
+    ...a.cruce.map(r=>[r.almacen, r.prodDisplay, r.ventas, r.existencia, r.dias, Number(r.rotacionDiaria.toFixed(3)), r.recomendacion])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsCruce, 'Sucursal-Modelo');
+
+  // Hoja 7 - Resultado final por sucursal
+  const wsFinal = XLSX.utils.aoa_to_sheet([
+    ['Sucursal','Existencia actual (total)','Unidades retiradas','Unidades agregadas','Existencia final (proyectada)'],
+    ...a.resultadoFinalSucursales.map(r=>[r.almacen, r.existenciaActual, r.unidadesRetiradas, r.unidadesAgregadas, r.existenciaFinal])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsFinal, 'Resultado final sucursal');
+
+  XLSX.writeFile(wb, 'analisis_rotacion_inventario_smartwatches.xlsx');
+}
+
+/* ==================== EVENTOS ==================== */
+
+document.getElementById('btnProcesar').addEventListener('click', async ()=>{
+  const status = document.getElementById('status');
+  const fVentas = document.getElementById('fileVentas').files[0];
+  const fExist = document.getElementById('fileExistencias').files[0];
+
+  if(!fVentas || !fExist){
+    status.textContent = 'Debes cargar ambos archivos (ventas y existencias).';
+    return;
+  }
+
+  status.textContent = 'Leyendo archivos...';
+  try{
+    const [rowsVentas, rowsExist] = await Promise.all([leerHoja(fVentas), leerHoja(fExist)]);
+
+    status.textContent = 'Procesando ventas...';
+    const {ventasAgg, fechaMin, fechaMax, dias, totalRegistros} = procesarVentas(rowsVentas);
+
+    status.textContent = 'Procesando existencias...';
+    const existAgg = procesarExistencias(rowsExist);
+
+    status.textContent = 'Cruzando información...';
+    const cruce = construirCruce(ventasAgg, existAgg, dias);
+
+    status.textContent = 'Analizando modelos...';
+    const modelos = analizarModelos(cruce);
+
+    status.textContent = 'Generando propuesta de rotación...';
+    const {movimientos, faltantes} = generarMovimientos(cruce);
+
+    const clasificacion = clasificarSucursales(cruce, movimientos);
+    const resultadoFinalSucursales = calcularResultadoFinalSucursales(cruce, movimientos);
+
+    ULTIMO_ANALISIS = {fechaMin, fechaMax, dias, totalRegistros, cruce, modelos, movimientos, faltantes, clasificacion, resultadoFinalSucursales};
+
+    renderResultados(ULTIMO_ANALISIS);
+    document.getElementById('btnDescargar').classList.remove('hidden');
+    status.textContent = 'Análisis completado.';
+  }catch(err){
+    console.error(err);
+    status.textContent = 'Error al procesar los archivos: ' + err.message;
+  }
+});
+
+document.getElementById('btnDescargar').addEventListener('click', ()=>{
+  if(ULTIMO_ANALISIS) descargarExcel(ULTIMO_ANALISIS);
+});
+</script>
+</body>
+</html>

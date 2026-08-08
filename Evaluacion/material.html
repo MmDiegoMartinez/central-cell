@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacitación · Centralcell</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+ 
+
+  body{background:var(--background);}
+
+  /* --- Barra de navegación superior --- */
+  .dash-topbar{
+    position:sticky;top:0;z-index:40;
+    background:rgba(249,249,255,0.85);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--outline-variant);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 var(--space-xl);height:64px;
+  }
+  .dash-brand{display:flex;align-items:center;gap:10px;color:var(--primary);font-weight:700;font-size:16px;}
+  .dash-brand .material-symbols-outlined{font-size:22px;}
+  .dash-nav{display:flex;align-items:center;gap:var(--space-xl);}
+  .dash-nav a, .dash-nav span{
+    font-size:14px;font-weight:600;color:var(--on-surface-variant);
+    display:flex;align-items:center;gap:6px;
+    padding:8px 4px;border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .dash-nav a:hover{color:var(--primary);}
+  .dash-nav .current{color:var(--primary);border-bottom-color:var(--primary);}
+  .dash-nav-toggle{display:none;color:var(--primary);font-size:26px;background:none;}
+
+  @media (max-width:720px){
+    .dash-topbar{padding:0 var(--space-md);}
+    .dash-nav{
+      display:none;position:absolute;top:64px;left:0;right:0;
+      background:var(--surface-container-lowest);
+      border-bottom:1px solid var(--outline-variant);
+      flex-direction:column;align-items:flex-start;gap:0;
+      padding:var(--space-sm) var(--space-md) var(--space-md);
+      box-shadow:0 8px 16px rgba(17,28,45,0.08);
+    }
+    .dash-nav.open{display:flex;}
+    .dash-nav a, .dash-nav span{width:100%;padding:12px 4px;border-bottom:1px solid var(--outline-variant);}
+    .dash-nav-toggle{display:inline-flex;}
+  }
+
+  /* --- Encabezado del dashboard --- */
+  .dash-hero{max-width:var(--container-max);margin:0 auto;padding:var(--space-2xl) var(--space-xl) var(--space-lg);}
+  .dash-hero h1{margin:8px 0 0;}
+  .dash-hero p{color:var(--on-surface-variant);margin-top:var(--space-sm);max-width:640px;}
+
+  /* --- Filtros de categoría --- */
+  .dash-filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:var(--space-lg);}
+  .filter-chip{
+    padding:8px 18px;border-radius:var(--radius-full);
+    font-size:13px;font-weight:600;color:var(--on-surface-variant);
+    background:var(--surface-container-low);border:1px solid var(--outline-variant);
+    transition:all .15s ease;cursor:pointer;
+  }
+  .filter-chip:hover{background:var(--surface-container-high);}
+  .filter-chip.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary);}
+
+  /* --- Grid de cursos --- */
+  .dash-wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--space-xl) var(--space-3xl);}
+  .course-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:var(--space-xl);
+    margin-top:var(--space-md);
+  }
+
+  .course-card{
+    background:var(--surface-container-lowest);
+    border:1px solid rgba(196,197,215,0.4);
+    border-radius:var(--radius-xl);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 1px 2px rgba(17,28,45,0.04);
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .course-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 16px 32px rgba(17,28,45,0.12);
+    border-color:var(--primary-fixed);
+  }
+
+  .course-thumb-wrap{position:relative;width:100%;aspect-ratio:16/9;background:var(--surface-container-high);overflow:hidden;}
+  .course-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block;background:var(--surface-container-high);}
+  .course-thumb-wrap::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(17,28,45,0) 60%, rgba(17,28,45,0.35) 100%);
+    pointer-events:none;
+  }
+  .course-badge{
+    position:absolute;top:12px;left:12px;z-index:2;
+    padding:4px 12px;border-radius:var(--radius-full);
+    font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
+  }
+  .badge-general{background:var(--tertiary-container);color:#fff;}
+  .badge-telefonia{background:var(--primary);color:var(--on-primary);}
+  .badge-accesorios{background:var(--secondary);color:var(--on-secondary);}
+
+  .course-body{padding:var(--space-md) var(--space-lg) var(--space-lg);display:flex;flex-direction:column;flex:1;gap:var(--space-sm);}
+  .course-title{font-size:16px;font-weight:700;line-height:22px;color:var(--on-surface);margin:0;flex:1;}
+  .course-cta{
+    margin-top:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:10px 16px;border-radius:var(--radius-lg);
+    font-size:13px;font-weight:700;letter-spacing:0.02em;
+    background:var(--primary);color:var(--on-primary);
+    transition:opacity .15s ease, transform .15s ease;
+    width:100%;
+  }
+  .course-cta:hover{opacity:0.9;transform:translateY(-1px);}
+  .course-cta .material-symbols-outlined{font-size:18px;}
+
+  .dash-section-label{
+    display:flex;align-items:center;gap:10px;
+    margin:var(--space-2xl) 0 4px;
+    color:var(--outline);font-size:12px;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;
+  }
+  .dash-section-label:first-of-type{margin-top:0;}
+  .dash-section-label::after{content:"";flex:1;height:1px;background:var(--outline-variant);}
+</style>
+</head>
+<body>
+
+<!-- BARRA DE NAVEGACIÓN -->
+<header class="dash-topbar">
+  <div class="dash-brand">
+    <span class="material-symbols-outlined">school</span>
+    Centralcell · Capacitación
+  </div>
+  <button class="dash-nav-toggle material-symbols-outlined" id="navToggle" aria-label="Abrir menú">menu</button>
+  <nav class="dash-nav" id="dashNav">
+    <a href="../garantias/vendedor/garantias.php">
+      <span class="material-symbols-outlined" style="font-size:18px;">home</span> Inicio
+    </a>
+    <span class="current">
+      <span class="material-symbols-outlined" style="font-size:18px;">grid_view</span> Material
+    </span>
+    <a href="examen.php">
+      <span class="material-symbols-outlined" style="font-size:18px;">quiz</span> Cuestionario
+    </a>
+  </nav>
+</header>
+
+<!-- ENCABEZADO -->
+<section class="dash-hero">
+  <span class="eyebrow">Plataforma de Aprendizaje</span>
+  <h1 class="text-headline-lg">Panel de Capacitación</h1>
+  <p class="text-body-md">Explora todos los cursos y módulos disponibles. Sigue el orden sugerido para avanzar de forma lógica por el proceso de venta, o busca directamente el tema que necesitas repasar.</p>
+
+  <div class="dash-filters" id="filters">
+    <div class="filter-chip active" data-filter="todos">Todos</div>
+    <div class="filter-chip" data-filter="general">General</div>
+    <div class="filter-chip" data-filter="telefonia">Telefonía</div>
+    <div class="filter-chip" data-filter="accesorios">Accesorios</div>
+  </div>
+</section>
+
+<!-- GALERÍA DE CURSOS -->
+<main class="dash-wrap">
+  <div class="course-grid" id="courseGrid">
+
+    <!-- 1 -->
+    <a class="course-card" data-category="general" href="https://www.canva.com/design/DAG3LqqOBRw/rLLFR6yY511e5UAWKZTBwA/edit?utm_content=DAG3LqqOBRw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank" rel="noopener">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-general">General</span>
+        <img src="https://i.ibb.co/YTKjjVzR/aa2f04d936d1.png" alt="Presentación de Centralcell">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Presentación</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">visibility</span> Ver contenido</span>
+      </div>
+    </a>
+
+    <!-- 2 -->
+    <a class="course-card" data-category="general" href="proceso-venta-centralcell.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-general">General</span>
+        <img src="	https://i.ibb.co/FbGYSTW6/ecac321d3fe1.png" alt="Proceso de Venta Centralcell">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Proceso de Venta Centralcell</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+    <!-- 3 -->
+    <a class="course-card" data-category="general" href="libro-objeciones-soluciones.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-general">General</span>
+        <img src="https://i.ibb.co/XrY0bcsT/92eebce79334.png" alt="Libro de Objeciones y Soluciones">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Libro de Objeciones y Soluciones</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">school</span> Iniciar curso</span>
+      </div>
+    </a>
+
+    <!-- 4 -->
+    <a class="course-card" data-category="telefonia" href="payjoy.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/m5Z4DQkh/46ff2bda8845.png" alt="Introducción a PayJoy">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Introducción a PayJoy</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">rocket_launch</span> Comenzar</span>
+      </div>
+    </a>
+
+    <!-- 5 -->
+    <a class="course-card" data-category="telefonia" href="primer-inicio-sesion-payjoy.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/DfNjLtgL/56e1e3cbd510.png" alt="Crea tu Cuenta PayJoy">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Crea tu Cuenta PayJoy</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+    <!-- 6 -->
+    <a class="course-card" data-category="telefonia" href="payjoy-uso.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/m5Z4DQkh/46ff2bda8845.png" alt="Uso de PayJoy">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Uso de PayJoy</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">visibility</span> Ver contenido</span>
+      </div>
+    </a>
+
+    <!-- 7 -->
+    <a class="course-card" data-category="telefonia" href="cancelacion-venta-payjoy.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/RGgwSgyp/f1c68ddbe7d0.png" alt="Cancelación de Venta de PayJoy">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Cancelación de Venta de PayJoy</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">school</span> Iniciar curso</span>
+      </div>
+    </a>
+
+    <!-- 8 -->
+    <a class="course-card" data-category="telefonia" href="activacion-chips.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/sJJ9fkfM/a0cf92c675b5.png" alt="Activación de Chips">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Activación de Chips</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">rocket_launch</span> Comenzar</span>
+      </div>
+    </a>
+
+    <!-- 9 -->
+    <a class="course-card" data-category="telefonia" href="vincular-smartwatch.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-telefonia">Telefonía</span>
+        <img src="https://i.ibb.co/SgD2ZNg/857329f4543d.png" alt="Vinculación de Teléfono con Smartwatch">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Vinculación de Teléfono con Smartwatch</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+    <!-- 10 -->
+    <a class="course-card" data-category="accesorios" href="instalacion-protection-pro.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/HDmy3GrD/5c24f7ea5bcb.png" alt="Instalación de Protection Pro">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Instalación de Protection Pro</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">visibility</span> Ver contenido</span>
+      </div>
+    </a>
+
+    <!-- 11 -->
+    <a class="course-card" data-category="accesorios" href="hidrogel.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/Q7ttvPcm/fd3d6cf6df83.png" alt="Propiedades de los Hidrogeles">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Propiedades de los Hidrogeles</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">school</span> Iniciar curso</span>
+      </div>
+    </a>
+
+    <!-- 12 -->
+    <a class="course-card" data-category="accesorios" href="https://drive.google.com/drive/folders/12bYW6LuOyAdqgKs5Qgj1ocAw4nZY9WaD?usp=sharing" target="_blank" rel="noopener">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/Q7ttvPcm/fd3d6cf6df83.png" alt="Instalación de Hidrogel">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Instalación de Hidrogel</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">rocket_launch</span> Comenzar</span>
+      </div>
+    </a>
+
+    <!-- 13 -->
+    <a class="course-card" data-category="accesorios" href="pantallas-curvas-mica-uv.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/Q3MT4kZP/47b147b9e567.png" alt="Curvaturas y Hidrogel UV">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Curvaturas y Hidrogel UV</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+    <!-- 14 -->
+    <a class="course-card" data-category="accesorios" href="https://drive.google.com/file/d/1feHWEwy0PRQb_kiXC7LzHFNXeHNMVepa/view?usp=sharing" target="_blank" rel="noopener">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/9HN7XhJX/921769303c68.jpg" alt="Instalación de Glass">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Instalación de Glass</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">visibility</span> Ver contenido</span>
+      </div>
+    </a>
+
+    <!-- 15 -->
+    <a class="course-card" data-category="accesorios" href="correas-apple-watch.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/zhXhKscH/be28ac115b3f.jpg" alt="Compatibilidad de Correas Apple Watch">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Compatibilidad de Correas Apple Watch</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">school</span> Iniciar curso</span>
+      </div>
+    </a>
+
+    <!-- 16 -->
+    <a class="course-card" data-category="accesorios" href="cables-adaptadores-corriente.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/3mSQ9LyL/2df7afa7b0e6.png" alt="Cables y Adaptadores de Corriente">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Cables y Adaptadores de Corriente</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">rocket_launch</span> Comenzar</span>
+      </div>
+    </a>
+
+    <!-- 17 -->
+    <a class="course-card" data-category="accesorios" href="garantias.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/1tf8C2jZ/e6884029025c.png" alt="Cómo Validar una Garantía en Accesorios">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Cómo Validar una Garantía en Accesorios</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+    <!-- 18 -->
+    <a class="course-card" data-category="accesorios" href="cobro-protectores-pantalla.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/cVJJyYX/773ea4eaabae.jpg" alt="Cuidado: Esto Puede Generar un Cobro en Protectores">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Cuidado: Esto Puede Generar un Cobro en Protectores</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">visibility</span> Ver contenido</span>
+      </div>
+    </a>
+
+    <!-- 19 -->
+    <a class="course-card" data-category="accesorios" href="envio-mermas-garantias.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/3m9RR9ds/15ed78853d1b.jpg" alt="Envío de Garantías y Mermas">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Envío de Garantías y Mermas</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">school</span> Iniciar curso</span>
+      </div>
+    </a>
+
+    <!-- 20 -->
+    <a class="course-card" data-category="accesorios" href="registro-productos-negados.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-accesorios">Accesorios</span>
+        <img src="https://i.ibb.co/XxR1qR3v/6ec906c3e4c4.png" alt="Registro de Productos Negados">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Registro de Productos Negados</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">rocket_launch</span> Comenzar</span>
+      </div>
+    </a>
+
+    <!-- 21 -->
+    <a class="course-card" data-category="general" href="kardex-movimientos.html">
+      <div class="course-thumb-wrap">
+        <span class="course-badge badge-general">General</span>
+        <img src="https://i.ibb.co/G4zfH2rn/8865b18afc95.png" alt="Kardex de Movimientos">
+      </div>
+      <div class="course-body">
+        <h3 class="course-title">Kardex de Movimientos</h3>
+        <span class="course-cta"><span class="material-symbols-outlined">play_arrow</span> Ver capacitación</span>
+      </div>
+    </a>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="dash-wrap" style="max-width:var(--container-max);margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;width:100%;gap:var(--space-md);padding-left:var(--space-xl);padding-right:var(--space-xl);">
+    <span>© <span id="current-year"></span> Centralcell · Capacitación General</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+
+  // Menú móvil
+  const navToggle = document.getElementById('navToggle');
+  const dashNav = document.getElementById('dashNav');
+  navToggle.addEventListener('click', () => dashNav.classList.toggle('open'));
+
+  // Filtro de categorías
+  const chips = document.querySelectorAll('.filter-chip');
+  const cards = document.querySelectorAll('.course-card');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const filter = chip.dataset.filter;
+      cards.forEach(card => {
+        card.style.display = (filter === 'todos' || card.dataset.category === filter) ? '' : 'none';
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

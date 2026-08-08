@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador · Smartphones Vendidos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- Hoja de estilos base del sistema de diseño (Material 3). Ajusta la ruta si tu archivo vive en otro lugar. -->
+<link rel="stylesheet" href="../styles.css">
+
+<!-- Estilos adicionales SOLO para componentes que no existen en la hoja base (drop-zone, stats, badges, tabla, tarjetas de vendedor en pantalla, navbar responsive). No se modifica el CSS externo. -->
+<style>
+  /* ---- Navbar horizontal con menú hamburguesa (idéntico al del Comparador de Series) ---- */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  /* Drop zone de carga de archivo */
+  .drop-zone{
+    margin-top:var(--space-lg);
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-xl);
+    padding:var(--space-2xl) var(--space-lg);
+    text-align:center;
+    cursor:pointer;
+    background:var(--surface-container-low);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .drop-zone:hover,
+  .drop-zone.dragover{
+    border-color:var(--primary);
+    background:var(--surface-container-high);
+  }
+  .drop-icon{
+    display:flex;align-items:center;justify-content:center;
+    width:56px;height:56px;margin:0 auto var(--space-md);
+    border-radius:var(--radius-full);
+    background:var(--primary-container);
+    color:var(--on-primary);
+  }
+  .drop-icon .material-symbols-outlined{font-size:28px;}
+  .file-name{
+    margin-top:var(--space-sm);
+    font-size:13px;font-weight:600;color:var(--secondary);
+    word-break:break-all;
+  }
+
+  /* Barra de estadísticas */
+  .stats-bar{
+    display:flex;flex-wrap:wrap;gap:var(--space-sm);
+    margin-top:var(--space-lg);
+  }
+  .stat-chip{
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    padding:8px 14px;
+    font-size:13px;color:var(--on-surface-variant);
+  }
+  .stat-chip strong{color:var(--on-surface);font-weight:700;}
+  .stat-chip strong.accent{color:var(--secondary);}
+
+  /* Badges de modalidad en tabla */
+  .badge{
+    display:inline-flex;align-items:center;gap:4px;
+    padding:4px 10px;border-radius:var(--radius-full);
+    font-size:12px;font-weight:700;
+  }
+  .badge .material-symbols-outlined{font-size:15px;}
+  .badge-contado{background:rgba(0,107,95,0.12);color:var(--secondary);}
+  .badge-credito{background:rgba(0,65,145,0.12);color:var(--tertiary);}
+
+  /* Tabla de previsualización */
+  .preview-wrap{overflow-x:auto;}
+  .data-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .data-table thead th{
+    text-align:left;padding:10px 14px;
+    background:var(--surface-container-high);
+    color:var(--on-surface-variant);
+    font-size:12px;text-transform:uppercase;letter-spacing:0.04em;
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .data-table tbody td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--outline-variant);
+    color:var(--on-surface);
+  }
+  .data-table tbody tr:hover{background:var(--surface-container-low);}
+
+  /* Grid y tarjetas de vendedor (vista en pantalla, con tokens M3) */
+  .cards-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:var(--space-lg);margin-top:var(--space-lg);
+  }
+  .card-wrap .vendor-card{
+    background:var(--surface-container-lowest);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-xl);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(17,28,45,0.06);
+    display:flex;flex-direction:column;
+  }
+  .card-wrap .vc-header{height:5px;}
+  .card-wrap .vc-header.contado{background:var(--secondary);}
+  .card-wrap .vc-header.credito{background:var(--tertiary);}
+  .card-wrap .vc-header.empate{background:var(--primary);}
+  .card-wrap .vc-body{padding:var(--space-lg);}
+  .card-wrap .vc-seller{display:flex;align-items:center;gap:var(--space-md);margin-bottom:var(--space-md);}
+  .card-wrap .vc-avatar{
+    width:48px;height:48px;border-radius:var(--radius-full);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:1.1rem;flex:0 0 48px;
+  }
+  .card-wrap .vc-avatar.contado{background:var(--secondary-container);color:var(--on-secondary-container);}
+  .card-wrap .vc-avatar.credito{background:var(--surface-container-high);color:var(--tertiary);}
+  .card-wrap .vc-avatar.empate{background:var(--primary-fixed);color:var(--on-primary-fixed);}
+  .card-wrap .vc-name{font-weight:700;font-size:15px;color:var(--on-surface);text-transform:capitalize;}
+  .card-wrap .vc-subtitle{font-size:12px;color:var(--on-surface-variant);margin-top:2px;}
+  .card-wrap .vc-congrats{
+    border-radius:var(--radius-lg);padding:10px 14px;
+    font-size:13px;font-weight:500;margin-bottom:var(--space-md);line-height:1.45;
+  }
+  .card-wrap .vc-congrats.contado{background:rgba(0,107,95,0.08);color:var(--secondary);border-left:3px solid var(--secondary);}
+  .card-wrap .vc-congrats.credito{background:rgba(0,65,145,0.08);color:var(--tertiary);border-left:3px solid var(--tertiary);}
+  .card-wrap .vc-congrats.empate{background:rgba(0,55,176,0.08);color:var(--primary);border-left:3px solid var(--primary);}
+  .card-wrap .vc-section-label{
+    font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+    color:var(--outline);margin:var(--space-md) 0 6px;
+  }
+  .card-wrap .vc-sale{
+    background:var(--surface-container-low);border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);padding:8px 12px;margin-bottom:6px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+  }
+  .card-wrap .vc-model{font-size:13px;color:var(--on-surface-variant);flex:1;}
+  .card-wrap .vc-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:var(--radius-full);white-space:nowrap;}
+  .card-wrap .vc-pill.contado{background:var(--secondary-container);color:var(--on-secondary-container);}
+  .card-wrap .vc-pill.credito{background:var(--surface-container-high);color:var(--tertiary);}
+  .card-wrap .vc-footer{
+    border-top:1px solid var(--outline-variant);margin-top:auto;padding-top:var(--space-md);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .card-wrap .vc-total{font-size:1.4rem;font-weight:700;}
+  .card-wrap .vc-total.contado{color:var(--secondary);}
+  .card-wrap .vc-total.credito{color:var(--tertiary);}
+  .card-wrap .vc-total.empate{color:var(--primary);}
+  .card-wrap .vc-total-label{font-size:11px;color:var(--on-surface-variant);margin-top:2px;}
+  .card-wrap .vc-date{font-size:12px;color:var(--on-surface-variant);text-align:right;}
+
+  
+  #render-zone{
+    position:absolute;
+    top:0;
+    left:-9999px;
+    z-index:-1;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL CON MENÚ HAMBURGUESA ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Reporte · Smartphones Vendidos</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<!-- MAIN (sin sidebar: quitamos el margin-left que la hoja base aplica por defecto) -->
+<div class="main" style="margin-left:0;">
+
+  <div class="container">
+
+    <div class="lesson">
+      <div class="lesson-body">
+        <div class="eyebrow">Carga de archivo</div>
+        <h1 class="text-headline-lg" style="margin:8px 0 4px;display:flex;align-items:center;gap:10px;">
+          <span class="material-symbols-outlined" style="font-size:32px;color:var(--primary);">smartphone</span>
+          Reporte de Smartphones Vendidos
+        </h1>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0;">
+          Sube tu archivo Excel de ventas para generar las tarjetas por vendedor
+        </p>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="drop-icon">
+            <span class="material-symbols-outlined">upload_file</span>
+          </div>
+          <h3 class="text-headline-sm" style="margin:0 0 4px;">Arrastra tu archivo .xlsx aquí</h3>
+          <p class="text-body-sm" style="color:var(--on-surface-variant);margin:0;">o haz clic para seleccionarlo</p>
+          <div class="file-name" id="fileName"></div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btnGenerar" disabled onclick="procesar()" style="margin-top:var(--space-lg);">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          Generar Reporte
+        </button>
+
+        <div class="stats-bar" id="statsBar" style="display:none"></div>
+      </div>
+    </div>
+
+    <div id="tablaWrap" class="lesson" style="display:none">
+      <div class="lesson-body">
+        <div class="eyebrow">Vista previa</div>
+        <h3 class="text-headline-sm" style="margin:8px 0 var(--space-md);">Detalle de ventas</h3>
+        <div class="preview-wrap">
+          <table id="tablaPreview" class="data-table">
+            <thead>
+              <tr>
+                <th>Vendedor</th><th>Modelo</th><th>Modalidad</th><th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="tablaBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="galeria" style="display:none">
+      <div class="step-head" style="margin-top:var(--space-2xl);">
+        <div class="step-num"><span class="material-symbols-outlined">celebration</span></div>
+        <h2 class="step-title text-headline-sm">Tarjetas por Vendedor</h2>
+      </div>
+
+      <button class="btn btn-secondary" id="btnDescargarTodo" onclick="pedirGrupoYDescargar()" style="margin-bottom:32px;display:none">
+        <span class="material-symbols-outlined">download</span>
+        Descargar imagen completa
+      </button>
+
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+
+  </div>
+
+ 
+</div>
+
+<div id="render-zone"></div>
+
+<script>
+// ══════════════════════════════════
+//  UTILIDADES
+// ══════════════════════════════════
+const MESES_ES = {
+  jan:'Enero', feb:'Febrero', mar:'Marzo', apr:'Abril',
+  may:'Mayo', jun:'Junio', jul:'Julio', aug:'Agosto',
+  sep:'Septiembre', oct:'Octubre', nov:'Noviembre', dec:'Diciembre'
+};
+
+function parsearFecha(str) {
+  if (!str) return null;
+  const m = String(str).match(/(\w{3})\s+(\d+)\s+(\d{4})/);
+  if (!m) return null;
+  const mesKey = m[1].toLowerCase();
+  return { mes: MESES_ES[mesKey] || m[1], dia: parseInt(m[2]), anio: parseInt(m[3]), raw: new Date(`${m[1]} ${m[2]} ${m[3]}`) };
+}
+
+function rangoFechas(fechas) {
+  const validas = fechas.filter(Boolean).map(f => f.raw).filter(d => d instanceof Date && !isNaN(d));
+  if (!validas.length) return '';
+  const min = new Date(Math.min(...validas));
+  const max = new Date(Math.max(...validas));
+  const fmt = d => {
+    const m = d.toLocaleString('en-US', {month:'short'});
+    const mes = MESES_ES[m.toLowerCase()] || m;
+    return `${d.getDate()} de ${mes} de ${d.getFullYear()}`;
+  };
+  if (min.toDateString() === max.toDateString()) return fmt(min);
+  return `${fmt(min)} — ${fmt(max)}`;
+}
+
+function extraerModelo(prodConcat) {
+  if (!prodConcat) return 'Modelo desconocido';
+  const m = prodConcat.match(/\(([^)]+)\)/);
+  if (!m) return prodConcat.trim();
+  const dentro = m[1];
+  const antes = dentro.split('/')[0].trim();
+  return antes || prodConcat.trim();
+}
+
+// ══════════════════════════════════
+//  DRAG & DROP + FILE INPUT
+// ══════════════════════════════════
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+let workbook = null;
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) cargarArchivo(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) cargarArchivo(fileInput.files[0]); });
+
+function cargarArchivo(file) {
+  document.getElementById('fileName').textContent = '📄 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    workbook = XLSX.read(data, { type: 'array' });
+    document.getElementById('btnGenerar').disabled = false;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ══════════════════════════════════
+//  PROCESAR
+// ══════════════════════════════════
+let filasProcesadas = [];
+
+async function procesar() {
+  if (!workbook) return;
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+  if (rows.length < 2) { alert('El archivo no tiene datos.'); return; }
+
+  const headers = rows[0].map(h => String(h).trim());
+  const idx = {
+    N1:         headers.indexOf('N1'),
+    N2:         headers.indexOf('N2'),
+    Vendedor:   headers.indexOf('Vendedor'),
+    Cliente:    headers.indexOf('Cliente'),
+    ProdConcat: headers.indexOf('ProdConcat'),
+    Fecha:      headers.indexOf('Fecha'),
+  };
+
+  if (idx.N1         < 0) idx.N1         = 1;
+  if (idx.N2         < 0) idx.N2         = 2;
+  if (idx.Vendedor   < 0) idx.Vendedor   = 9;
+  if (idx.Cliente    < 0) idx.Cliente    = 8;
+  if (idx.ProdConcat < 0) idx.ProdConcat = 11;
+  if (idx.Fecha      < 0) idx.Fecha      = 7;
+
+  filasProcesadas = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const n1 = String(r[idx.N1] || '').trim().toUpperCase();
+    const n2 = String(r[idx.N2] || '').trim().toUpperCase();
+
+    if (n1 !== 'TECNOLOGIA MOVIL') continue;
+    if (n2 !== 'SMARTPHONE')       continue;
+
+    const vendedor   = String(r[idx.Vendedor]   || '').trim();
+    const clienteRaw = String(r[idx.Cliente]    || '').trim().toUpperCase();
+    const prodConcat = String(r[idx.ProdConcat] || '').trim();
+    const fechaRaw   = String(r[idx.Fecha]      || '').trim();
+
+    const modalidad = clienteRaw.includes('PUBLICO EN GENERAL') ? 'contado' : 'credito';
+    const modelo    = extraerModelo(prodConcat);
+    const fecha     = parsearFecha(fechaRaw);
+
+    filasProcesadas.push({ vendedor, modalidad, modelo, fecha });
+  }
+
+  if (!filasProcesadas.length) {
+    alert('No se encontraron ventas de Smartphone en Tecnología Móvil.');
+    return;
+  }
+
+  await cargarFotosBD();
+  renderTabla();
+  renderStats();
+  renderTarjetas();
+}
+
+// ══════════════════════════════════
+//  TABLA PREVIEW
+// ══════════════════════════════════
+function renderTabla() {
+  const tbody = document.getElementById('tablaBody');
+  tbody.innerHTML = '';
+  filasProcesadas.forEach(f => {
+    const tr = document.createElement('tr');
+    const fStr = f.fecha ? `${f.fecha.dia} ${f.fecha.mes} ${f.fecha.anio}` : '—';
+    const badgeIcon  = f.modalidad === 'contado' ? 'payments' : 'credit_card';
+    const badgeLabel = f.modalidad === 'contado' ? 'Contado' : 'PayJoy';
+    tr.innerHTML = `
+      <td>${f.vendedor || '—'}</td>
+      <td>${f.modelo}</td>
+      <td><span class="badge badge-${f.modalidad}"><span class="material-symbols-outlined">${badgeIcon}</span>${badgeLabel}</span></td>
+      <td>${fStr}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('tablaWrap').style.display = '';
+}
+
+// ══════════════════════════════════
+//  STATS
+// ══════════════════════════════════
+function renderStats() {
+  const contado    = filasProcesadas.filter(f => f.modalidad === 'contado').length;
+  const credito    = filasProcesadas.filter(f => f.modalidad === 'credito').length;
+  const vendedores = [...new Set(filasProcesadas.map(f => f.vendedor))].length;
+  const rango      = rangoFechas(filasProcesadas.map(f => f.fecha));
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-chip">Total ventas: <strong>${filasProcesadas.length}</strong></div>
+    <div class="stat-chip">Contado: <strong class="accent">${contado}</strong></div>
+    <div class="stat-chip">PayJoy: <strong style="color:var(--tertiary)">${credito}</strong></div>
+    <div class="stat-chip">Vendedores: <strong>${vendedores}</strong></div>
+    ${rango ? `<div class="stat-chip">Período: <strong>${rango}</strong></div>` : ''}
+  `;
+  document.getElementById('statsBar').style.display = 'flex';
+}
+
+// ══════════════════════════════════
+//  AGRUPAR POR VENDEDOR
+// ══════════════════════════════════
+function agruparPorVendedor() {
+  const map = {};
+  filasProcesadas.forEach(f => {
+    const k = f.vendedor || 'Sin nombre';
+    if (!map[k]) map[k] = { ventas: [], contado: 0, credito: 0, fechas: [] };
+    map[k].ventas.push(f);
+    map[k][f.modalidad]++;
+    if (f.fecha) map[k].fechas.push(f.fecha);
+  });
+  return map;
+}
+
+// ══════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════
+function tipoVendedor(contado, credito) {
+  if (credito > contado) return 'credito';
+  if (contado > credito) return 'contado';
+  return 'empate';
+}
+
+function inicialAvatar(nombre) {
+  const partes = nombre.split(' ').filter(Boolean);
+  if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase();
+  return nombre.substring(0, 2).toUpperCase();
+}
+
+// ══════════════════════════════════
+//  FRASES — usan contado y credito reales
+// ══════════════════════════════════
+const FRASES = {
+  credito: [
+    (n,t,c,cr) => `¡Gran semana, ${n}! Cerraste ${t} equipo${t>1?'s':''} en total: ${cr} con PayJoy${c>0?' y '+c+' al contado':''}. El crédito es tu fuerte. 🚀`,
+    (n,t,c,cr) => `¡Imparable, ${n}! De tus ${t} venta${t>1?'s':''}, ${cr} fueron financiadas${c>0?' y '+c+' al contado':''}. ¡Eso es versatilidad! 💳✨`,
+    (n,t,c,cr) => `¡Top seller, ${n}! ${cr} equipo${cr>1?'s':''} con PayJoy${c>0?' más '+c+' al contado':''} — ${t} en total. Tú haces que lo imposible sea accesible. 🔥`,
+    (n,t,c,cr) => `¡Qué racha, ${n}! ${cr} venta${cr>1?'s':''} a crédito${c>0?' y '+c+' al contado':''} hacen ${t} en total. ¡Los clientes confían en ti! 🌟`,
+  ],
+  contado: [
+    (n,t,c,cr) => `¡Increíble, ${n}! De tus ${t} venta${t>1?'s':''}, ${c} fueron al contado${cr>0?' y '+cr+' con PayJoy':''}. ¡Eso es dominar las ventas! 💵`,
+    (n,t,c,cr) => `¡Efectivo puro, ${n}! ${c} equipo${c>1?'s':''} de contado${cr>0?' más '+cr+' con PayJoy':''} — ${t} en total. Los números no mienten. 💯`,
+    (n,t,c,cr) => `¡Brutal, ${n}! ${c} venta${c>1?'s':''} al contado${cr>0?' y '+cr+' financiada'+(cr>1?'s':''):''} — ${t} en total. ¡Así se vende! 🏆`,
+    (n,t,c,cr) => `¡Crack, ${n}! ${c} smartphone${c>1?'s':''} al contado${cr>0?' y '+cr+' con PayJoy':''} suman ${t} en total. Donde otros negocian, tú cierras. ⚡`,
+  ],
+  empate: [
+    (n,t,c,cr) => `¡Versátil total, ${n}! ${c} al contado y ${cr} con PayJoy — ${t} equipo${t>1?'s':''} en total. ¡Adaptas tu estrategia como nadie! ⭐`,
+    (n,t,c,cr) => `¡Equilibrado, ${n}! ${c} contado + ${cr} PayJoy = ${t} venta${t>1?'s':''} en total. Lo mejor de los dos mundos. 🎯`,
+    (n,t,c,cr) => `¡Multi-estrategia, ${n}! ${cr} a crédito y ${c} al contado hacen ${t} equipo${t>1?'s':''} totales. Conoces al cliente y sabes cerrar. 🤝`,
+    (n,t,c,cr) => `¡Flexible y ganador, ${n}! ${c} de contado, ${cr} con PayJoy — ${t} en total. ¡Eso es talento puro! 💫`,
+  ],
+};
+
+function mensajeFelicitacion(nombre, total, tipo, rango, contado, credito) {
+  const first = nombre.split(' ')[0];
+  const pool  = FRASES[tipo] || FRASES.empate;
+  const fn    = pool[Math.floor(Math.random() * pool.length)];
+  // IMPORTANTE: pasar contado y credito como números, NO el rango
+  return fn(first, total, contado, credito);
+}
+
+// ══════════════════════════════════════════════════════
+//  CSS PARA html2canvas (diseño propio de la imagen exportada — se mantiene intacto)
+// ══════════════════════════════════════════════════════
+const CARD_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  .vendor-card { width:380px; background:#ffffff; border-radius:22px; overflow:hidden;
+    font-family:'DM Sans',sans-serif; border:1px solid rgba(15,23,36,.09);
+    box-shadow:0 10px 30px rgba(12,18,26,.09); }
+  .vc-header { height:6px; }
+  .vc-header.contado { background:linear-gradient(90deg,#1f9a8a,#17b89e); }
+  .vc-header.credito { background:linear-gradient(90deg,#16729a,#0f5476); }
+  .vc-header.empate  { background:linear-gradient(90deg,#e05c2a,#f0833a); }
+  .vc-body { padding:26px 28px 20px; }
+  .vc-seller { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .vc-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; }
+  .vc-avatar.contado { background:rgba(31,154,138,.15); color:#1f9a8a; }
+  .vc-avatar.credito { background:rgba(22,114,154,.15); color:#16729a; }
+  .vc-avatar.empate  { background:rgba(224,92,42,.15); color:#e05c2a; }
+  .vc-name { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem;
+    color:#0f1724; line-height:1.1; text-transform:capitalize; }
+  .vc-subtitle { font-size:.78rem; color:#6b7280; margin-top:3px; }
+  .vc-congrats { border-radius:10px; padding:10px 14px; font-size:.82rem;
+    font-weight:500; margin-bottom:18px; line-height:1.45; }
+  .vc-congrats.contado { background:rgba(31,154,138,.08); color:#167a6c; border-left:3px solid #1f9a8a; }
+  .vc-congrats.credito { background:rgba(22,114,154,.08); color:#0f5476; border-left:3px solid #16729a; }
+  .vc-congrats.empate  { background:rgba(224,92,42,.08);  color:#b84a1e; border-left:3px solid #e05c2a; }
+  .vc-sale { background:#f5f7fa; border:1px solid rgba(15,23,36,.06); border-radius:10px;
+    padding:10px 14px; margin-bottom:8px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px; }
+  .vc-model { font-size:.84rem; color:#374151; font-weight:500; flex:1; }
+  .vc-pill { font-size:.72rem; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .vc-pill.contado { background:rgba(31,154,138,.12); color:#167a6c; }
+  .vc-pill.credito { background:rgba(22,114,154,.12); color:#0f5476; }
+  .vc-section-label { font-size:.72rem; font-weight:700; letter-spacing:.6px;
+    text-transform:uppercase; color:#6b7280; margin:14px 0 6px; padding-left:4px; }
+  .vc-footer { border-top:1px solid rgba(15,23,36,.07); margin-top:auto; padding-top:12px;
+    display:flex; justify-content:space-between; align-items:center; }
+  .vc-total { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
+  .vc-total.contado { color:#1f9a8a; }
+  .vc-total.credito { color:#16729a; }
+  .vc-total.empate  { color:#e05c2a; }
+  .vc-total-label { font-size:.74rem; color:#6b7280; margin-top:2px; }
+  .vc-date { font-size:.78rem; color:#6b7280; text-align:right; }
+`;
+
+// ══════════════════════════════════════════════════════
+//  FOTOS DE VENDEDORES
+// ══════════════════════════════════════════════════════
+const FOTOS_VENDEDORES = {};
+let IMAGENES_BD_VENDEDORES = [];
+
+function normalizar(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function mapearFotosVendedores(vendedoresUnicos) {
+  Object.keys(FOTOS_VENDEDORES).forEach(k => delete FOTOS_VENDEDORES[k]);
+  for (const { descripcion, url } of IMAGENES_BD_VENDEDORES) {
+    const desc = normalizar(descripcion);
+    for (const v of vendedoresUnicos) {
+      const vNorm = normalizar(v);
+      if (vNorm === desc || vNorm.includes(desc) || desc.includes(vNorm)) {
+        FOTOS_VENDEDORES[v] = url;
+        break;
+      }
+    }
+  }
+}
+
+async function cargarFotosBD() {
+  try {
+    const res = await fetch('get_fotos_vendedores.php');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    IMAGENES_BD_VENDEDORES = await res.json();
+  } catch(e) {
+    console.warn('No se pudieron cargar fotos de la BD:', e.message);
+    IMAGENES_BD_VENDEDORES = [];
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  CONSTRUIR HTML DE TARJETA
+// ══════════════════════════════════════════════════════
+function buildCardHTML(vendedor, data, msgOverride) {
+  const tipo  = tipoVendedor(data.contado, data.credito);
+  const rango = rangoFechas(data.fechas);
+  const msg   = msgOverride || mensajeFelicitacion(vendedor, data.ventas.length, tipo, rango || 'el período', data.contado, data.credito);
+  const inits = inicialAvatar(vendedor);
+
+  const fotoVendedor = FOTOS_VENDEDORES[vendedor];
+  const avatarEl = fotoVendedor
+    ? `<div class="vc-avatar ${tipo}" style="overflow:hidden;padding:0;">
+         <img src="${fotoVendedor}" alt="${vendedor}" crossorigin="anonymous"
+              style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
+              onerror="this.parentElement.innerHTML='${inits}';this.parentElement.style.padding='';">
+       </div>`
+    : `<div class="vc-avatar ${tipo}">${inits}</div>`;
+
+  const ventasContado = data.ventas.filter(v => v.modalidad === 'contado');
+  const ventasCredito = data.ventas.filter(v => v.modalidad === 'credito');
+
+  function ventaItems(lista, cls) {
+    return lista.map(v => `
+      <div class="vc-sale">
+        <div class="vc-model">
+            <span class="material-symbols-outlined">smartphone</span>
+            ${v.modelo}
+        </div>
+       <div class="vc-pill ${cls}">
+          ${
+              cls === 'contado'
+                  ? '<span class="material-symbols-outlined">payments</span> Contado'
+                  : '<span class="material-symbols-outlined">credit_card</span> PayJoy'
+          }
+      </div>
+      </div>`).join('');
+  }
+
+  let ventasHTML = '';
+  if (tipo === 'contado' || (tipo === 'empate' && ventasContado.length)) {
+      if (ventasContado.length)
+          ventasHTML += `<div class="vc-section-label">
+              <span class="material-symbols-outlined">payments</span>
+              Al contado (${ventasContado.length})
+          </div>` + ventaItems(ventasContado, 'contado');
+
+      if (ventasCredito.length)
+          ventasHTML += `<div class="vc-section-label">
+              <span class="material-symbols-outlined">credit_card</span>
+              PayJoy (${ventasCredito.length})
+          </div>` + ventaItems(ventasCredito, 'credito');
+  } else {
+      if (ventasCredito.length)
+          ventasHTML += `<div class="vc-section-label">
+              <span class="material-symbols-outlined">credit_card</span>
+              PayJoy (${ventasCredito.length})
+          </div>` + ventaItems(ventasCredito, 'credito');
+
+      if (ventasContado.length)
+          ventasHTML += `<div class="vc-section-label">
+              <span class="material-symbols-outlined">payments</span>
+              Al contado (${ventasContado.length})
+          </div>` + ventaItems(ventasContado, 'contado');
+  }
+
+  return `
+    <div class="vendor-card">
+      <div class="vc-header ${tipo}"></div>
+      <div class="vc-body">
+        <div class="vc-seller">
+          ${avatarEl}
+          <div>
+            <div class="vc-name">${vendedor.toLowerCase()}</div>
+            <div class="vc-subtitle">Departamento · Telefonía</div>
+          </div>
+        </div>
+        <div class="vc-congrats ${tipo}">${msg}</div>
+        ${ventasHTML}
+        <div class="vc-footer">
+          <div>
+            <div class="vc-total ${tipo}">${data.ventas.length}</div>
+            <div class="vc-total-label">equipo${data.ventas.length>1?'s':''} vendido${data.ventas.length>1?'s':''}</div>
+          </div>
+          <div class="vc-date">${rango || ''}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER TARJETAS EN PANTALLA
+// ══════════════════════════════════════════════════════
+let tarjetasData = [];
+
+async function renderTarjetas() {
+  const map  = agruparPorVendedor();
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+  document.getElementById('galeria').style.display = '';
+  tarjetasData = [];
+
+  const vendedoresUnicos = Object.keys(map);
+  mapearFotosVendedores(vendedoresUnicos);
+
+  const entradasOrdenadas = Object.entries(map).sort((a, b) => b[1].ventas.length - a[1].ventas.length);
+
+  for (const [vendedor, data] of entradasOrdenadas) {
+    const tipo  = tipoVendedor(data.contado, data.credito);
+    const rango = rangoFechas(data.fechas);
+    const msg   = mensajeFelicitacion(vendedor, data.ventas.length, tipo, rango || 'el período', data.contado, data.credito);
+
+    tarjetasData.push({ vendedor, data, msg });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.innerHTML = buildCardHTML(vendedor, data, msg);
+    grid.appendChild(wrap);
+  }
+
+  document.getElementById('btnDescargarTodo').style.display = '';
+}
+
+// ══════════════════════════════════════════════════════
+//  MODAL SELECTOR DE GRUPO
+// ══════════════════════════════════════════════════════
+function pedirGrupoYDescargar() {
+  const previo = document.getElementById('selector-grupo');
+  if (previo) previo.remove();
+
+  const opciones = [1, 2, 3, 4].filter(n => n <= tarjetasData.length);
+
+  const selector = document.createElement('div');
+  selector.id = 'selector-grupo';
+  selector.style.cssText = `
+    position:fixed; inset:0; background:rgba(15,23,36,.55); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; z-index:9999;
+  `;
+
+  selector.innerHTML = `
+    <div style="background:#fff; border-radius:20px; padding:36px 40px; max-width:420px; width:90%;
+                box-shadow:0 20px 60px rgba(12,18,26,.2); font-family:'DM Sans',sans-serif; text-align:center;">
+      <div style="font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800;
+                  background:linear-gradient(135deg,#0f5476,#1f9a8a); -webkit-background-clip:text;
+                  -webkit-text-fill-color:transparent; margin-bottom:8px;">
+        ¿Cuántos vendedores por imagen?
+      </div>
+      <p style="color:#6b7280; font-size:.88rem; margin-bottom:28px;">
+        Elige cuántas tarjetas quieres en cada imagen descargada
+      </p>
+      <div style="display:flex; gap:12px; justify-content:center; margin-bottom:28px; flex-wrap:wrap;">
+        ${opciones.map(n => `
+          <button onclick="seleccionarGrupo(${n})"
+            style="width:72px; height:72px; border-radius:14px; border:2px solid rgba(15,84,118,.2);
+                   background:#f5f7fa; color:#0f1724; font-family:'Syne',sans-serif;
+                   font-size:1.5rem; font-weight:800; cursor:pointer; transition:all .2s;
+                   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;"
+            onmouseover="this.style.background='rgba(15,84,118,.1)';this.style.borderColor='#0f5476';this.style.color='#0f5476'"
+            onmouseout="this.style.background='#f5f7fa';this.style.borderColor='rgba(15,84,118,.2)';this.style.color='#0f1724'">
+            ${n}
+            <span style="font-size:.6rem; font-weight:500; color:#6b7280; font-family:'DM Sans',sans-serif;">
+              ${n === 1 ? 'tarjeta' : 'tarjetas'}
+            </span>
+          </button>`).join('')}
+      </div>
+      <button onclick="document.getElementById('selector-grupo').remove()"
+        style="background:none; border:none; color:#9ca3af; font-size:.85rem;
+               cursor:pointer; font-family:'DM Sans',sans-serif; padding:4px 12px;">
+        Cancelar
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(selector);
+  selector.addEventListener('click', e => { if (e.target === selector) selector.remove(); });
+}
+
+function seleccionarGrupo(n) {
+  document.getElementById('selector-grupo').remove();
+  descargarTodo(n);
+}
+
+// ══════════════════════════════════════════════════════
+//  DESCARGAR IMÁGENES
+// ══════════════════════════════════════════════════════
+async function descargarTodo(GRUPO = 3) {
+  const btn = document.getElementById('btnDescargarTodo');
+  btn.disabled = true;
+
+  const renderZone  = document.getElementById('render-zone');
+  const todasFechas = filasProcesadas.map(f => f.fecha);
+  const rango       = rangoFechas(todasFechas) || 'Sin fecha';
+  const total       = tarjetasData.length;
+  const numImagenes = Math.ceil(total / GRUPO);
+
+  // Columnas según tamaño de grupo
+  const cols      = GRUPO === 1 ? 1 : GRUPO === 2 ? 2 : 2;
+  const cardWidth = 380;
+
+  for (let g = 0; g < numImagenes; g++) {
+    const grupo = tarjetasData.slice(g * GRUPO, g * GRUPO + GRUPO);
+    btn.textContent = `⏳ Generando imagen ${g + 1} de ${numImagenes}...`;
+
+    renderZone.innerHTML = '';
+
+    const style = document.createElement('style');// AQUI AGRGA CSS A LAS TARJETAS QUE SE DESCARGAN 
+    style.textContent = CARD_CSS + `
+      .render-wrapper{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        padding:48px 40px;
+        background:#f5f7fa;
+        font-family:'DM Sans',sans-serif;
+        width:fit-content;
+      }
+      .render-titulo{
+        font-family:'Syne',sans-serif;
+        font-weight:800;
+        font-size:1.9rem;
+        color:#0f1724;
+        text-align:center;
+        margin-bottom:6px;
+      }
+      .render-subtitulo{
+        font-size:.95rem;
+        color:#6b7280;
+        text-align:center;
+        margin-bottom:32px;
+      }
+      .render-grid{
+        display:grid;
+        grid-template-columns:repeat(${cols}, ${cardWidth}px);
+        gap:24px;
+        justify-content:center;
+        align-items:stretch;
+      }
+      .render-pag{
+        margin-top:24px;
+        font-size:.82rem;
+        font-weight:600;
+        color:#9ca3af;
+        text-align:center;
+      }
+    `;
+    renderZone.appendChild(style);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'render-wrapper';
+
+    const titulo = document.createElement('div');
+    titulo.className = 'render-titulo';
+    titulo.textContent = ' Top Vendedores de Smartphones';
+    wrapper.appendChild(titulo);
+
+    const subtitulo = document.createElement('div');
+    subtitulo.className = 'render-subtitulo';
+    subtitulo.textContent = `Período: ${rango} · Telefonía`;
+    wrapper.appendChild(subtitulo);
+
+    const grid = document.createElement('div');
+    grid.className = 'render-grid';
+
+    const imgs = [];
+    for (const { vendedor, data, msg } of grupo) {
+      const cardEl = document.createElement('div');
+      cardEl.innerHTML = buildCardHTML(vendedor, data, msg);
+      const card = cardEl.firstElementChild;
+      grid.appendChild(card);
+      card.querySelectorAll('img').forEach(img => imgs.push(img));
+    }
+
+    wrapper.appendChild(grid);
+
+    if (numImagenes > 1) {
+      const pag = document.createElement('div');
+      pag.className = 'render-pag';
+      pag.textContent = `${g + 1} / ${numImagenes}`;
+      wrapper.appendChild(pag);
+    }
+
+    renderZone.appendChild(wrapper);
+
+    // Esperar imágenes
+    await Promise.all(imgs.map(img => new Promise(r => {
+      if (img.complete && img.naturalWidth > 0) { r(); return; }
+      img.onload  = r;
+      img.onerror = r;
+      setTimeout(r, 5000);
+    })));
+
+    await new Promise(r => setTimeout(r, 300));
+
+    // Igualar alturas de tarjetas
+    const cards = Array.from(grid.querySelectorAll('.vendor-card'));
+    cards.forEach(c => { c.style.height = ''; });
+    await new Promise(r => setTimeout(r, 50));
+    const maxH = Math.max(...cards.map(c => c.getBoundingClientRect().height));
+    cards.forEach(c => { c.style.height = maxH + 'px'; });
+
+    await new Promise(r => setTimeout(r, 200));
+
+    try {
+      const canvas = await html2canvas(wrapper, {
+        scale: 4,
+        backgroundColor: '#f5f7fa',
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 15000,
+      });
+
+      const dataURL  = canvas.toDataURL('image/png');
+      const byteSize = Math.round((dataURL.length * 3) / 4);
+      const finalURL = byteSize > 300_000 ? dataURL : canvas.toDataURL('image/jpeg', 1.0);
+
+      const link    = document.createElement('a');
+      const sufijo  = numImagenes > 1 ? `-${g + 1}de${numImagenes}` : '';
+      const ext     = finalURL.startsWith('data:image/png') ? 'png' : 'jpg';
+      link.download = `smartphones-vendedores${sufijo}.${ext}`;
+      link.href     = finalURL;
+      link.click();
+
+      if (g < numImagenes - 1) await new Promise(r => setTimeout(r, 600));
+    } catch(e) {
+      console.error(`Error en imagen ${g + 1}:`, e);
+    }
+  }
+
+  renderZone.innerHTML = '';
+  btn.textContent = `✅ ¡${numImagenes} imagen${numImagenes > 1 ? 'es' : ''} descargada${numImagenes > 1 ? 's' : ''}!`;
+  setTimeout(() => {
+    btn.disabled    = false;
+    btn.textContent = '⬇️ Descargar imagen completa';
+  }, 3500);
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

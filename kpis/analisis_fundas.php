@@ -1,168 +1,576 @@
 <?php
-include_once '../funciones.php'; 
+include_once '../funciones.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <head>
-<meta charset="utf-8" />
-<title>📊 Análisis de Fundas — INNOVACION MOVIL</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Análisis de Fundas - INNOVACION MOVIL</title>
+
+<link rel="stylesheet" href="../styles.css">
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin: 20px;
-  background: #f5f7fa;
-  color: #333;
+
+#inputFile{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
 }
-h1 { margin-top: 0; color: #2f6fa6; }
-.controls {
-  display: flex; gap: 12px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;
+
+.file-status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:12px;
+    font-size:14px;
+    color:var(--on-surface-variant);
 }
-input[type=file] {
-  padding: 6px; border: 1px solid #ccc; border-radius: 4px;
+
+.method-card.loaded{
+    border-color:var(--secondary);
+    background:rgba(109,245,225,0.10);
 }
-button.btn {
-  background: #2f6fa6; color: white; border: none; padding: 8px 14px;
-  border-radius: 6px; cursor: pointer; font-weight: 600;
+
+.loader{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    padding:20px;
+    margin-top:20px;
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
 }
-button.btn:disabled {
-  background: #999; cursor: not-allowed;
+
+.spinner{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    border:3px solid var(--outline-variant);
+    border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
 }
-table {
-  border-collapse: collapse;
-  width: 100%;
-  background: white;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  margin-top: 15px;
+
+@keyframes spin{
+to{
+transform:rotate(360deg);
 }
-th, td {
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  text-align: left;
 }
-th {
-  background: #2f6fa6;
-  color: white;
-  text-align: center;
+
+.loader-text{
+    font-size:14px;
+    font-weight:600;
 }
-caption {
-  text-align: left;
-  font-weight: bold;
-  padding: 8px;
-  color: #2f6fa6;
+
+.filters-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    margin-top:8px;
 }
-.note {
-  font-size: 13px;
-  color: #444;
-  margin-top: 8px;
+
+.filters-grid label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
 }
-select {
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-  font-weight: 500;
+
+.filters-grid select{
+    width:100%;
 }
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-  background: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+#tablesContainer{
+    margin-top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:28px;
 }
+
+#tablesContainer table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--surface);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+}
+
+#tablesContainer caption{
+    padding:16px 18px;
+    text-align:left;
+    font-weight:700;
+    font-size:17px;
+    background:var(--surface-container-low);
+}
+
+#tablesContainer th{
+    background:var(--primary);
+    color:#fff;
+    padding:12px;
+    text-align:left;
+}
+
+#tablesContainer td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--outline-variant);
+}
+
+#tablesContainer tr:nth-child(even){
+    background:var(--surface-container-low);
+}
+
+.sidebar-brand-logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.sidebar-brand-logo img{
+    border-radius:8px;
+}
+
 </style>
-<link rel="stylesheet" href="estilos.css">
+
 </head>
+
 <body>
-<header>
- <nav>
-        <div class="nav-inner">
-            <!-- Botón hamburguesa -->
-            <label class="bar-menu">
-                <input type="checkbox" id="menu-check">
-                <span class="top"></span>
-                <span class="middle"></span>
-                <span class="bottom"></span>
-            </label>
 
-            <ul id="nav-menu">
-                 <li> <a href="index.php">
-          
-          Home
-        </a></li>
-           <li><a href="analisis_fundas_ventas_existencias.php">Análisis de Ventas vs Existencias</a></li>
-        <li><a href="fundasstock.php">Distribucion Por Modelo Fundas</a></li>
-        <li><a href="ventasfundas.php">Ventas Por Modelo Fundas</a></li>
-            </ul>
-        </div>
-    </nav>
+<!-- ===================== SIDEBAR ===================== -->
+
+<aside class="sidebar" id="sidebar">
+
+<div class="sidebar-head">
+
+<div class="sidebar-brand-logo">
+
+<img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png"
+alt="Logo"
+width="32"
+height="32">
+
+<div>
+
+<p class="sidebar-brand text-headline-sm">
+Central Cell
+</p>
+
+<p class="sidebar-sub text-label-sm">
+Panel de Análisis
+</p>
+
+</div>
+
+</div>
+
+<button
+class="sidebar-close"
+id="sidebarClose"
+type="button"
+aria-label="Cerrar menú">
+
+<span class="material-symbols-outlined">
+close
+</span>
+
+</button>
+
+</div>
+
+<nav class="sidebar-nav">
+
+<p class="sidebar-label">
+Navegación
+</p>
+
+<a href="../garantias/validador/validador.php" class="sidebar-link">
+
+<span class="material-symbols-outlined">
+home
+</span>
+
+Home
+
+</a>
+
+<a href="index.php" class="sidebar-link">
+
+<span class="material-symbols-outlined">
+dashboard
+</span>
+
+Panel de Herramientas
+
+</a>
+
+<a href="analisis_fundas_ventas_existencias.php" class="sidebar-link">
+
+<span class="material-symbols-outlined">
+analytics
+</span>
+
+Ventas vs Existencias
+
+</a>
+
+<a href="fundasstock.php" class="sidebar-link">
+
+<span class="material-symbols-outlined">
+inventory_2
+</span>
+
+Distribución de Fundas
+
+</a>
+
+<a href="ventasfundas.php" class="sidebar-link">
+
+<span class="material-symbols-outlined">
+shopping_bag
+</span>
+
+Ventas por Modelo
+
+</a>
+<a href="analisis_fundas.php" class="sidebar-link active">
+      <span class="material-symbols-outlined">sell</span>
+      Ventas Por Marca
+    </a>
+</nav>
+
+<div class="sidebar-foot">
+
+<p class="text-label-sm"
+style="color:var(--outline);">
+
+Innovación Móvil
+
+</p>
+
+</div>
+
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===================== MAIN ===================== -->
+
+<div class="main">
+
+<header class="topheader">
+
+<div class="topheader-left">
+
+<button
+class="menu-toggle"
+id="menuToggle"
+type="button"
+aria-label="Abrir menú">
+
+<span class="material-symbols-outlined">
+menu
+</span>
+
+</button>
+
+<h2 class="text-headline-sm" style="margin:0;">
+Análisis de Fundas
+</h2>
+
+</div>
+
 </header>
+
 <div class="container">
-<h1>📊 Análisis de Fundas — INNOVACION MOVIL</h1>
 
-<div class="controls">
-<div class="file-upload">
-  <input id="inputFile" type="file" accept=".xlsx,.xls" />
+<div class="lesson">
 
-  <button class="boton" id="fileButton" type="button">
-    <div class="contenedorCarpeta">
-      <div class="folder folder_one"></div>
-      <div class="folder folder_two"></div>
-      <div class="folder folder_three"></div>
-      <div class="folder folder_four"></div>
-    </div>
-    <div class="active_line"></div>
-    <span class="text">Seleccionar Archivo</span>
-  </button>
+<div class="lesson-body">
+
+<span class="eyebrow">
+Reportes
+</span>
+
+<h1 class="text-headline-lg" style="margin:6px 0 0;">
+Análisis de Fundas
+</h1>
+
+<div class="lesson-meta">
+
+<span>
+
+<span class="material-symbols-outlined" style="font-size:16px">
+sell
+</span>
+
+Innovación Móvil
+
+</span>
+
 </div>
 
-<script>
-// Conectamos el botón animado con el input oculto
-document.getElementById("fileButton").addEventListener("click", () => {
-  document.getElementById("inputFile").click();
-});
-</script>
-  <button id="procesarBtn" class="btn" disabled>Procesar archivo</button>
-  <button id="descargarBtn" class="btn" disabled>Descargar Excel</button>
-</div>
-<div class="center-container">
-  <!-- Loader animado mientras se procesa el archivo -->
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front">
-      <span class="left-front"></span>
-      <span class="right-front"></span>
-    </div>
-    <span class="sun sunshine"></span>
-    <span class="sun"></span>
-    <div class="cloud back">
-      <span class="left-back"></span>
-      <span class="right-back"></span>
-    </div>
-  </div>
+<div class="intro-panel">
+
+<div class="icon-badge">
+
+<span class="material-symbols-outlined">
+insights
+</span>
+
 </div>
 
-<div id="mensajes" class="note"></div>
+<div>
 
-<div id="filtros" class="filters" style="display:none;">
-  <label><b>Tipo:</b></label>
-  <select id="tipoFiltro">
-    <option value="TODOS">Todos</option>
-    <option value="CELULAR">Solo CELULAR</option>
-    <option value="TABLET">Solo TABLET</option>
-  </select>
+<h3 style="margin:0">
+Genera el ranking de ventas
+</h3>
 
-  <label><b>Almacén:</b></label>
-  <select id="almacenFiltro"></select>
+<p>
+Carga el archivo de ventas para obtener automáticamente el ranking
+de fundas por marca, modelo y los totales agrupados por marca.
+</p>
 
-  <label><b>Marca:</b></label>
-  <select id="marcaFiltro"></select>
+</div>
+
+</div>
+
+<!-- Paso 1: Selección de archivo -->
+
+<section class="step-section">
+
+<div class="step-head">
+
+<div class="step-num">
+1
+</div>
+
+<h3 class="step-title text-headline-sm">
+Selecciona el archivo
+</h3>
+
+</div>
+
+<div class="method-grid">
+
+<div class="method-card" id="fileCard">
+
+<h4>
+
+<span class="material-symbols-outlined">
+upload_file
+</span>
+
+Archivo Excel
+
+</h4>
+
+<input id="inputFile" type="file" accept=".xlsx,.xls">
+
+<button class="btn btn-outline btn-block" id="fileButton" type="button">
+
+<span class="material-symbols-outlined">
+upload_file
+</span>
+
+Seleccionar Archivo
+
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- Paso 2: Procesamiento -->
+
+<section class="step-section">
+
+<div class="step-head">
+
+<div class="step-num">
+2
+</div>
+
+<h3 class="step-title text-headline-sm">
+Procesamiento
+</h3>
+
+</div>
+
+<button id="procesarBtn" class="btn btn-primary btn-block" disabled>
+
+<span class="material-symbols-outlined">
+play_arrow
+</span>
+
+Procesar Archivo
+
+</button>
+
+<br>
+
+<button id="descargarBtn" class="btn btn-outline btn-block" disabled>
+
+<span class="material-symbols-outlined">
+download
+</span>
+
+Descargar Excel
+
+</button>
+
+<div class="loader" id="loader">
+
+<div class="spinner"></div>
+
+<div class="loader-text">
+Procesando información...
+</div>
+
+</div>
+
+<div id="mensajes" class="file-status"></div>
+
+</section>
+
+<!-- Paso 3: Filtros -->
+
+<section class="step-section">
+
+<div class="step-head">
+
+<div class="step-num">
+3
+</div>
+
+<h3 class="step-title text-headline-sm">
+Filtrar información
+</h3>
+
+</div>
+
+<div id="filtros" class="filters-grid" style="display:none;">
+
+<div>
+
+<label for="tipoFiltro">
+Tipo
+</label>
+
+<select id="tipoFiltro" class="input">
+<option value="TODOS">Todos</option>
+<option value="CELULAR">Solo CELULAR</option>
+<option value="TABLET">Solo TABLET</option>
+</select>
+
+</div>
+
+<div>
+
+<label for="almacenFiltro">
+Almacén
+</label>
+
+<select id="almacenFiltro" class="input"></select>
+
+</div>
+
+<div>
+
+<label for="marcaFiltro">
+Marca
+</label>
+
+<select id="marcaFiltro" class="input"></select>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- Paso 4: Resultados -->
+
+<section class="step-section">
+
+<div class="step-head">
+
+<div class="step-num">
+4
+</div>
+
+<h3 class="step-title text-headline-sm">
+Resultados
+</h3>
+
 </div>
 
 <div id="tablesContainer"></div>
+
+</section>
+
+<div class="takeaway">
+
+<div class="icon-badge">
+
+<span class="material-symbols-outlined">
+tips_and_updates
+</span>
+
 </div>
+
+<div>
+
+<h4>
+Instrucciones
+</h4>
+
+<ul class="step-list check">
+
+<li>
+Selecciona el archivo Excel de ventas.
+</li>
+
+<li>
+Presiona <strong>Procesar Archivo</strong>.
+</li>
+
+<li>
+Utiliza los filtros para limitar la información por tipo, almacén o marca.
+</li>
+
+<li>
+Descarga el reporte en Excel cuando el procesamiento finalice.
+</li>
+
+</ul>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+</div>
+
 <script>
 const inputFile = document.getElementById("inputFile");
 const procesarBtn = document.getElementById("procesarBtn");
@@ -178,7 +586,11 @@ let dataFiltradaOriginal = [];
 let resultados = [];
 let totalesPorMarca = [];
 
-inputFile.addEventListener('change', ()=>{ procesarBtn.disabled = !inputFile.files.length; mensajes.innerText = inputFile.files.length ? `Archivo listo: ${inputFile.files[0].name}` : ""; });
+inputFile.addEventListener('change', ()=>{
+  procesarBtn.disabled = !inputFile.files.length;
+  mensajes.innerText = inputFile.files.length ? `Archivo listo: ${inputFile.files[0].name}` : "";
+  document.getElementById('fileCard').classList.toggle('loaded', !!inputFile.files.length);
+});
 
 procesarBtn.addEventListener("click", () => {
   if (inputFile.files.length) leerExcel(inputFile.files[0]);
@@ -192,15 +604,16 @@ marcaFiltro.addEventListener("change", aplicarFiltro);
 
 function leerExcel(file) {
   mensajes.innerText = 'Leyendo archivo...';
-document.getElementById('loader').style.display = 'flex';
-const reader = new FileReader();
+  document.getElementById('loader').style.display = 'flex';
+  const reader = new FileReader();
   reader.onload = e => {
     const data = new Uint8Array(e.target.result);
     const wb = XLSX.read(data, { type: "array" });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
     if (!rows.length) {
-      mensajes.innerText = "⚠️ El archivo está vacío.";
+      mensajes.innerText = "El archivo está vacío.";
+      document.getElementById('loader').style.display = 'none';
       return;
     }
 
@@ -236,10 +649,10 @@ const reader = new FileReader();
     marcaFiltro.innerHTML = `<option value="TODAS">Todas</option>` +
       marcas.map(m => `<option value="${m}">${m}</option>`).join("");
 
-    filtros.style.display = "flex";
+    filtros.style.display = "grid";
     aplicarFiltro();
     descargarBtn.disabled = false;
-    document.getElementById('loader').style.display = 'none'; 
+    document.getElementById('loader').style.display = 'none';
   };
   reader.readAsArrayBuffer(file);
 }
@@ -326,20 +739,33 @@ function descargarExcel() {
 }
 </script>
 
-  <script>
-    // Controlar menú hamburguesa
-    document.getElementById('menu-check').addEventListener('change', function() {
-        const menu = document.getElementById('nav-menu');
-        if (this.checked) {
-            menu.style.opacity = '1';
-            menu.style.visibility = 'visible';
-            menu.style.pointerEvents = 'auto';
-        } else {
-            menu.style.opacity = '0';
-            menu.style.visibility = 'hidden';
-            menu.style.pointerEvents = 'none';
-        }
-    });
+<script>
+/* Botón seleccionar archivo */
+document.getElementById("fileButton").addEventListener("click", () => {
+  document.getElementById("inputFile").click();
+});
+
+/* Control del sidebar */
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const menuToggle = document.getElementById('menuToggle');
+const sidebarClose = document.getElementById('sidebarClose');
+
+function abrirSidebar() {
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.add('show');
+}
+function cerrarSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+}
+
+menuToggle.addEventListener('click', abrirSidebar);
+sidebarClose.addEventListener('click', cerrarSidebar);
+sidebarOverlay.addEventListener('click', cerrarSidebar);
+
+document.getElementById('anioActual').textContent = new Date().getFullYear();
 </script>
+
 </body>
 </html>

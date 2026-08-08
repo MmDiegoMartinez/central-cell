@@ -15,7 +15,8 @@ try {
 
     $sql = "SELECT 
         g.id,
-        g.plows, 
+        g.plows,
+        g.numero_serie, 
         g.tipo,
         g.dpto,
         d.nombre  AS dpto_nombre,

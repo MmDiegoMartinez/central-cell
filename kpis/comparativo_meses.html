@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparativo por Grupos — IM & TM</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (mismo patrón usado en las otras herramientas) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Controles superiores */
+  .controls{display:flex;flex-wrap:wrap;gap:var(--space-sm);align-items:center;margin-bottom:var(--space-lg);}
+
+  /* Zona de carga */
+  #mensajes.note{
+    padding:12px 16px;margin-bottom:var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    font-size:13px;color:var(--on-surface-variant);
+  }
+
+  /* Loader simple */
+  .loader-container{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:var(--space-lg);margin-bottom:var(--space-lg);
+    color:var(--on-surface-variant);font-size:13px;font-weight:600;
+  }
+  .spinner{
+    width:22px;height:22px;border-radius:50%;
+    border:3px solid var(--outline-variant);border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* Selector de grupos */
+  .grupos-wrapper{
+    display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:700px){ .grupos-wrapper{grid-template-columns:1fr;} }
+
+  .grupo-box{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+  }
+  .grupo-box h3{
+    display:flex;align-items:center;gap:6px;margin:0 0 4px;
+    font-size:15px;font-weight:700;color:var(--on-surface);
+  }
+  .grupo-box h3 .material-symbols-outlined{font-size:18px;color:var(--primary);}
+  .grupo-desc{font-size:12px;color:var(--outline);margin:0 0 10px;}
+
+  .meses-list{
+    display:flex;flex-direction:column;gap:6px;
+    max-height:180px;overflow-y:auto;
+    padding:8px;border:1px solid var(--outline-variant);border-radius:var(--radius-lg);
+    background:var(--surface);margin-bottom:10px;
+  }
+  .mes-item{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 8px;border-radius:8px;
+    font-size:13px;color:var(--on-surface);cursor:pointer;
+    transition:background .15s ease;
+  }
+  .mes-item:hover{background:var(--surface-container-low);}
+  .mes-item input[type="checkbox"]{accent-color:var(--primary);width:16px;height:16px;}
+
+  .grupo-badges{display:flex;flex-wrap:wrap;gap:6px;}
+  .badge{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+  }
+  .badge-g1{background:rgba(0,131,143,0.12);color:#00838F;}
+  .badge-g2{background:rgba(230,126,34,0.14);color:#E67E22;}
+
+  /* Secciones IM / TM */
+  .seccion{margin-bottom:var(--space-xl,32px);}
+  .seccion-titulo{
+    display:flex;align-items:center;gap:8px;
+    font-size:17px;font-weight:800;color:var(--on-surface);
+    padding-bottom:8px;margin-bottom:4px;
+    border-bottom:2px solid var(--outline-variant);
+  }
+  .seccion-titulo .material-symbols-outlined{font-size:22px;}
+  .titulo-im .material-symbols-outlined{color:#00838F;}
+  .titulo-tm .material-symbols-outlined{color:#E67E22;}
+  .seccion-subtitulo{font-size:13px;color:var(--on-surface-variant);margin:0 0 var(--space-md);}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:var(--space-md);flex-wrap:wrap;}
+  .tab{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 16px;border-radius:var(--radius-lg);
+    font-size:13px;font-weight:700;color:var(--on-surface-variant);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .tab:hover{color:var(--primary);}
+  .tab.active-im{background:#00838F;color:#fff;border-color:#00838F;}
+  .tab.active-tm{background:#E67E22;color:#fff;border-color:#E67E22;}
+
+  .tab-content{overflow-x:auto;}
+
+  /* Tablas generadas dinámicamente por JS */
+  .tab-content table{
+    width:100%;border-collapse:collapse;font-size:13px;
+    background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;
+    margin-bottom:var(--space-lg);
+  }
+  .tab-content caption{
+    caption-side:top;text-align:left;
+    padding:10px 12px;font-weight:700;font-size:13px;
+    color:#fff;background:#00838F;border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  #tabGenTM caption, #tabTiendaTM caption{background:#E67E22;}
+  .tab-content thead th{
+    background:var(--surface-container-low);color:var(--on-surface);font-weight:700;
+    padding:10px 12px;text-align:left;white-space:nowrap;
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .tab-content tbody td{
+    padding:8px 12px;border-bottom:1px solid var(--outline-variant);color:var(--on-surface);
+  }
+  .tab-content tbody tr:nth-child(even){background:var(--surface-container-low);}
+  .tab-content tr.total-row{font-weight:800;background:rgba(0,131,143,0.08);}
+  .tab-content tr.total-row td{color:var(--on-surface);}
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Comparativo IM & TM</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="index.php" class="navbar-link">
+      <span class="material-symbols-outlined">bar_chart</span>
+      Panel KPIs
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Ventas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Comparativo por <span>Grupos</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">sync_alt</span> Compara meses de Innovación Móvil y Tecnología Móvil</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+        <div>
+          <h3 style="margin:0">Sube tu archivo y arma tus grupos de meses</h3>
+          <p>Sube un archivo Excel con al menos dos meses de ventas, agrupa los meses que quieras comparar y obtén el comparativo por categoría y por tienda.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga y analiza</h3>
+        </div>
+
+        <div class="controls">
+          <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
+          <button class="btn btn-outline" id="fileButton" type="button">
+            <span class="material-symbols-outlined" style="font-size:18px">upload_file</span>
+            Seleccionar archivo
+          </button>
+          <button id="cargarBtn" class="btn btn-outline" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">folder_open</span>
+            Cargar archivo
+          </button>
+          <button id="analizarBtn" class="btn btn-primary" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
+            Analizar
+          </button>
+          <button id="exportBtn" class="btn btn-outline" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Exportar Excel
+          </button>
+        </div>
+
+        <!-- ── Selector de grupos ── -->
+        <div class="grupos-wrapper" id="gruposWrapper" style="display:none;">
+          <div class="grupo-box">
+            <h3><span class="material-symbols-outlined">calendar_month</span><span class="grupo1-title">Grupo 1</span></h3>
+            <p class="grupo-desc">Selecciona los meses del primer período</p>
+            <div class="meses-list" id="listaG1"></div>
+            <div class="grupo-badges" id="badgesG1"></div>
+          </div>
+          <div class="grupo-box">
+            <h3><span class="material-symbols-outlined">calendar_month</span><span class="grupo2-title">Grupo 2</span></h3>
+            <p class="grupo-desc">Selecciona los meses del segundo período</p>
+            <div class="meses-list" id="listaG2"></div>
+            <div class="grupo-badges" id="badgesG2"></div>
+          </div>
+        </div>
+
+        <div id="loader" class="loader-container" style="display:none;">
+          <div class="spinner"></div>
+          <span>Procesando archivo...</span>
+        </div>
+
+        <div id="mensajes" class="note">Sube un archivo Excel con al menos dos meses de ventas.</div>
+      </section>
+
+      <!-- ── INNOVACIÓN MÓVIL ── -->
+      <section class="seccion" id="seccionIM" style="display:none">
+        <div class="seccion-titulo titulo-im">
+          <span class="material-symbols-outlined">smartphone</span>
+          Innovación Móvil — Accesorios
+        </div>
+        <p class="seccion-subtitulo" id="subtituloIM"></p>
+        <div class="tabs">
+          <div class="tab active-im" id="tabIM-gen"    onclick="mostrarTab('IM','gen',this)">
+            <span class="material-symbols-outlined" style="font-size:16px">public</span>General
+          </div>
+          <div class="tab"           id="tabIM-tienda" onclick="mostrarTab('IM','tienda',this)">
+            <span class="material-symbols-outlined" style="font-size:16px">storefront</span>Por Tienda
+          </div>
+        </div>
+        <div class="tab-content">
+          <div id="tabGenIM"></div>
+          <div id="tabTiendaIM" style="display:none"></div>
+        </div>
+      </section>
+
+      <!-- ── TECNOLOGÍA MÓVIL ── -->
+      <section class="seccion" id="seccionTM" style="display:none">
+        <div class="seccion-titulo titulo-tm">
+          <span class="material-symbols-outlined">phone_iphone</span>
+          Tecnología Móvil — Telefonía
+        </div>
+        <p class="seccion-subtitulo" id="subtituloTM"></p>
+        <div class="tabs">
+          <div class="tab active-tm" id="tabTM-gen"    onclick="mostrarTab('TM','gen',this)">
+            <span class="material-symbols-outlined" style="font-size:16px">public</span>General
+          </div>
+          <div class="tab"           id="tabTM-tienda" onclick="mostrarTab('TM','tienda',this)">
+            <span class="material-symbols-outlined" style="font-size:16px">storefront</span>Por Tienda
+          </div>
+        </div>
+        <div class="tab-content">
+          <div id="tabGenTM"></div>
+          <div id="tabTiendaTM" style="display:none"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Índices de columnas ── */
+const IDX_ALMACEN = 0;
+const IDX_N1      = 1;
+const IDX_N2      = 2;
+const IDX_N3      = 3;
+const IDX_FECHA   = 7;
+const IDX_SUM     = 18;
+
+/* ── Estado ── */
+let rawRows          = [];
+let mesesDisponibles = [];  // [{key, label}]
+let resultIM = null, resultTM = null;
+
+/* ── DOM ── */
+const inputFile  = document.getElementById('inputFile');
+const cargarBtn  = document.getElementById('cargarBtn');
+const analizarBtn= document.getElementById('analizarBtn');
+const exportBtn  = document.getElementById('exportBtn');
+const mensajes   = document.getElementById('mensajes');
+
+document.getElementById('fileButton').addEventListener('click', ()=> inputFile.click());
+inputFile.addEventListener('change', ()=>{
+  cargarBtn.disabled = !inputFile.files.length;
+  mensajes.innerText = inputFile.files.length ? `Archivo listo: ${inputFile.files[0].name}` : 'Sube un archivo.';
+});
+cargarBtn.addEventListener('click',   handleLoad);
+analizarBtn.addEventListener('click', handleAnalizar);
+exportBtn.addEventListener('click',   handleExport);
+
+/* ── Tabs ── */
+function mostrarTab(depto, panel, el){
+  document.getElementById(`tabGen${depto}`).style.display    = panel==='gen'    ? '' : 'none';
+  document.getElementById(`tabTienda${depto}`).style.display = panel==='tienda' ? '' : 'none';
+  const cls = depto==='IM' ? 'active-im' : 'active-tm';
+  document.querySelectorAll(`#seccion${depto} .tab`).forEach(t=>t.classList.remove('active-im','active-tm'));
+  el.classList.add(cls);
+}
+
+/* ══════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════ */
+function safeNumber(x){
+  if(x===null||x===undefined||x==='') return 0;
+  const n=parseFloat(String(x).replace(/[,\$]/g,'').trim());
+  return isNaN(n)?0:n;
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+function monthKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+function monthLabel(d){
+  return `${["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()]} ${d.getFullYear()}`;
+}
+function getLabel(key){
+  const [y,m]=key.split('-').map(Number);
+  return `${["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][m-1]} ${y}`;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function parseFecha(raw){
+  if(raw===null||raw===undefined||raw==='') return null;
+  if(typeof raw==='number'){
+    const js=new Date((raw-25569)*86400*1000);
+    return new Date(js.getFullYear(),js.getMonth(),js.getDate());
+  }
+  if(typeof raw==='string'){
+    let s=raw.replace(/\s+/g,' ').trim();
+    const monMap={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
+                  ene:0,abr:3,ago:7,dic:11};
+    const r1=s.match(/([A-Za-z]{3,})\s+(\d{1,2})\s+(\d{4})/);
+    if(r1){
+      const mk=r1[1].substring(0,3).toLowerCase();
+      const month=(mk in monMap)?monMap[mk]:NaN;
+      if(!isNaN(month)) return new Date(parseInt(r1[3],10),month,parseInt(r1[2],10));
+    }
+    const d=new Date(s);
+    if(!isNaN(d.getTime())) return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  }
+  return null;
+}
+
+/* ── Obtener meses seleccionados de cada grupo ── */
+function getGrupos(){
+  const g1=[], g2=[];
+  document.querySelectorAll('#listaG1 input[type=checkbox]:checked').forEach(cb=>g1.push(cb.value));
+  document.querySelectorAll('#listaG2 input[type=checkbox]:checked').forEach(cb=>g2.push(cb.value));
+  return {g1, g2};
+}
+
+/* ── Etiqueta legible para un grupo ── */
+function labelGrupo(keys){
+  if(!keys.length) return '(sin meses)';
+  return keys.map(getLabel).join(' + ');
+}
+
+/* ── Construir checkboxes para ambos grupos ── */
+function buildGrupoSelectors(){
+  const listaG1=document.getElementById('listaG1');
+  const listaG2=document.getElementById('listaG2');
+  listaG1.innerHTML=''; listaG2.innerHTML='';
+
+  mesesDisponibles.forEach((m,i)=>{
+    // Grupo 1
+    const div1=document.createElement('label');
+    div1.className='mes-item';
+    const cb1=document.createElement('input');
+    cb1.type='checkbox'; cb1.value=m.key; cb1.id=`g1_${i}`;
+    cb1.addEventListener('change',()=>actualizarBadges());
+    div1.appendChild(cb1);
+    div1.appendChild(document.createTextNode(m.label));
+    listaG1.appendChild(div1);
+
+    // Grupo 2
+    const div2=document.createElement('label');
+    div2.className='mes-item';
+    const cb2=document.createElement('input');
+    cb2.type='checkbox'; cb2.value=m.key; cb2.id=`g2_${i}`;
+    cb2.addEventListener('change',()=>actualizarBadges());
+    div2.appendChild(cb2);
+    div2.appendChild(document.createTextNode(m.label));
+    listaG2.appendChild(div2);
+  });
+
+  actualizarBadges();
+}
+
+function actualizarBadges(){
+  const {g1,g2}=getGrupos();
+  const b1=document.getElementById('badgesG1');
+  const b2=document.getElementById('badgesG2');
+  b1.innerHTML=g1.length ? g1.map(k=>`<span class="badge badge-g1">${getLabel(k)}</span>`).join('') : '<span style="font-size:12px;color:#aaa">Ninguno seleccionado</span>';
+  b2.innerHTML=g2.length ? g2.map(k=>`<span class="badge badge-g2">${getLabel(k)}</span>`).join('') : '<span style="font-size:12px;color:#aaa">Ninguno seleccionado</span>';
+  analizarBtn.disabled = !(g1.length && g2.length);
+}
+
+/* ══════════════════════════════════════════════════
+   CARGA DEL ARCHIVO
+══════════════════════════════════════════════════ */
+function handleLoad(){
+  const file=inputFile.files[0]; if(!file) return;
+  mensajes.innerText='Leyendo archivo...';
+  document.getElementById('loader').style.display='flex';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""});
+      if(!rows||rows.length<2){ mensajes.innerText='Archivo sin datos.'; return; }
+      rawRows=rows;
+
+      const monthsSet=new Map();
+      for(let i=1;i<rows.length;i++){
+        const d=parseFecha(rows[i][IDX_FECHA]);
+        if(!d) continue;
+        const k=monthKey(d);
+        if(!monthsSet.has(k)) monthsSet.set(k,monthLabel(d));
+      }
+      const keys=Array.from(monthsSet.keys()).sort();
+      mesesDisponibles=keys.map(k=>({key:k,label:monthsSet.get(k)}));
+      if(mesesDisponibles.length<2){ mensajes.innerText='Necesitas al menos dos meses en el archivo.'; return; }
+
+      buildGrupoSelectors();
+      document.getElementById('gruposWrapper').style.display='flex';
+      mensajes.innerText=`Archivo cargado ✔ — ${mesesDisponibles.length} meses disponibles: ${mesesDisponibles.map(m=>m.label).join(', ')}. Asigna meses a cada grupo y pulsa Analizar.`;
+    }catch(err){ console.error(err); mensajes.innerText='Error leyendo el archivo.'; }
+    document.getElementById('loader').style.display='none';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ══════════════════════════════════════════════════
+   ANÁLISIS
+══════════════════════════════════════════════════ */
+function handleAnalizar(){
+  const {g1,g2}=getGrupos();
+  if(!g1.length||!g2.length){ alert('Selecciona al menos un mes en cada grupo.'); return; }
+
+  const g1Set=new Set(g1), g2Set=new Set(g2);
+  const comunes=[...g1].filter(k=>g2Set.has(k));
+  if(comunes.length){ alert(`Los meses ${comunes.map(getLabel).join(', ')} están en ambos grupos. Por favor asígnalos sólo a uno.`); return; }
+
+  const lbl1=labelGrupo(g1), lbl2=labelGrupo(g2);
+  mensajes.innerText=`Analizando [${lbl1}] vs [${lbl2}]...`;
+
+  resultIM = analizarDepto('INNOVACION MOVIL', g1Set, g2Set);
+  resultTM = analizarDepto('TECNOLOGIA MOVIL', g1Set, g2Set);
+
+  renderDepto(resultIM, 'IM', lbl1, lbl2);
+  renderDepto(resultTM, 'TM', lbl1, lbl2);
+
+  exportBtn.disabled=false;
+  const cIM=Object.keys(resultIM).length, cTM=Object.keys(resultTM).length;
+  mensajes.innerText=`Análisis listo ✔ · [${lbl1}] vs [${lbl2}] · Tiendas IM: ${cIM} · Tiendas TM: ${cTM}`;
+}
+
+/* n1Label: string, g1Set/g2Set: Set de monthKey */
+function analizarDepto(n1Label, g1Set, g2Set){
+  const storesMap={};
+  for(let i=1;i<rawRows.length;i++){
+    const r=rawRows[i];
+    if(String(r[IDX_N1]||'').trim()!==n1Label) continue;
+    const d=parseFecha(r[IDX_FECHA]); if(!d) continue;
+    const mk=monthKey(d);
+    const inG1=g1Set.has(mk), inG2=g2Set.has(mk);
+    if(!inG1&&!inG2) continue;
+
+    const alm=String(r[IDX_ALMACEN]||'(SIN ALMACEN)').trim();
+    const n3=String(r[IDX_N3]||'').trim();
+    const n2=String(r[IDX_N2]||'').trim();
+    const cat=n3||n2||'(SIN CATEGORIA)';
+    const val=safeNumber(r[IDX_SUM]);
+
+    if(!storesMap[alm]) storesMap[alm]={};
+    if(!storesMap[alm][cat]) storesMap[alm][cat]={g1:0,g2:0};
+    if(inG1) storesMap[alm][cat].g1+=val;
+    if(inG2) storesMap[alm][cat].g2+=val;
+  }
+
+  const result={};
+  Object.keys(storesMap).sort((a,b)=>a.localeCompare(b,'es')).forEach(alm=>{
+    result[alm]=Object.keys(storesMap[alm]).sort((a,b)=>a.localeCompare(b,'es')).map(cat=>{
+      const g1v=storesMap[alm][cat].g1, g2v=storesMap[alm][cat].g2;
+      const diff=g2v-g1v;
+      const pct=g1v===0?null:(diff/g1v)*100;
+      return {categoria:cat, mes1:g1v, mes2:g2v, diferencia:diff, porcentaje:pct,
+              porcentajeDecimal:g1v===0?null:diff/g1v};
+    });
+  });
+  return result;
+}
+
+/* ══════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════ */
+function renderDepto(data, depto, lbl1, lbl2){
+  if(!Object.keys(data).length) return;
+  document.getElementById(`seccion${depto}`).style.display='';
+  document.getElementById(`subtitulo${depto}`).textContent=
+    `Comparativo de categorías N3 · Grupo 1: ${lbl1} · Grupo 2: ${lbl2}`;
+
+  // Tabla general
+  const global={};
+  Object.values(data).forEach(rows=>{
+    rows.forEach(r=>{
+      if(!global[r.categoria]) global[r.categoria]={m1:0,m2:0};
+      global[r.categoria].m1+=r.mes1;
+      global[r.categoria].m2+=r.mes2;
+    });
+  });
+
+  const hGen=buildTable(`GENERAL — ${lbl1} vs ${lbl2}`, lbl1, lbl2,
+    Object.keys(global).sort((a,b)=>a.localeCompare(b,'es')).map(cat=>{
+      const m1v=global[cat].m1, m2v=global[cat].m2, diff=m2v-m1v;
+      return {categoria:cat,mes1:m1v,mes2:m2v,diferencia:diff,
+              porcentaje:m1v===0?null:(diff/m1v)*100};
+    })
+  );
+  document.getElementById(`tabGen${depto}`).innerHTML=hGen;
+
+  let hTienda='';
+  Object.keys(data).forEach(alm=>{
+    hTienda+=buildTable(`${alm} — ${lbl1} vs ${lbl2}`, lbl1, lbl2, data[alm]);
+  });
+  document.getElementById(`tabTienda${depto}`).innerHTML=hTienda||'<p class="note">Sin datos.</p>';
+}
+
+function buildTable(title, label1, label2, rows){
+  let html=`<table><caption>${escapeHtml(title)}</caption>
+  <thead><tr>
+    <th>Categoría</th>
+    <th>${escapeHtml(label1)}</th>
+    <th>${escapeHtml(label2)}</th>
+    <th>Diferencia</th>
+    <th>% Diferencia</th>
+  </tr></thead><tbody>`;
+
+  let tot1=0,tot2=0;
+  rows.forEach(r=>{
+    const pctText=r.porcentaje===null?'N/A':r.porcentaje.toFixed(2)+'%';
+    html+=`<tr>
+      <td>${escapeHtml(r.categoria)}</td>
+      <td>${r.mes1.toFixed(2)}</td>
+      <td>${r.mes2.toFixed(2)}</td>
+      <td>${r.diferencia.toFixed(2)}</td>
+      <td>${pctText}</td>
+    </tr>`;
+    tot1+=r.mes1; tot2+=r.mes2;
+  });
+
+  const totDiff=tot2-tot1;
+  const totPct=tot1===0?'N/A':(totDiff/tot1*100).toFixed(2)+'%';
+  html+=`<tr class="total-row">
+    <td>Total</td>
+    <td>${tot1.toFixed(2)}</td>
+    <td>${tot2.toFixed(2)}</td>
+    <td>${totDiff.toFixed(2)}</td>
+    <td>${totPct}</td>
+  </tr></tbody></table>`;
+  return html;
+}
+
+/* ══════════════════════════════════════════════════
+   EXPORT
+══════════════════════════════════════════════════ */
+function handleExport(){
+  if(!resultIM&&!resultTM){ alert('Analiza primero.'); return; }
+  const {g1,g2}=getGrupos();
+  const lbl1=labelGrupo(g1), lbl2=labelGrupo(g2);
+  const wb=XLSX.utils.book_new();
+
+  exportDeptoExcel(wb, resultIM, 'IM', lbl1, lbl2);
+  exportDeptoExcel(wb, resultTM, 'TM', lbl1, lbl2);
+
+  const tag=`${g1.join('_')}_vs_${g2.join('_')}`.replace(/-/g,'');
+  XLSX.writeFile(wb,`Comparativo_IM_TM_${tag}.xlsx`);
+}
+
+function exportDeptoExcel(wb, data, depto, lbl1, lbl2){
+  if(!data||!Object.keys(data).length) return;
+  const header=["Categoría",`Ventas ${lbl1}`,`Ventas ${lbl2}`,"Diferencia","% Diferencia"];
+  const aoa=[];
+
+  /* Tabla general */
+  const global={};
+  Object.values(data).forEach(rows=>{
+    rows.forEach(r=>{
+      if(!global[r.categoria]) global[r.categoria]={m1:0,m2:0};
+      global[r.categoria].m1+=r.mes1;
+      global[r.categoria].m2+=r.mes2;
+    });
+  });
+
+  aoa.push([`[${depto}] GENERAL — ${lbl1} vs ${lbl2}`]);
+  aoa.push(header);
+  let tot1g=0,tot2g=0;
+  Object.keys(global).sort((a,b)=>a.localeCompare(b,'es')).forEach(cat=>{
+    const m1v=global[cat].m1, m2v=global[cat].m2, diff=m2v-m1v;
+    aoa.push([cat, m1v, m2v, diff, m1v===0?'':diff/m1v]);
+    tot1g+=m1v; tot2g+=m2v;
+  });
+  aoa.push(["Total", tot1g, tot2g, tot2g-tot1g, tot1g===0?'':(tot2g-tot1g)/tot1g]);
+
+  /* Tablas por almacén */
+  Object.keys(data).sort((a,b)=>a.localeCompare(b,'es')).forEach(alm=>{
+    const rows=data[alm];
+    aoa.push([]); aoa.push([]);
+    aoa.push([`[${depto}] ${alm} — ${lbl1} vs ${lbl2}`]);
+    aoa.push(header);
+    let tot1=0,tot2=0;
+    rows.forEach(r=>{
+      aoa.push([r.categoria,r.mes1,r.mes2,r.diferencia,
+                r.porcentajeDecimal===null?'':r.porcentajeDecimal]);
+      tot1+=r.mes1; tot2+=r.mes2;
+    });
+    aoa.push(["Total",tot1,tot2,tot2-tot1,tot1===0?'':(tot2-tot1)/tot1]);
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+  function colorCell(cell,val){
+    if(!cell||typeof val!=='number') return;
+    const rgb=val>0?'FF7DFA6B':val<0?'FFFF4545':'FFA8A8A8';
+    cell.s={fill:{patternType:'solid',fgColor:{rgb}}};
+  }
+
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let R=range.s.r;R<=range.e.r;R++){
+    const cDif=ws[XLSX.utils.encode_cell({r:R,c:3})];
+    if(cDif&&typeof cDif.v==='number') colorCell(cDif,cDif.v);
+    const cPct=ws[XLSX.utils.encode_cell({r:R,c:4})];
+    if(cPct&&typeof cPct.v==='number'){ cPct.z='0.00%'; colorCell(cPct,cPct.v); }
+  }
+
+  ws['!cols']=[{wch:35},{wch:18},{wch:18},{wch:14},{wch:14}];
+
+  const sheetName=depto==='IM'?'Innovación Móvil':'Tecnología Móvil';
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+}
+
+/* ── Menú hamburguesa ── */
+document.getElementById('menu-check')?.addEventListener('change',function(){
+  const m=document.getElementById('nav-menu');
+  if(!m) return;
+  m.style.opacity=this.checked?'1':'0';
+  m.style.visibility=this.checked?'visible':'hidden';
+  m.style.pointerEvents=this.checked?'auto':'none';
+});
+</script>
+
+<script>
+  // Control del menú horizontal en móvil (navbar nuevo)
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

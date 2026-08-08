@@ -5,123 +5,239 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comparativo Mensual — IM & TM</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+<!-- Hoja de estilos base del sistema de diseño (Material 3) -->
+<link rel="stylesheet" href="../styles.css">
+
+<!-- Estilos adicionales SOLO para componentes que no existen en la hoja base
+     (subida de archivo, selects de mes, loader, tabs, tablas comparativas con fila total).
+     No se modifica el CSS externo. -->
 <style>
-body{font-family:Arial,sans-serif;margin:18px;background:#f7f7f7;color:#222}
-h1{color:#234;margin-top:0}
-.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-select,input[type=file]{padding:6px;border-radius:6px;border:1px solid #ccc}
-button.btn{background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
-button.btn:disabled{background:#999;cursor:not-allowed}
-.note{font-size:13px;color:#444;margin-top:8px}
-table{border-collapse:collapse;width:100%;background:#fff;margin-top:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-th,td{padding:8px;border:1px solid #e6e6e6;text-align:center;font-size:13px}
-th{background:#2f6fa6;color:#fff;position:sticky;top:0}
-caption{font-weight:700;text-align:left;padding:8px;color:#123}
-tr.total-row{font-weight:700;background:#eee}
+  /* ── Contenedor de controles ── */
+  .controls{
+    display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-md);
+    margin-top:var(--space-lg);
+  }
+  .controls label{
+    font-size:13px;font-weight:600;color:var(--on-surface-variant);
+  }
 
-/* ── Secciones IM / TM ── */
-.seccion{margin-top:32px}
-.seccion-titulo{
-  display:flex;align-items:center;gap:10px;
-  font-size:1.18em;font-weight:700;padding:12px 18px;
-  border-radius:10px;color:#fff;margin-bottom:4px;
-}
-.titulo-im{background:linear-gradient(135deg,#f5576c,#f093fb)}
-.titulo-tm{background:linear-gradient(135deg,#4facfe,#00b4d8)}
-.seccion-subtitulo{font-size:.9em;color:#666;margin:2px 0 10px 4px}
+  /* ── Botón de subir archivo (reemplaza la animación de carpetas) ── */
+  .file-upload{display:flex;}
+  .boton{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 18px;border-radius:var(--radius-lg);
+    background:var(--surface-container-high);
+    border:1px solid var(--outline-variant);
+    color:var(--on-surface);font-size:14px;font-weight:600;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .boton:hover{background:var(--surface-container-highest);border-color:var(--primary);}
+  .boton .material-symbols-outlined{font-size:20px;color:var(--primary);}
 
-/* ── Tabs ── */
-.tabs{display:flex;gap:6px;margin-bottom:-1px;flex-wrap:wrap}
-.tab{padding:7px 16px;border-radius:8px 8px 0 0;border:1px solid #ddd;border-bottom:none;
-     cursor:pointer;background:#e9eef5;font-weight:600;font-size:13px;color:#444;transition:background .2s}
-.tab:hover{filter:brightness(.95)}
-.tab.active-im{background:#f5576c;color:#fff;border-color:#f5576c}
-.tab.active-tm{background:#4facfe;color:#fff;border-color:#4facfe}
-.tab-content{border:1px solid #ddd;border-radius:0 8px 8px 8px;padding:10px;background:#fff}
+  /* ── Selects de mes ── */
+  .controls select{
+    padding:9px 14px;border-radius:var(--radius-lg);
+    border:1px solid var(--outline-variant);
+    background:var(--surface-container-lowest);
+    color:var(--on-surface);font-size:14px;font-weight:500;
+    cursor:pointer;
+  }
+  .controls select:disabled{opacity:0.5;cursor:not-allowed;}
+  .controls select:focus-visible{outline:2px solid var(--primary);outline-offset:1px;}
+
+  /* ── Mensaje / nota de estado ── */
+  .note{
+    margin-top:var(--space-md);
+    font-size:14px;color:var(--on-surface-variant);
+    min-height:20px;
+  }
+
+  /* ── Loader simple (reemplaza la animación de sol/nube) ── */
+  .loader-container{
+    display:flex;align-items:center;gap:var(--space-sm);
+    padding:var(--space-md) 0;
+    color:var(--primary);font-size:14px;font-weight:600;
+  }
+  .loader-container .material-symbols-outlined{
+    font-size:22px;animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+  /* ── Secciones IM / TM ── */
+  .seccion{
+    background:var(--surface-container-lowest);
+    border:1px solid rgba(196,197,215,0.4);
+    border-radius:var(--radius-xl);
+    padding:var(--space-xl) var(--space-2xl);
+    margin:var(--space-2xl) 0;
+    box-shadow:0 1px 2px rgba(17,28,45,0.04);
+  }
+  @media (max-width:640px){ .seccion{padding:var(--space-lg);} }
+
+  .seccion-titulo{
+    display:flex;align-items:center;gap:10px;
+    font-size:20px;line-height:28px;font-weight:700;color:var(--on-surface);
+  }
+  .seccion-titulo .material-symbols-outlined{
+    font-size:26px;color:var(--primary);
+  }
+  .titulo-tm .material-symbols-outlined{color:var(--tertiary);}
+  .seccion-subtitulo{
+    margin:6px 0 var(--space-lg);
+    font-size:13px;color:var(--on-surface-variant);
+  }
+
+  /* ── Tabs ── */
+  .tabs{display:flex;gap:8px;border-bottom:1px solid var(--outline-variant);margin-bottom:var(--space-lg);}
+  .tab{
+    display:flex;align-items:center;gap:6px;
+    padding:10px 16px;font-size:13px;font-weight:600;
+    color:var(--on-surface-variant);cursor:pointer;
+    border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .tab .material-symbols-outlined{font-size:18px;}
+  .tab:hover{color:var(--primary);}
+  .tab.active-im{color:var(--primary);border-bottom-color:var(--primary);}
+  .tab.active-tm{color:var(--tertiary);border-bottom-color:var(--tertiary);}
+
+  /* ── Tablas comparativas ── */
+  .tab-content{overflow-x:auto;}
+  .tab-content table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:var(--space-xl);}
+  .tab-content caption{
+    text-align:left;caption-side:top;
+    font-size:14px;font-weight:700;color:var(--on-surface);
+    padding:0 0 10px;
+  }
+  .tab-content thead th{
+    text-align:left;padding:10px 12px;white-space:nowrap;
+    background:var(--surface-container-high);
+    color:var(--on-surface-variant);
+    font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .tab-content tbody td{
+    padding:9px 12px;white-space:nowrap;
+    border-bottom:1px solid var(--outline-variant);
+    color:var(--on-surface);
+  }
+  .tab-content tbody tr:hover{background:var(--surface-container-low);}
+  .tab-content tbody tr.total-row{
+    background:var(--surface-container-high);
+    font-weight:700;color:var(--on-surface);
+  }
+  .tab-content tbody tr.total-row td{border-bottom:none;}
 </style>
-<link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li>
-          <a href="index.php" class="menu-link">
-            <span class="logo-container">
-              <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25"/>
-            </span>
-            Home
-          </a>
-        </li>
-      </ul>
-    </div>
+
+<!-- TOP HEADER -->
+<header class="topheader">
+  <div class="topheader-left">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="26" height="26" style="border-radius:6px;">
+    <h2 class="text-headline-sm">Comparativo Mensual — IM &amp; TM</h2>
+  </div>
+  <nav class="topnav">
+    <a href="../garantias/validador/validador.php">Home</a>
+    <a href="modulos.html">Panel de Herramientas</a>
   </nav>
 </header>
 
-<div class="container">
-  <h1>🔁 Comparativo Mensual por Categoría — IM & TM</h1>
+<div class="main" style="margin-left:0;">
+  <div class="container">
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
+    <div class="lesson">
+      <div class="lesson-body">
+        <div class="eyebrow">Comparativo por categoría</div>
+        <h1 class="text-headline-lg" style="margin:8px 0 4px;display:flex;align-items:center;gap:10px;">
+          <span class="material-symbols-outlined" style="font-size:30px;color:var(--primary);">sync_alt</span>
+          Comparativo Mensual por Categoría — IM &amp; TM
+        </h1>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0;">
+          Sube tu archivo Excel y compara las ventas por categoría entre dos meses
+        </p>
+
+        <div class="controls">
+          <div class="file-upload">
+            <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
+            <button class="boton" id="fileButton" type="button">
+              <span class="material-symbols-outlined">attach_file</span>
+              <span class="text">Seleccionar Archivo</span>
+            </button>
+          </div>
+          <button id="cargarBtn" class="btn btn-outline" disabled>
+            <span class="material-symbols-outlined">upload</span>
+            Cargar archivo
+          </button>
+          <label>Mes 1:</label>
+          <select id="mes1" disabled></select>
+          <label>Mes 2:</label>
+          <select id="mes2" disabled></select>
+          <button id="analizarBtn" class="btn btn-primary" disabled>
+            <span class="material-symbols-outlined">query_stats</span>
+            Analizar
+          </button>
+          <button id="exportBtn" class="btn btn-secondary" disabled>
+            <span class="material-symbols-outlined">download</span>
+            Exportar Excel
+          </button>
         </div>
-        <div class="active_line"></div>
-        <span class="text">Seleccionar Archivo</span>
-      </button>
+
+        <div id="loader" class="loader-container" style="display:none;">
+          <span class="material-symbols-outlined">progress_activity</span>
+          <span>Procesando archivo...</span>
+        </div>
+
+        <div id="mensajes" class="note">Sube un archivo Excel con al menos dos meses de ventas.</div>
+      </div>
     </div>
-    <button id="cargarBtn" class="btn" disabled>Cargar archivo</button>
-    <label style="margin-left:8px;">Mes 1:</label>
-    <select id="mes1" disabled></select>
-    <label>Mes 2:</label>
-    <select id="mes2" disabled></select>
-    <button id="analizarBtn" class="btn" disabled>Analizar</button>
-    <button id="exportBtn"   class="btn" disabled>⬇ Exportar Excel</button>
+
+    <!-- ── INNOVACIÓN MÓVIL ── -->
+    <div class="seccion" id="seccionIM" style="display:none">
+      <div class="seccion-titulo titulo-im">
+        <span class="material-symbols-outlined">smartphone</span>
+        Innovación Móvil — Accesorios
+      </div>
+      <p class="seccion-subtitulo">Comparativo mensual de categorías N3 · N1 = INNOVACION MOVIL</p>
+      <div class="tabs">
+        <div class="tab active-im" id="tabIM-gen" onclick="mostrarTab('IM','gen',this)">
+          <span class="material-symbols-outlined">public</span> General
+        </div>
+        <div class="tab" id="tabIM-tienda" onclick="mostrarTab('IM','tienda',this)">
+          <span class="material-symbols-outlined">storefront</span> Por Tienda
+        </div>
+      </div>
+      <div class="tab-content">
+        <div id="tabGenIM"></div>
+        <div id="tabTiendaIM" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- ── TECNOLOGÍA MÓVIL ── -->
+    <div class="seccion" id="seccionTM" style="display:none">
+      <div class="seccion-titulo titulo-tm">
+        <span class="material-symbols-outlined">devices</span>
+        Tecnología Móvil — Telefonía
+      </div>
+      <p class="seccion-subtitulo">Comparativo mensual de categorías N3 · N1 = TECNOLOGIA MOVIL</p>
+      <div class="tabs">
+        <div class="tab active-tm" id="tabTM-gen" onclick="mostrarTab('TM','gen',this)">
+          <span class="material-symbols-outlined">public</span> General
+        </div>
+        <div class="tab" id="tabTM-tienda" onclick="mostrarTab('TM','tienda',this)">
+          <span class="material-symbols-outlined">storefront</span> Por Tienda
+        </div>
+      </div>
+      <div class="tab-content">
+        <div id="tabGenTM"></div>
+        <div id="tabTiendaTM" style="display:none"></div>
+      </div>
+    </div>
+
   </div>
 
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-    <span class="sun sunshine"></span><span class="sun"></span>
-    <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-  </div>
-
-  <div id="mensajes" class="note">Sube un archivo Excel con al menos dos meses de ventas.</div>
-
-  <!-- ── INNOVACIÓN MÓVIL ── -->
-  <div class="seccion" id="seccionIM" style="display:none">
-    <div class="seccion-titulo titulo-im">📱 Innovación Móvil — Accesorios</div>
-    <p class="seccion-subtitulo">Comparativo mensual de categorías N3 · N1 = INNOVACION MOVIL</p>
-    <div class="tabs">
-      <div class="tab active-im" id="tabIM-gen"    onclick="mostrarTab('IM','gen',this)">🌐 General</div>
-      <div class="tab"           id="tabIM-tienda" onclick="mostrarTab('IM','tienda',this)">🏪 Por Tienda</div>
-    </div>
-    <div class="tab-content">
-      <div id="tabGenIM"></div>
-      <div id="tabTiendaIM" style="display:none"></div>
-    </div>
-  </div>
-
-  <!-- ── TECNOLOGÍA MÓVIL ── -->
-  <div class="seccion" id="seccionTM" style="display:none">
-    <div class="seccion-titulo titulo-tm">📲 Tecnología Móvil — Telefonía</div>
-    <p class="seccion-subtitulo">Comparativo mensual de categorías N3 · N1 = TECNOLOGIA MOVIL</p>
-    <div class="tabs">
-      <div class="tab active-tm" id="tabTM-gen"    onclick="mostrarTab('TM','gen',this)">🌐 General</div>
-      <div class="tab"           id="tabTM-tienda" onclick="mostrarTab('TM','tienda',this)">🏪 Por Tienda</div>
-    </div>
-    <div class="tab-content">
-      <div id="tabGenTM"></div>
-      <div id="tabTiendaTM" style="display:none"></div>
-    </div>
-  </div>
+  
 </div>
 
 <script>
@@ -366,9 +482,9 @@ function buildTable(title, label1, label2, rows){
   return html;
 }
 
-/* ══════════════════════════════════════════════════
+/*
    EXPORT — Solo 2 hojas: una IM y una TM
-══════════════════════════════════════════════════ */
+ */
 function handleExport(){
   if(!resultIM&&!resultTM){ alert('Analiza primero.'); return; }
   const m1=mes1Sel.value, m2=mes2Sel.value;
@@ -456,14 +572,6 @@ function exportDeptoExcel(wb, data, depto, m1, m2){
   const sheetName = depto === 'IM' ? 'Innovación Móvil' : 'Tecnología Móvil';
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 }
-
-/* ── Menú hamburguesa ── */
-document.getElementById('menu-check').addEventListener('change',function(){
-  const m=document.getElementById('nav-menu');
-  m.style.opacity=this.checked?'1':'0';
-  m.style.visibility=this.checked?'visible':'hidden';
-  m.style.pointerEvents=this.checked?'auto':'none';
-});
 </script>
 </body>
 </html>

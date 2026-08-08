@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InventaScan — Sistema de Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   RESET & VARIABLES
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --muted: #64748b;
+  --text: #0f172a;
+  --text-sm: #334155;
+  --primary-600: #155e75;
+  --primary-400: #0ea5e9;
+  --accent: #0F5476;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --success-border: #6ee7b7;
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --error-border: #fca5a5;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --warn-border: #fcd34d;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.05);
+  --shadow-md: 0 4px 12px rgba(15,23,42,0.08), 0 12px 40px rgba(15,23,42,0.07);
+  --shadow-lg: 0 8px 24px rgba(15,23,42,0.10), 0 24px 64px rgba(15,23,42,0.09);
+  --transition-fast: 200ms cubic-bezier(.2,.9,.2,1);
+  --transition-med: 320ms cubic-bezier(.2,.9,.2,1);
+  --font-main: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-2: #1e2738;
+  --muted: #94a3b8;
+  --text: #f1f5f9;
+  --text-sm: #cbd5e1;
+  --success-bg: #052e16;
+  --success-border: #166534;
+  --error-bg: #450a0a;
+  --error-border: #991b1b;
+  --warn-bg: #451a03;
+  --warn-border: #92400e;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4), 0 12px 40px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.4);
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background var(--transition-med), color var(--transition-med);
+}
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; opacity: .4; }
+
+/* ═══════════════════════════════════════
+   GLOBAL LAYOUT
+═══════════════════════════════════════ */
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════
+   TOP NAV
+═══════════════════════════════════════ */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid rgba(100,116,139,.12);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent);
+  letter-spacing: -.3px;
+}
+
+.topbar-brand .brand-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--primary-400));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-icon {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(100,116,139,.2);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  transition: all var(--transition-fast);
+}
+.btn-icon:hover {
+  background: var(--bg);
+  color: var(--text);
+  border-color: rgba(100,116,139,.4);
+}
+
+/* ═══════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════ */
+.screen {
+  display: none;
+  flex: 1;
+  padding: 40px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeUp .35s cubic-bezier(.2,.9,.2,1) both;
+}
+.screen.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════
+   SCREEN 1 — CARGA
+═══════════════════════════════════════ */
+.hero-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.hero-header h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.5px;
+  line-height: 1.15;
+}
+.hero-header h1 span {
+  background: linear-gradient(90deg, var(--accent), var(--primary-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-header p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(100,116,139,.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-header .card-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.card-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.card-header p {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.card-body { padding: 20px 24px 24px; }
+
+/* Textarea de series */
+.series-textarea {
+  width: 100%;
+  min-height: 200px;
+  background: var(--surface-2);
+  border: 1.5px solid rgba(100,116,139,.18);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--text);
+  resize: vertical;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  line-height: 1.6;
+}
+.series-textarea:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+}
+.series-textarea::placeholder { color: var(--muted); opacity: .6; }
+
+/* Info bar preview */
+.preview-bar {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px solid rgba(100,116,139,.12);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: .85rem;
+  color: var(--muted);
+  min-height: 44px;
+  transition: all var(--transition-fast);
+}
+.preview-bar.has-data {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+.preview-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.preview-stat .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .7;
+}
+
+/* Drag & drop zone */
+.drop-zone {
+  border: 2px dashed rgba(100,116,139,.25);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  text-align: center;
+  margin-top: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--muted);
+  font-size: .875rem;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--primary-400);
+  background: rgba(14,165,233,.04);
+  color: var(--primary-400);
+}
+.drop-zone .drop-icon { font-size: 24px; margin-bottom: 6px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  outline: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, #0e7490 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(15,84,118,.35);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15,84,118,.45);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text-sm);
+  border: 1px solid rgba(100,116,139,.2);
+}
+.btn-secondary:hover {
+  background: var(--bg);
+  border-color: rgba(100,116,139,.35);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(220,38,38,.3);
+}
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(220,38,38,.4);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(5,150,105,.3);
+}
+.btn-success:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(5,150,105,.4);
+}
+
+.btn-lg {
+  padding: 14px 32px;
+  font-size: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+.btn-full { width: 100%; justify-content: center; }
+
+/* ═══════════════════════════════════════
+   SCREEN 2 — ESCANEO
+═══════════════════════════════════════ */
+.scan-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Counters row */
+.counters-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.counter-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(100,116,139,.1);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.counter-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+.counter-card.green::before  { background: var(--success); }
+.counter-card.red::before    { background: var(--error); }
+.counter-card.blue::before   { background: var(--primary-400); }
+
+.counter-card .c-label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.counter-card .c-value {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.counter-card.green .c-value  { color: var(--success); }
+.counter-card.red .c-value    { color: var(--error); }
+.counter-card.blue .c-value   { color: var(--primary-400); }
+.counter-card .c-sub {
+  font-size: .78rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Pulse animation for counters on change */
+@keyframes counterPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.counter-pop { animation: counterPop .25s ease both; }
+
+/* Progress bar */
+.progress-wrap {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(100,116,139,.1);
+  margin-bottom: 24px;
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: .8rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.progress-label strong { color: var(--text); }
+.progress-track {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--primary-400));
+  border-radius: 99px;
+  transition: width .4s cubic-bezier(.2,.9,.2,1);
+  min-width: 4px;
+}
+
+/* Scan input zone */
+.scan-zone {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(100,116,139,.1);
+  padding: 26px 24px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.scan-zone-title {
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scan-active-dot {
+  width: 8px; height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: blink 1.4s ease infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .25; }
+}
+
+.scan-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scan-input {
+  flex: 1;
+  height: 58px;
+  background: var(--surface-2);
+  border: 2px solid rgba(100,116,139,.2);
+  border-radius: var(--radius-md);
+  padding: 0 18px;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: .05em;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  caret-color: var(--primary-400);
+}
+.scan-input:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(14,165,233,.14);
+  background: var(--surface);
+}
+.scan-input.result-ok {
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 3px rgba(5,150,105,.15) !important;
+}
+.scan-input.result-err {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.15) !important;
+}
+.scan-input.result-dup {
+  border-color: var(--warn) !important;
+  box-shadow: 0 0 0 3px rgba(217,119,6,.15) !important;
+}
+
+/* Feedback toast */
+.feedback-toast {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--text);
+  color: var(--surface);
+  padding: 8px 18px;
+  border-radius: 99px;
+  font-size: .82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all .22s cubic-bezier(.2,.9,.2,1);
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+}
+.feedback-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.feedback-toast.ok  { background: var(--success); }
+.feedback-toast.err { background: var(--error); }
+.feedback-toast.dup { background: var(--warn); color: #fff; }
+
+/* Feedback banner in main area */
+.scan-result-banner {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  font-size: .9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 4px solid;
+  opacity: 0;
+  transition: opacity .2s;
+  min-height: 52px;
+}
+.scan-result-banner.show { opacity: 1; }
+.scan-result-banner.ok  { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+.scan-result-banner.err { background: var(--error-bg);   border-color: var(--error);   color: var(--error); }
+.scan-result-banner.dup { background: var(--warn-bg);    border-color: var(--warn);    color: var(--warn); }
+
+.banner-code {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  font-weight: 400;
+  opacity: .75;
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════
+   HISTORIAL
+═══════════════════════════════════════ */
+.history-panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(100,116,139,.1);
+  overflow: hidden;
+}
+.history-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(100,116,139,.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.history-head h3 {
+  font-size: .9rem;
+  font-weight: 600;
+}
+.history-head .badge {
+  font-size: .72rem;
+  background: var(--surface-2);
+  color: var(--muted);
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-weight: 600;
+  border: 1px solid rgba(100,116,139,.15);
+}
+
+.history-list {
+  max-height: 460px;
+  overflow-y: auto;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  padding: 11px 18px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(100,116,139,.07);
+  font-size: .8rem;
+  animation: slideIn .2s cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.history-item:last-child { border-bottom: none; }
+.history-item .hi-badge {
+  flex-shrink: 0;
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 3px 8px;
+  border-radius: 99px;
+  min-width: 72px;
+  text-align: center;
+}
+.hi-badge.ok  { background: var(--success-bg); color: var(--success); }
+.hi-badge.err { background: var(--error-bg); color: var(--error); }
+.hi-badge.dup { background: var(--warn-bg); color: var(--warn); }
+
+.hi-code {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: .77rem;
+  color: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hi-time {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+/* ═══════════════════════════════════════
+   ACTIONS ROW
+═══════════════════════════════════════ */
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════
+   SCREEN 3 — RESULTADO
+═══════════════════════════════════════ */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.result-stat {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(100,116,139,.1);
+}
+.result-stat .rs-number {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.result-stat .rs-label {
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.result-stat.green .rs-number { color: var(--success); }
+.result-stat.red .rs-number   { color: var(--error); }
+.result-stat.blue .rs-number  { color: var(--primary-400); }
+
+.result-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+/* ═══════════════════════════════════════
+   KEYBOARD SHORTCUT HINT
+═══════════════════════════════════════ */
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .72rem;
+  color: var(--muted);
+}
+kbd {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  border: 1px solid rgba(100,116,139,.2);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: .68rem;
+  color: var(--text-sm);
+}
+
+/* ═══════════════════════════════════════
+   NOTIFICATIONS / SNACKBAR
+═══════════════════════════════════════ */
+#snackbar {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.snack {
+  background: var(--text);
+  color: var(--surface);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: .85rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: snackIn .25s ease both;
+  pointer-events: auto;
+  max-width: 320px;
+}
+@keyframes snackIn {
+  from { opacity: 0; transform: translateY(10px) scale(.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes snackOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(4px) scale(.95); }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 820px) {
+  .screen { padding: 24px 16px; }
+  .scan-layout { grid-template-columns: 1fr; }
+  .counters-row { grid-template-columns: repeat(3, 1fr); }
+  .result-grid { grid-template-columns: repeat(3, 1fr); }
+  .hero-header h1 { font-size: 1.8rem; }
+  .topbar { padding: 0 16px; }
+}
+@media (max-width: 560px) {
+  .counters-row { grid-template-columns: 1fr 1fr; }
+  .result-grid { grid-template-columns: 1fr 1fr; }
+  .counter-card .c-value { font-size: 2rem; }
+}
+
+/* ═══════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+.empty-state .es-icon { font-size: 36px; margin-bottom: 10px; }
+.empty-state p { font-size: .85rem; }
+
+/* ═══════════════════════════════════════
+   LOADING SPINNER
+═══════════════════════════════════════ */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* step breadcrumb */
+.step-crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .78rem;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+.step-crumb .crumb {
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid rgba(100,116,139,.15);
+  font-weight: 500;
+}
+.step-crumb .crumb.active {
+  background: linear-gradient(135deg, var(--accent), #0e7490);
+  color: #fff;
+  border-color: transparent;
+}
+.step-crumb .sep { font-size: .6rem; }
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- ─── TOP BAR ─── -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      
+      Inventario de series
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" title="Modo oscuro (T)">
+        <span class="material-symbols-outlined">dark_mode</span>
+    </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════
+       SCREEN 1 — CARGA DE SERIES
+  ══════════════════════════════════ -->
+  <section class="screen active" id="screen-load">
+    <div class="step-crumb">
+      <span class="crumb active">1 — Cargar series</span>
+      <span class="sep">▶</span>
+      <span class="crumb">2 — Escanear</span>
+      <span class="sep">▶</span>
+      <span class="crumb">3 — Resultado</span>
+    </div>
+
+    <div class="hero-header">
+      <h1>Carga tu lista<br>de <span>series</span></h1>
+      <p>Pega las series separadas por coma, o arrastra un archivo .txt / .csv</p>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header">
+       
+        <div>
+          <h2>Lista de series</h2>
+          <p>Separadas por coma y espacio. Se ignoran duplicados y vacíos.</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <textarea
+          class="series-textarea"
+          id="seriesInput"
+          placeholder="Ejemplo:&#10;8952140064237964896F, 8952140064237964904F, 8952140064237964912F&#10;&#10;o también una por línea:&#10;8952020026171962066&#10;8952020026171962074"
+          spellcheck="false"
+          autocomplete="off"
+        ></textarea>
+
+        <div class="preview-bar" id="previewBar">
+          <span style="font-size:1.1rem">📊</span>
+          <span id="previewText">Escribe o pega tus series para ver el resumen</span>
+        </div>
+
+        <!-- Drag & drop -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">📁</div>
+          <div>Arrastra un archivo <strong>.txt</strong> o <strong>.csv</strong> aquí</div>
+          <div style="font-size:.75rem;margin-top:4px;opacity:.6">o haz clic para seleccionarlo</div>
+        </div>
+        <input type="file" id="fileInput" accept=".txt,.csv" style="display:none">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;align-items:center">
+      <span class="kbd-hint"><kbd>Enter</kbd> para iniciar cuando haya series válidas</span>
+      <button class="btn btn-primary btn-lg" id="btnStart" disabled>
+        Comenzar inventario →
+      </button>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SCREEN 2 — ESCANEO
+  ══════════════════════════════════ -->
+  <section class="screen" id="screen-scan">
+    <div class="step-crumb">
+      <span class="crumb">1 — Cargar series</span>
+      <span class="sep">▶</span>
+      <span class="crumb active">2 — Escanear</span>
+      <span class="sep">▶</span>
+      <span class="crumb">3 — Resultado</span>
+    </div>
+
+    <!-- Contadores -->
+    <div class="counters-row">
+      <div class="counter-card green">
+        <div class="c-label">⬇ Faltantes</div>
+        <div class="c-value" id="cntMissing">0</div>
+        <div class="c-sub">por encontrar</div>
+      </div>
+      <div class="counter-card blue">
+        <div class="c-label">✔ Encontradas</div>
+        <div class="c-value" id="cntFound">0</div>
+        <div class="c-sub">escaneadas OK</div>
+      </div>
+      <div class="counter-card red">
+        <div class="c-label">✕ No registradas</div>
+        <div class="c-value" id="cntError">0</div>
+        <div class="c-sub">fuera de lista</div>
+      </div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Progreso del inventario</span>
+        <strong id="progressPct">0%</strong>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="scan-layout">
+      <!-- Columna izquierda: escaneo + resultado + acciones -->
+      <div>
+        <!-- Zona de escaneo -->
+        <div class="scan-zone">
+          <div class="scan-zone-title">
+            <div class="scan-active-dot"></div>
+            Zona de escaneo activa
+          </div>
+          <div class="feedback-toast" id="feedbackToast">—</div>
+          <div class="scan-input-wrap">
+            <input
+              type="text"
+              class="scan-input"
+              id="scanInput"
+              placeholder="Apunta el scanner aquí…"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            >
+            <button class="btn btn-secondary" id="btnManualScan" title="Validar manualmente (Enter)">↵</button>
+          </div>
+          <div class="scan-result-banner" id="scanBanner">
+            <span id="scanBannerIcon">—</span>
+            <div>
+              <div id="scanBannerMsg">—</div>
+              <div class="banner-code" id="scanBannerCode">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="action-row">
+          <button class="btn btn-success" id="btnFinish">
+             Finalizar inventario
+          </button>
+          <button class="btn btn-secondary" id="btnBackToLoad">
+            ← Volver y recargar
+          </button>
+        </div>
+      </div>
+
+      <!-- Columna derecha: historial -->
+      <div>
+        <div class="history-panel">
+          <div class="history-head">
+            <h3>Historial de escaneos</h3>
+            <span class="badge" id="historyBadge">0</span>
+          </div>
+          <div class="history-list" id="historyList">
+            <div class="empty-state">
+              <div class="es-icon">🔍</div>
+              <p>Los escaneos aparecerán aquí</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SCREEN 3 — RESULTADO FINAL
+  ══════════════════════════════════ -->
+  <section class="screen" id="screen-result">
+    <div class="step-crumb">
+      <span class="crumb">1 — Cargar series</span>
+      <span class="sep">▶</span>
+      <span class="crumb">2 — Escanear</span>
+      <span class="sep">▶</span>
+      <span class="crumb active">3 — Resultado</span>
+    </div>
+
+    <div class="hero-header">
+      <h1>Inventario <span>completado</span></h1>
+      <p id="resultSubtitle">Resumen del proceso</p>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-stat green">
+        <div class="rs-number" id="res-found">0</div>
+        <div class="rs-label">Encontradas</div>
+      </div>
+      <div class="result-stat red">
+        <div class="rs-number" id="res-missing">0</div>
+        <div class="rs-label">Faltantes</div>
+      </div>
+      <div class="result-stat blue">
+        <div class="rs-number" id="res-unknown">0</div>
+        <div class="rs-label">No registradas</div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-success btn-lg" id="btnExcelFull">
+        📊 Descargar Excel completo
+      </button>
+      <button class="btn btn-secondary" id="btnExportCSV">
+        📄 Exportar CSV faltantes
+      </button>
+      <button class="btn btn-primary" id="btnNewInventory">
+        ↺ Nuevo inventario
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- Snackbar container -->
+<div id="snackbar"></div>
+
+<!-- SheetJS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   InventaScan — JavaScript principal
+═══════════════════════════════════════════════════ */
+
+// ── Estado global ───────────────────────────────
+const STATE = {
+  loadedSeries: new Set(),      // todas las series cargadas
+  foundSeries: new Set(),       // series encontradas (escaneo OK)
+  unknownSeries: [],            // series escaneadas que NO estaban
+  scanHistory: [],              // historial de todos los escaneos
+  totalLoaded: 0,
+  scanLockout: false,           // anti-doble lectura
+  LOCKOUT_MS: 280,
+};
+
+// ── Atajos de elementos DOM ─────────────────────
+const $ = id => document.getElementById(id);
+
+const screens = {
+  load:   $('screen-load'),
+  scan:   $('screen-scan'),
+  result: $('screen-result'),
+};
+
+// ── Audio context para sonidos ──────────────────
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, vol = 0.18) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function soundOK()  { playTone(880, 'sine', .12); setTimeout(() => playTone(1100, 'sine', .1), 80); }
+function soundErr() { playTone(280, 'square', .22, .12); }
+function soundDup() { playTone(600, 'triangle', .18, .1); }
+
+// ── Navegación entre pantallas ──────────────────
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name].classList.add('active');
+  if (name === 'scan') {
+    setTimeout(() => focusScanInput(), 120);
+  }
+}
+
+// ── PANTALLA 1 — Parseo de series ──────────────
+const seriesInput = $('seriesInput');
+const previewBar  = $('previewBar');
+const previewText = $('previewText');
+const btnStart    = $('btnStart');
+
+function parseSeries(raw) {
+  // Separadores: coma, salto de línea, punto y coma, tab
+  const parts = raw.split(/[,\n;\t]+/);
+  const seen = new Set();
+  const valid = [];
+  for (const p of parts) {
+    const s = p.trim().toUpperCase().replace(/\s+/g, '');
+    if (s.length > 0 && !seen.has(s)) {
+      seen.add(s);
+      valid.push(s);
+    }
+  }
+  return valid;
+}
+
+seriesInput.addEventListener('input', updatePreview);
+
+function updatePreview() {
+  const val = seriesInput.value.trim();
+  if (!val) {
+    previewBar.className = 'preview-bar';
+    previewText.textContent = 'Escribe o pega tus series para ver el resumen';
+    btnStart.disabled = true;
+    return;
+  }
+  const series = parseSeries(val);
+  if (series.length === 0) {
+    previewBar.className = 'preview-bar';
+    previewText.innerHTML = '⚠️ No se detectaron series válidas';
+    btnStart.disabled = true;
+  } else {
+    previewBar.className = 'preview-bar has-data';
+    previewText.innerHTML = `
+      <span class="preview-stat"><span class="dot"></span>${series.length.toLocaleString()} series válidas</span>
+      <span style="color:var(--muted);font-size:.8rem">listas para inventariar</span>
+    `;
+    btnStart.disabled = false;
+  }
+}
+
+// Drag & drop
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) readFile(fileInput.files[0]);
+});
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    seriesInput.value = e.target.result;
+    updatePreview();
+    snack('📁 Archivo cargado: ' + file.name);
+  };
+  reader.readAsText(file);
+}
+
+// Iniciar inventario
+btnStart.addEventListener('click', startInventory);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement !== $('scanInput')) {
+    if (screens.load.classList.contains('active') && !btnStart.disabled) startInventory();
+  }
+  // Atajo T = toggle tema
+  if (e.key === 't' || e.key === 'T') {
+    if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+      toggleTheme();
+    }
+  }
+});
+
+function startInventory() {
+  const raw = seriesInput.value.trim();
+  const series = parseSeries(raw);
+  if (series.length === 0) { snack('⚠️ Agrega series primero', 'warn'); return; }
+
+  // Resetear estado
+  STATE.loadedSeries = new Set(series);
+  STATE.foundSeries  = new Set();
+  STATE.unknownSeries = [];
+  STATE.scanHistory   = [];
+  STATE.totalLoaded   = series.length;
+
+  // Persistir en localStorage
+  try {
+    localStorage.setItem('inventascan_series', JSON.stringify(series));
+  } catch(e) {}
+
+  // Actualizar UI contadores
+  updateCounters();
+  renderHistory();
+  clearBanner();
+
+  showScreen('scan');
+  snack(`✅ ${series.length.toLocaleString()} series cargadas`);
+}
+
+// ── PANTALLA 2 — Escaneo ───────────────────────
+const scanInput   = $('scanInput');
+const scanBanner  = $('scanBanner');
+const cntMissing  = $('cntMissing');
+const cntFound    = $('cntFound');
+const cntError    = $('cntError');
+const progressFill = $('progressFill');
+const progressPct  = $('progressPct');
+const historyList  = $('historyList');
+const historyBadge = $('historyBadge');
+const feedbackToast = $('feedbackToast');
+
+// ── Foco inamovible ─────────────────────────────
+function focusScanInput() {
+  scanInput.focus();
+  scanInput.select();
+}
+
+// Restaurar foco si se pierde
+document.addEventListener('click', (e) => {
+  if (screens.scan.classList.contains('active')) {
+    if (e.target !== $('btnFinish') &&
+        e.target !== $('btnBackToLoad') &&
+        e.target !== $('btnManualScan') &&
+        e.target !== $('themeToggle')) {
+      setTimeout(focusScanInput, 50);
+    }
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && screens.scan.classList.contains('active')) {
+    setTimeout(focusScanInput, 100);
+  }
+});
+
+// Escaneo con scanner (Enter automático)
+scanInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    processScan(scanInput.value.trim());
+  }
+});
+
+// Detección de escaneo rápido (pistola llena el campo en <100ms)
+let scanBuffer = '';
+let scanTimer  = null;
+scanInput.addEventListener('input', () => {
+  const val = scanInput.value;
+  clearTimeout(scanTimer);
+  scanTimer = setTimeout(() => {
+    // Si el valor tiene contenido razonable (>4 chars) y no hubo Enter, procesar igual
+    if (val.trim().length > 4) {
+      processScan(val.trim());
+    }
+  }, 180);
+});
+
+$('btnManualScan').addEventListener('click', () => {
+  processScan(scanInput.value.trim());
+  focusScanInput();
+});
+
+// ── Procesamiento del escaneo ───────────────────
+function processScan(raw) {
+  if (STATE.scanLockout) return;
+  const code = raw.toUpperCase().replace(/\s+/g, '');
+  if (!code) return;
+
+  // Resetear input inmediatamente
+  scanInput.value = '';
+  clearTimeout(scanTimer);
+
+  // Lockout anti-doble
+  STATE.scanLockout = true;
+  setTimeout(() => { STATE.scanLockout = false; }, STATE.LOCKOUT_MS);
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+  if (STATE.loadedSeries.has(code)) {
+    if (STATE.foundSeries.has(code)) {
+      // Duplicado
+      addHistory(code, 'dup', timeStr);
+      showBanner('dup', '⚠ Serie duplicada', code, 'Ya fue escaneada anteriormente');
+      showToast('dup', '⚠ Duplicada');
+      soundDup();
+    } else {
+      // Encontrada
+      STATE.foundSeries.add(code);
+      addHistory(code, 'ok', timeStr);
+      showBanner('ok', '✔ Serie encontrada', code, 'Registrada correctamente');
+      showToast('ok', '✔ Encontrada');
+      soundOK();
+      updateCounters();
+      animateCounter('cntMissing');
+      animateCounter('cntFound');
+    }
+  } else {
+    // No registrada
+    STATE.unknownSeries.push({ code, time: timeStr, date: now.toLocaleDateString('es-MX') });
+    addHistory(code, 'err', timeStr);
+    showBanner('err', '✕ Serie no registrada', code, 'No existe en la lista cargada');
+    showToast('err', '✕ No registrada');
+    soundErr();
+    updateCounters();
+    animateCounter('cntError');
+  }
+}
+
+function updateCounters() {
+  const missing = STATE.totalLoaded - STATE.foundSeries.size;
+  cntMissing.textContent = missing.toLocaleString();
+  cntFound.textContent   = STATE.foundSeries.size.toLocaleString();
+  cntError.textContent   = STATE.unknownSeries.length.toLocaleString();
+
+  const pct = STATE.totalLoaded > 0
+    ? Math.round((STATE.foundSeries.size / STATE.totalLoaded) * 100)
+    : 0;
+  progressFill.style.width = pct + '%';
+  progressPct.textContent  = pct + '%';
+}
+
+function animateCounter(id) {
+  const el = $(id);
+  el.classList.remove('counter-pop');
+  void el.offsetWidth;
+  el.classList.add('counter-pop');
+}
+
+function showBanner(type, msg, code, sub) {
+  scanBanner.className = 'scan-result-banner show ' + type;
+  $('scanBannerIcon').textContent = type === 'ok' ? '✔' : type === 'err' ? '✕' : '⚠';
+  $('scanBannerMsg').textContent = msg;
+  $('scanBannerCode').textContent = code + (sub ? ' — ' + sub : '');
+  scanInput.className = 'scan-input result-' + type;
+  setTimeout(() => {
+    scanInput.className = 'scan-input';
+  }, 900);
+}
+
+function clearBanner() {
+  scanBanner.className = 'scan-result-banner';
+}
+
+let toastTimer = null;
+function showToast(type, msg) {
+  feedbackToast.textContent = msg;
+  feedbackToast.className   = 'feedback-toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    feedbackToast.className = 'feedback-toast';
+  }, 1100);
+}
+
+function addHistory(code, type, time) {
+  STATE.scanHistory.unshift({ code, type, time });
+  if (STATE.scanHistory.length > 200) STATE.scanHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = STATE.scanHistory;
+  historyBadge.textContent = list.length;
+  if (list.length === 0) {
+    historyList.innerHTML = `
+      <div class="empty-state">
+        <div class="es-icon">🔍</div>
+        <p>Los escaneos aparecerán aquí</p>
+      </div>`;
+    return;
+  }
+  // Renderizar solo los últimos 80 para no saturar DOM
+  const items = list.slice(0, 80).map(item => {
+    const labels = { ok: 'Encontrada', err: 'No registrada', dup: 'Duplicada' };
+    return `<div class="history-item">
+      <span class="hi-badge ${item.type}">${labels[item.type]}</span>
+      <span class="hi-code">${item.code}</span>
+      <span class="hi-time">${item.time}</span>
+    </div>`;
+  }).join('');
+  historyList.innerHTML = items;
+}
+
+// Botón finalizar
+$('btnFinish').addEventListener('click', finishInventory);
+
+$('btnBackToLoad').addEventListener('click', () => {
+  if (confirm('¿Volver a cargar series? El progreso actual se perderá.')) {
+    showScreen('load');
+  }
+});
+
+// ── FINALIZACIÓN ────────────────────────────────
+function finishInventory() {
+  const found   = [...STATE.foundSeries];
+  const missing = [...STATE.loadedSeries].filter(s => !STATE.foundSeries.has(s));
+  const unknown = STATE.unknownSeries;
+
+  // Actualizar pantalla resultado
+  $('res-found').textContent   = found.length.toLocaleString();
+  $('res-missing').textContent = missing.length.toLocaleString();
+  $('res-unknown').textContent = unknown.length.toLocaleString();
+  $('resultSubtitle').textContent =
+    `${found.length} encontradas · ${missing.length} faltantes · ${unknown.length} no registradas`;
+
+  showScreen('result');
+  generateExcel(found, missing, unknown);
+}
+
+// ── EXCEL ───────────────────────────────────────
+function generateExcel(found, missing, unknown) {
+  try {
+    const wb = XLSX.utils.book_new();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-MX');
+    const timeStr = now.toLocaleTimeString('es-MX');
+
+    /* --- HOJA 1: Encontradas --- */
+    const sheet1Data = [
+      ['INVENTASCAN — Reporte de inventario'],
+      [`Fecha: ${dateStr}  Hora: ${timeStr}`],
+      [],
+      ['SERIES ENCONTRADAS'],
+      ['#', 'Serie'],
+      ...found.map((s, i) => [i + 1, s]),
+      [],
+      ['TOTAL', found.length],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(sheet1Data);
+    styleSheet(ws1, sheet1Data.length);
+    XLSX.utils.book_append_sheet(wb, ws1, 'Encontradas');
+
+    /* --- HOJA 2: Faltantes --- */
+    const sheet2Data = [
+      ['INVENTASCAN — Series Faltantes'],
+      [`Fecha: ${dateStr}  Hora: ${timeStr}`],
+      [],
+      ['SERIES QUE NO FUERON ESCANEADAS'],
+      ['#', 'Serie'],
+      ...missing.map((s, i) => [i + 1, s]),
+      [],
+      ['TOTAL', missing.length],
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(sheet2Data);
+    styleSheet(ws2, sheet2Data.length);
+    XLSX.utils.book_append_sheet(wb, ws2, 'Faltantes');
+
+    /* --- HOJA 3: No registradas --- */
+    const sheet3Data = [
+      ['INVENTASCAN — Series No Registradas'],
+      [`Fecha: ${dateStr}  Hora: ${timeStr}`],
+      [],
+      ['SERIES ESCANEADAS QUE NO ESTÁN EN LA LISTA'],
+      ['#', 'Serie', 'Hora de escaneo'],
+      ...unknown.map((u, i) => [i + 1, u.code, u.time]),
+      [],
+      ['TOTAL', unknown.length],
+    ];
+    const ws3 = XLSX.utils.aoa_to_sheet(sheet3Data);
+    styleSheet(ws3, sheet3Data.length);
+    XLSX.utils.book_append_sheet(wb, ws3, 'No registradas');
+
+    // Descargar
+    const filename = `inventario_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    snack('📊 Excel generado y descargado');
+  } catch(e) {
+    console.error(e);
+    snack('⚠️ Error al generar Excel: ' + e.message, 'warn');
+  }
+}
+
+function styleSheet(ws, rows) {
+  // Ancho de columnas
+  ws['!cols'] = [{ wch: 8 }, { wch: 28 }, { wch: 18 }];
+}
+
+// CSV de faltantes
+$('btnExportCSV').addEventListener('click', () => {
+  const missing = [...STATE.loadedSeries].filter(s => !STATE.foundSeries.has(s));
+  if (missing.length === 0) { snack('No hay series faltantes 🎉'); return; }
+  const csv = 'Serie\n' + missing.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'faltantes.csv'; a.click();
+  URL.revokeObjectURL(url);
+  snack('📄 CSV de faltantes exportado');
+});
+
+$('btnExcelFull').addEventListener('click', () => {
+  const found   = [...STATE.foundSeries];
+  const missing = [...STATE.loadedSeries].filter(s => !STATE.foundSeries.has(s));
+  generateExcel(found, missing, STATE.unknownSeries);
+});
+
+$('btnNewInventory').addEventListener('click', () => {
+  if (confirm('¿Iniciar un nuevo inventario? Se borrará el progreso actual.')) {
+    seriesInput.value = '';
+    updatePreview();
+    showScreen('load');
+  }
+});
+
+// ── SNACKBAR ────────────────────────────────────
+function snack(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'snack';
+  el.textContent = msg;
+  if (type === 'warn') el.style.background = 'var(--warn)';
+  $('snackbar').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'snackOut .2s ease both';
+    setTimeout(() => el.remove(), 220);
+  }, 2800);
+}
+
+// ── TEMA OSCURO ─────────────────────────────────
+let darkMode = localStorage.getItem('inventascan_dark') === '1';
+if (darkMode) document.documentElement.setAttribute('data-theme', 'dark');
+updateThemeIcon();
+
+$('themeToggle').addEventListener('click', toggleTheme);
+
+function toggleTheme() {
+  darkMode = !darkMode;
+  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
+  localStorage.setItem('inventascan_dark', darkMode ? '1' : '0');
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  $('themeToggle').textContent = darkMode ? '☀️' : '🌙';
+  $('themeToggle').title = (darkMode ? 'Modo claro' : 'Modo oscuro') + ' (T)';
+}
+
+// ── PERSISTENCIA: restaurar desde localStorage ──
+(function restoreState() {
+  try {
+    const saved = localStorage.getItem('inventascan_series');
+    if (saved) {
+      const series = JSON.parse(saved);
+      if (Array.isArray(series) && series.length > 0) {
+        seriesInput.value = series.join(', ');
+        updatePreview();
+      }
+    }
+  } catch(e) {}
+})();
+
+// ── Mantener foco en scan siempre ──────────────
+setInterval(() => {
+  if (screens.scan.classList.contains('active') &&
+      document.activeElement !== scanInput &&
+      !document.hidden) {
+    focusScanInput();
+  }
+}, 800);
+
+</script>
+</body>
+</html>

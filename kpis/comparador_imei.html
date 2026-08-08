@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparador de IMEI / ICCID</title>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntico al del Analizador PayJoy) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Grid de columnas de entrada */
+  .columns-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);
+    margin-bottom:var(--space-md);
+  }
+  @media (max-width:700px){ .columns-grid{grid-template-columns:1fr;} }
+
+  .input-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+  }
+  .input-label{
+    display:block;font-size:12px;font-weight:700;color:var(--on-surface-variant);
+    text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;
+  }
+  .series-input{
+    width:100%;min-height:160px;resize:vertical;
+    padding:12px;border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface);color:var(--on-surface);
+    font-size:13px;font-family:inherit;line-height:1.5;
+    box-sizing:border-box;
+  }
+  .series-input:focus{outline:none;border-color:var(--primary);}
+
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-lg);}
+
+  /* Resultados */
+  .results-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);
+  }
+  @media (max-width:700px){ .results-grid{grid-template-columns:1fr;} }
+
+  .result-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface);
+  }
+  .result-card.matches{border-top:3px solid #00838F;}
+  .result-card.nomatches{border-top:3px solid #C0392B;}
+
+  .table-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:var(--space-sm);flex-wrap:wrap;gap:8px;
+  }
+  .table-title{font-weight:700;font-size:15px;color:var(--on-surface);}
+
+  .badge{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+    background:rgba(0,131,143,0.12);color:#00838F;
+  }
+  .badge.badge-alt{
+    background:rgba(192,57,43,0.12);color:#C0392B;
+  }
+
+  .list-output{
+    width:100%;min-height:180px;resize:vertical;
+    padding:12px;border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);color:var(--on-surface);
+    font-size:13px;font-family:inherit;line-height:1.5;
+    box-sizing:border-box;margin-bottom:10px;
+  }
+
+  .btn-sm{
+    padding:6px 12px;font-size:13px;
+  }
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Comparador de Series</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Herramientas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Comparador de <span>Series</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">compare_arrows</span> Compara series IMEI / ICCID entre dos listas</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">difference</span></div>
+        <div>
+          <h3 style="margin:0">Pega tus listas y compara</h3>
+          <p>Pega las series separadas por comas en cada columna. Soporta miles de caracteres sin problema.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Ingresa las series</h3>
+        </div>
+
+        <div class="columns-grid">
+          <div class="input-card">
+            <label for="col1" class="input-label">Columna 1</label>
+            <textarea id="col1" class="series-input" placeholder="8952020026171962009, 8952020026171962074, ..."></textarea>
+            <div class="stat-desc" id="count1">0 elementos detectados</div>
+          </div>
+          <div class="input-card">
+            <label for="col2" class="input-label">Columna 2</label>
+            <textarea id="col2" class="series-input" placeholder="8952020026171962009, 8952020026171962074, ..."></textarea>
+            <div class="stat-desc" id="count2">0 elementos detectados</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="comparar()">
+            <span class="material-symbols-outlined" style="font-size:18px">compare_arrows</span>
+            Comparar
+          </button>
+          <button class="btn btn-outline" onclick="limpiarTodo()">
+            <span class="material-symbols-outlined" style="font-size:18px">restart_alt</span>
+            Limpiar todo
+          </button>
+        </div>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Resultados</h3>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-card matches">
+            <div class="table-header">
+              <span class="table-title">Existencias en tienda</span>
+              <span class="badge">Coincidencias: <b id="matchCount">0</b></span>
+            </div>
+            <textarea class="list-output" id="matchList" readonly></textarea>
+            <button class="btn btn-outline btn-sm" onclick="copiar('matchList')">
+              <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
+              Copiar lista
+            </button>
+          </div>
+
+          <div class="result-card nomatches">
+            <div class="table-header">
+              <span class="table-title">Ya se dieron salida</span>
+              <span class="badge badge-alt">No coincidentes: <b id="noMatchCount">0</b></span>
+            </div>
+            <textarea class="list-output" id="noMatchList" readonly></textarea>
+            <button class="btn btn-outline btn-sm" onclick="copiar('noMatchList')">
+              <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
+              Copiar lista
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function parseSeries(texto) {
+  if (!texto) return [];
+  return texto
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
+function actualizarConteo(id, countId) {
+  const val = document.getElementById(id).value;
+  const arr = parseSeries(val);
+  document.getElementById(countId).textContent = arr.length + " elementos detectados";
+}
+
+document.getElementById('col1').addEventListener('input', () => actualizarConteo('col1', 'count1'));
+document.getElementById('col2').addEventListener('input', () => actualizarConteo('col2', 'count2'));
+
+function comparar() {
+  const list1 = parseSeries(document.getElementById('col1').value);
+  const list2 = parseSeries(document.getElementById('col2').value);
+
+  const set2 = new Set(list2);
+
+  // Evitar duplicados en el resultado, preservando el orden de aparición
+  const seenMatch = new Set();
+  const seenNoMatch = new Set();
+
+  const matches = [];
+  const noMatches = [];
+
+  for (const item of list1) {
+    if (set2.has(item)) {
+      if (!seenMatch.has(item)) {
+        matches.push(item);
+        seenMatch.add(item);
+      }
+    } else {
+      if (!seenNoMatch.has(item)) {
+        noMatches.push(item);
+        seenNoMatch.add(item);
+      }
+    }
+  }
+
+  document.getElementById('matchCount').textContent = matches.length;
+  document.getElementById('noMatchCount').textContent = noMatches.length;
+
+  document.getElementById('matchList').value = matches.join('\n');
+  document.getElementById('noMatchList').value = noMatches.join('\n');
+}
+
+function limpiarTodo() {
+  document.getElementById('col1').value = '';
+  document.getElementById('col2').value = '';
+  document.getElementById('matchList').value = '';
+  document.getElementById('noMatchList').value = '';
+  document.getElementById('matchCount').textContent = '0';
+  document.getElementById('noMatchCount').textContent = '0';
+  document.getElementById('count1').textContent = '0 elementos detectados';
+  document.getElementById('count2').textContent = '0 elementos detectados';
+}
+
+function copiar(id) {
+  const el = document.getElementById(id);
+  el.select();
+  el.setSelectionRange(0, 999999999);
+  navigator.clipboard.writeText(el.value).then(() => {
+    // feedback simple sin alert intrusivo
+    const original = el.style.borderColor;
+    el.style.borderColor = '#22c55e';
+    setTimeout(() => { el.style.borderColor = original; }, 500);
+  }).catch(() => {
+    document.execCommand('copy');
+  });
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

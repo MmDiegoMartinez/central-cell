@@ -13,8 +13,8 @@ if (!isset($_GET['id'])) {
 $id = intval($_GET['id']);
 $conn = conectarBD();
 
-// Verificar si la garantía ya fue validada
-$verificar = $conn->prepare("SELECT id_validador FROM garantia WHERE id = ?");
+// Verificar si la garantía ya tiene número de ajuste
+$verificar = $conn->prepare("SELECT numero_ajuste FROM garantia WHERE id = ?");
 $verificar->execute([$id]);
 $garantia = $verificar->fetch(PDO::FETCH_ASSOC);
 
@@ -22,7 +22,7 @@ if (!$garantia) {
     die("Garantía no encontrada.");
 }
 
-if ($garantia['id_validador'] !== null) {
+if (!empty($garantia['numero_ajuste'])) {
     echo '
         <meta http-equiv="refresh" content="3;url=validador.php">
         <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
@@ -34,21 +34,17 @@ if ($garantia['id_validador'] !== null) {
             const countdown = document.getElementById("countdown");
             setInterval(() => {
                 seconds--;
-                if (seconds >= 0) {
-                    countdown.textContent = seconds;
-                }
+                if (seconds >= 0) countdown.textContent = seconds;
             }, 1000);
         </script>
     ';
     exit;
 }
 
-
-// Eliminar garantía si aún no está validada
+// Eliminar garantía si no tiene número de ajuste
 $eliminar = $conn->prepare("DELETE FROM garantia WHERE id = ?");
 $eliminar->execute([$id]);
 
-// Redireccionar de vuelta a la tabla
 header("Location: validador.php");
 exit;
 ?>

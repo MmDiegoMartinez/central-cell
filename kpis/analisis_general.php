@@ -8,122 +8,271 @@ include_once '../funciones.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Análisis Multisemana — IM & TM</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:18px;background:#f7f7f7;color:#222}
-    h1{margin-top:0}
-    .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    button.btn{background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
-    button.btn:disabled{background:#999;cursor:not-allowed}
-    table{border-collapse:collapse;width:100%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-top:12px}
-    th,td{padding:8px 6px;border:1px solid #e6e6e6;text-align:center;font-size:13px}
-    th{background:#2f6fa6;color:#fff;position:sticky;top:0;z-index:1}
-    .verde{background:#dff7df}.amarillo{background:#fff3cc}.rojo{background:#ffdad6}
-    .note{margin-top:8px;color:#333}
 
-    /* ── Secciones ── */
-    .seccion{margin-top:32px}
+  <!-- Hoja de estilos base del sistema de diseño (Material 3) -->
+  <link rel="stylesheet" href="../styles.css">
+
+  <!-- Estilos adicionales SOLO para componentes que no existen en la hoja base
+       (navbar responsive, subida de archivo, loader, tabs, tablas de desempeño con semáforo).
+       No se modifica el CSS externo. -->
+  <style>
+    /* ── Navbar horizontal con menú hamburguesa (idéntico al del Comparador de Series) ── */
+    .navbar{
+      position:sticky;top:0;z-index:50;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:var(--space-md);
+      padding:12px var(--space-lg);
+      background:var(--surface);
+      border-bottom:1px solid var(--outline-variant);
+    }
+    .navbar-brand{
+      display:flex;align-items:center;gap:10px;
+      text-decoration:none;color:var(--on-surface);
+    }
+    .navbar-brand img{border-radius:6px;}
+    .navbar-brand-text p{margin:0;line-height:1.2;}
+    .navbar-links{
+      display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    }
+    .navbar-link{
+      display:flex;align-items:center;gap:6px;
+      padding:8px 14px;border-radius:var(--radius-lg);
+      color:var(--on-surface-variant);text-decoration:none;
+      font-size:14px;font-weight:600;
+      transition:all .15s ease;
+    }
+    .navbar-link .material-symbols-outlined{font-size:20px;}
+    .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+    .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+    .navbar-toggle{display:none;}
+
+    @media (max-width:720px){
+      .navbar-links{
+        display:none;flex-direction:column;align-items:stretch;
+        position:absolute;top:100%;left:0;right:0;
+        background:var(--surface);border-bottom:1px solid var(--outline-variant);
+        padding:var(--space-sm);gap:4px;
+      }
+      .navbar-links.open{display:flex;}
+      .navbar-toggle{
+        display:flex;align-items:center;justify-content:center;
+        background:none;border:none;cursor:pointer;color:var(--on-surface);
+      }
+    }
+
+    /* ── Contenedor de controles ── */
+    .controls{
+      display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-md);
+      margin-top:var(--space-lg);
+    }
+
+    /* ── Botón de subir archivo (reemplaza la animación de carpetas) ── */
+    .file-upload{display:flex;}
+    .boton{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 18px;border-radius:var(--radius-lg);
+      background:var(--surface-container-high);
+      border:1px solid var(--outline-variant);
+      color:var(--on-surface);font-size:14px;font-weight:600;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .boton:hover{background:var(--surface-container-highest);border-color:var(--primary);}
+    .boton .material-symbols-outlined{font-size:20px;color:var(--primary);}
+
+    /* ── Mensaje / nota de estado ── */
+    .note{
+      margin-top:var(--space-md);
+      font-size:14px;color:var(--on-surface-variant);
+      min-height:20px;
+    }
+
+    /* ── Loader simple (reemplaza la animación de sol/nube) ── */
+    .loader-container{
+      display:flex;align-items:center;gap:var(--space-sm);
+      padding:var(--space-md) 0;
+      color:var(--primary);font-size:14px;font-weight:600;
+    }
+    .loader-container .material-symbols-outlined{
+      font-size:22px;animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+    /* ── Secciones IM / TM ── */
+    .seccion{
+      background:var(--surface-container-lowest);
+      border:1px solid rgba(196,197,215,0.4);
+      border-radius:var(--radius-xl);
+      padding:var(--space-xl) var(--space-2xl);
+      margin:var(--space-2xl) 0;
+      box-shadow:0 1px 2px rgba(17,28,45,0.04);
+    }
+    @media (max-width:640px){ .seccion{padding:var(--space-lg);} }
+
     .seccion-titulo{
       display:flex;align-items:center;gap:10px;
-      font-size:1.18em;font-weight:700;padding:12px 18px;
-      border-radius:10px;color:#fff;margin-bottom:4px;
+      font-size:20px;line-height:28px;font-weight:700;color:var(--on-surface);
     }
-    .titulo-im{background:linear-gradient(135deg,#f5576c,#f093fb)}
-    .titulo-tm{background:linear-gradient(135deg,#4facfe,#00b4d8)}
-    .seccion-subtitulo{font-size:.9em;color:#666;margin:2px 0 10px 4px}
+    .seccion-titulo .material-symbols-outlined{
+      font-size:26px;color:var(--primary);
+    }
+    .titulo-tm .material-symbols-outlined{color:var(--tertiary);}
+    .seccion-subtitulo{
+      margin:6px 0 var(--space-lg);
+      font-size:13px;color:var(--on-surface-variant);
+    }
 
     /* ── Tabs ── */
-    .tabs{display:flex;gap:6px;margin-bottom:-1px;flex-wrap:wrap}
-    .tab{padding:7px 16px;border-radius:8px 8px 0 0;border:1px solid #ddd;border-bottom:none;
-         cursor:pointer;background:#e9eef5;font-weight:600;font-size:13px;color:#444;transition:background .2s}
-    .tab:hover{filter:brightness(.95)}
-    .tab.active-im{background:#f5576c;color:#fff;border-color:#f5576c}
-    .tab.active-tm{background:#4facfe;color:#fff;border-color:#4facfe}
-    .tab-content{border:1px solid #ddd;border-radius:0 8px 8px 8px;padding:10px;background:#fff}
+    .tabs{display:flex;gap:8px;border-bottom:1px solid var(--outline-variant);margin-bottom:var(--space-lg);}
+    .tab{
+      display:flex;align-items:center;gap:6px;
+      padding:10px 16px;font-size:13px;font-weight:600;
+      color:var(--on-surface-variant);cursor:pointer;
+      border-bottom:2px solid transparent;
+      transition:color .15s ease, border-color .15s ease;
+    }
+    .tab .material-symbols-outlined{font-size:18px;}
+    .tab:hover{color:var(--primary);}
+    .tab.active-im{color:var(--primary);border-bottom-color:var(--primary);}
+    .tab.active-tm{color:var(--tertiary);border-bottom-color:var(--tertiary);}
+
+    /* ── Tablas de desempeño (semáforo) ── */
+    .tab-content{overflow-x:auto;}
+    .tab-content table{width:100%;border-collapse:collapse;font-size:13px;}
+    .tab-content thead th{
+      text-align:left;padding:10px 12px;white-space:nowrap;
+      background:var(--surface-container-high);
+      color:var(--on-surface-variant);
+      font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+      border-bottom:1px solid var(--outline-variant);
+    }
+    .tab-content tbody td{
+      padding:9px 12px;white-space:nowrap;
+      border-bottom:1px solid var(--outline-variant);
+      color:var(--on-surface);
+    }
+    .tab-content tbody tr.verde   { background:rgba(0,107,95,0.07); }
+    .tab-content tbody tr.amarillo{ background:rgba(196,130,15,0.09); }
+    .tab-content tbody tr.rojo    { background:rgba(186,26,26,0.06); }
+    .tab-content tbody tr.verde    td:first-child{border-left:3px solid var(--secondary);}
+    .tab-content tbody tr.amarillo td:first-child{border-left:3px solid #c4820f;}
+    .tab-content tbody tr.rojo     td:first-child{border-left:3px solid var(--error);}
   </style>
-  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li>
-          <a href="index.php" class="menu-link">
-            <span class="logo-container">
-              <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25"/>
-            </span>
-            Home
-          </a>
-        </li>
-      </ul>
+
+<!-- ===================== NAVBAR HORIZONTAL CON MENÚ HAMBURGUESA ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Analizador Multisemana — IM &amp; TM</p>
     </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
   </nav>
 </header>
 
-<div class="container">
-  <h1>Analizador Multisemana — IM & TM</h1>
+<div class="main" style="margin-left:0;">
+  <div class="container">
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="fileInput" type="file" accept=".xlsx,.xls" style="display:none;" />
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
+    <div class="lesson">
+      <div class="lesson-body">
+        <div class="eyebrow">Comparativo semanal</div>
+        <h1 class="text-headline-lg" style="margin:8px 0 4px;">Analizador Multisemana — IM &amp; TM</h1>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0;">
+          Sube tu archivo Excel de ventas para comparar el desempeño semanal contra la meta de cada departamento
+        </p>
+
+        <div class="controls">
+          <div class="file-upload">
+            <input id="fileInput" type="file" accept=".xlsx,.xls" style="display:none;" />
+            <button class="boton" id="fileButton" type="button">
+              <span class="material-symbols-outlined">attach_file</span>
+              <span class="text">Seleccionar Archivo</span>
+            </button>
+          </div>
+          <button id="processBtn" class="btn btn-primary" disabled>
+            <span class="material-symbols-outlined">play_arrow</span>
+            Procesar
+          </button>
+          <button id="downloadBtn" class="btn btn-secondary" disabled>
+            <span class="material-symbols-outlined">download</span>
+            Descargar Excel
+          </button>
         </div>
-        <div class="active_line"></div>
-        <span class="text">Seleccionar Archivo</span>
-      </button>
+
+        <div id="mensajes" class="note"></div>
+
+        <div id="loader" class="loader-container" style="display:none;">
+          <span class="material-symbols-outlined">progress_activity</span>
+          <span>Procesando archivo...</span>
+        </div>
+      </div>
     </div>
-    <button id="processBtn" class="btn" disabled>Procesar</button>
-    <button id="downloadBtn" class="btn" disabled>⬇ Descargar Excel</button>
+
+    <!-- ── INNOVACIÓN MÓVIL ── -->
+    <div class="seccion" id="seccionIM" style="display:none">
+      <div class="seccion-titulo titulo-im">
+        <span class="material-symbols-outlined">smartphone</span>
+        Innovación Móvil — Accesorios
+      </div>
+      <p class="seccion-subtitulo">Comparativo semanal vs meta IM · Verde ≥100% · Amarillo ≥70% · Rojo &lt;70%</p>
+      <div class="tabs">
+        <div class="tab active-im" id="tabIM-vend" onclick="mostrarTab('IM','vend',this)">
+          <span class="material-symbols-outlined">person</span> Vendedores
+        </div>
+        <div class="tab" id="tabIM-suc" onclick="mostrarTab('IM','suc',this)">
+          <span class="material-symbols-outlined">storefront</span> Sucursales
+        </div>
+      </div>
+      <div class="tab-content">
+        <div id="tablaVendIM"></div>
+        <div id="tablaSucIM" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- ── TECNOLOGÍA MÓVIL ── -->
+    <div class="seccion" id="seccionTM" style="display:none">
+      <div class="seccion-titulo titulo-tm">
+        <span class="material-symbols-outlined">devices</span>
+        Tecnología Móvil — Telefonía
+      </div>
+      <p class="seccion-subtitulo">Comparativo semanal vs meta TM · Almacén y días efectivos tomados de IM</p>
+      <div class="tabs">
+        <div class="tab active-tm" id="tabTM-vend" onclick="mostrarTab('TM','vend',this)">
+          <span class="material-symbols-outlined">person</span> Vendedores
+        </div>
+        <div class="tab" id="tabTM-suc" onclick="mostrarTab('TM','suc',this)">
+          <span class="material-symbols-outlined">storefront</span> Sucursales
+        </div>
+      </div>
+      <div class="tab-content">
+        <div id="tablaVendTM"></div>
+        <div id="tablaSucTM" style="display:none"></div>
+      </div>
+    </div>
+
   </div>
 
-  <div id="mensajes" class="note"></div>
-
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-    <span class="sun sunshine"></span><span class="sun"></span>
-    <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-  </div>
-
-  <!-- ── INNOVACIÓN MÓVIL ── -->
-  <div class="seccion" id="seccionIM" style="display:none">
-    <div class="seccion-titulo titulo-im">📱 Innovación Móvil — Accesorios</div>
-    <p class="seccion-subtitulo">Comparativo semanal vs meta IM · Verde ≥100% · Amarillo ≥70% · Rojo &lt;70%</p>
-    <div class="tabs">
-      <div class="tab active-im" id="tabIM-vend" onclick="mostrarTab('IM','vend',this)">👤 Vendedores</div>
-      <div class="tab"           id="tabIM-suc"  onclick="mostrarTab('IM','suc',this)">🏪 Sucursales</div>
-    </div>
-    <div class="tab-content">
-      <div id="tablaVendIM"></div>
-      <div id="tablaSucIM"  style="display:none"></div>
-    </div>
-  </div>
-
-  <!-- ── TECNOLOGÍA MÓVIL ── -->
-  <div class="seccion" id="seccionTM" style="display:none">
-    <div class="seccion-titulo titulo-tm">📲 Tecnología Móvil — Telefonía</div>
-    <p class="seccion-subtitulo">Comparativo semanal vs meta TM · Almacén y días efectivos tomados de IM</p>
-    <div class="tabs">
-      <div class="tab active-tm" id="tabTM-vend" onclick="mostrarTab('TM','vend',this)">👤 Vendedores</div>
-      <div class="tab"           id="tabTM-suc"  onclick="mostrarTab('TM','suc',this)">🏪 Sucursales</div>
-    </div>
-    <div class="tab-content">
-      <div id="tablaVendTM"></div>
-      <div id="tablaSucTM"  style="display:none"></div>
-    </div>
-  </div>
+  
 </div>
 
 <script>
-/* ══════════════════════════════════════════════════
-   METAS desde PHP (BD)
-══════════════════════════════════════════════════ */
+
 const METAS_IM = <?php echo json_encode(obtenerMetasTiendas('IM'), JSON_PRETTY_PRINT); ?> || {};
 const METAS_TM = <?php echo json_encode(obtenerMetasTiendas('TM'), JSON_PRETTY_PRINT); ?> || {};
 
@@ -159,9 +308,7 @@ function mostrarTab(depto, panel, el){
   el.classList.add(activeCls);
 }
 
-/* ══════════════════════════════════════════════════
-   HELPERS
-══════════════════════════════════════════════════ */
+
 function safeCell(row,i){ return (i!==null&&i!==undefined&&row[i]!==undefined&&row[i]!==null)?row[i]:""; }
 function toNumber(x){ if(!x&&x!==0)return 0; const n=parseFloat(String(x).replace(/\$/g,'').replace(/,/g,'').trim()); return isNaN(n)?0:n; }
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -216,9 +363,7 @@ function niceWeekLabel(key){
   return `${pad(s.getDate())}/${pad(s.getMonth()+1)}/${s.getFullYear()} — ${pad(e.getDate())}/${pad(e.getMonth()+1)}/${e.getFullYear()}`;
 }
 
-/* ══════════════════════════════════════════════════
-   LECTURA DEL ARCHIVO
-══════════════════════════════════════════════════ */
+
 function readFile(file){
   mensajes.innerText='Leyendo archivo...';
   document.getElementById('loader').style.display='flex';
@@ -275,11 +420,7 @@ function readFile(file){
   reader.readAsArrayBuffer(file);
 }
 
-/* ══════════════════════════════════════════════════
-   PROCESAR TODAS LAS SEMANAS DE UN DEPARTAMENTO
-   diasIMRef  : { weekKey → vendedoresMap }  → modo TM
-   outMapIM   : objeto donde se escribe el mapa IM  → modo IM
-══════════════════════════════════════════════════ */
+
 function processWeeks(allRecords, METAS, diasIMRef, outMapIM){
   const sellers={}, stores={};
 
@@ -331,12 +472,7 @@ function processWeeks(allRecords, METAS, diasIMRef, outMapIM){
     const vendedoresArray=[];
 
     if(diasIMRef){
-      /* ══════════════ MODO TM ══════════════
-         Fuente de verdad = mapa de IM en esta semana.
-         · Almacén asignado → el que IM determinó.
-         · Días efectivos   → días en IM.
-         · Ventas           → lo que vendió en TM (0 si no vendió).
-         Todos los vendedores de IM aparecen en TM.          */
+     
       const mapIM=diasIMRef[wk]||{};
       Object.entries(mapIM).forEach(([vendedor,infoIM])=>{
         const totalTM = vendedoresMap[vendedor] ? vendedoresMap[vendedor].total : 0;
@@ -409,9 +545,7 @@ function processWeeks(allRecords, METAS, diasIMRef, outMapIM){
   return {sellers, stores};
 }
 
-/* ══════════════════════════════════════════════════
-   RENDER TABLAS
-══════════════════════════════════════════════════ */
+
 function buildAndRenderTables(){
   /* IM */
   document.getElementById('seccionIM').style.display='';
@@ -455,9 +589,7 @@ function buildTable(byWeek){
   return {html:html+'</tbody></table>', rows:exportRows};
 }
 
-/* ══════════════════════════════════════════════════
-   EXPORT — 4 hojas Excel
-══════════════════════════════════════════════════ */
+
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expVendIM), 'Vendedores IM');
@@ -466,14 +598,15 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expSucTM),  'Sucursales TM');
   XLSX.writeFile(wb,'Resultados_Multisemana_IM_TM.xlsx');
 }
+</script>
 
-/* ── Menú hamburguesa ── */
-document.getElementById('menu-check').addEventListener('change',function(){
-  const m=document.getElementById('nav-menu');
-  m.style.opacity=this.checked?'1':'0';
-  m.style.visibility=this.checked?'visible':'hidden';
-  m.style.pointerEvents=this.checked?'auto':'none';
-});
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
 </script>
 </body>
 </html>

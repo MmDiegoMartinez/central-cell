@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validador de Códigos Promocionales</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #f4f7f9;
+    --surface: #ffffff;
+    --surface2: #edf1f5;
+    --border: #dde3ec;
+    --muted: #64748b;
+    --text: #0f172a;
+    --primary: #155e75;
+    --primary-light: #0ea5e9;
+    --accent: #0F5476;
+    --accent-hover: #0c4260;
+    --valid: #0e7a4f;
+    --invalid: #c0172f;
+    --warn-color: #92580a;
+    --valid-bg: #f0faf5;
+    --valid-border: #a7f3d0;
+    --invalid-bg: #fff5f6;
+    --invalid-border: #fecdd3;
+    --warn-bg: #fffbeb;
+    --warn-border: #fde68a;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
+    --shadow-md: 0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.05);
+    --shadow-accent: 0 8px 24px rgba(15,84,118,0.22);
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --transition: 220ms cubic-bezier(.2,.9,.2,1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Decorative top bar */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
+    z-index: 100;
+  }
+
+  /* Subtle dot grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(15,84,118,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 52px 28px 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .header-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(145deg, var(--accent) 0%, var(--primary-light) 100%);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .header-text h1 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .header-text h1 span {
+    color: var(--accent);
+  }
+
+  .header-text p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-text p::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 2px;
+    background: var(--primary-light);
+    border-radius: 2px;
+  }
+
+  /* ── Upload cards ── */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 700px) {
+    .upload-grid { grid-template-columns: 1fr; }
+  }
+
+  .upload-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .upload-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* Left accent stripe */
+  .upload-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--primary-light), var(--accent));
+    border-radius: 3px 0 0 3px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-card.loaded::before { opacity: 1; }
+  .upload-card.loaded {
+    border-color: rgba(14,165,233,0.35);
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-label {
+    font-size: 0.64rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.14em;
+    color: var(--primary);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-label span {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--primary-light));
+    color: white;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(15,84,118,0.3);
+  }
+
+  .card-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+
+  .card-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.66rem;
+    color: var(--muted);
+    margin-bottom: 18px;
+    line-height: 1.7;
+  }
+
+  .file-input-wrapper input[type="file"] { display: none; }
+
+  .file-btn {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .file-btn:hover {
+    border-color: var(--primary-light);
+    color: var(--accent);
+    background: rgba(14,165,233,0.05);
+  }
+
+  .file-btn.has-file {
+    border-style: solid;
+    border-color: var(--primary-light);
+    color: var(--primary);
+    background: rgba(14,165,233,0.07);
+    font-weight: 500;
+  }
+
+  .file-name {
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 14px;
+  }
+
+  /* ── Action row ── */
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 40px;
+  }
+
+  .btn-validate {
+    padding: 13px 34px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .btn-validate:hover {
+    background: linear-gradient(135deg, var(--accent-hover) 0%, #0284c7 100%);
+    box-shadow: 0 12px 28px rgba(15,84,118,0.3);
+    transform: translateY(-2px);
+  }
+
+  .btn-validate:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .status-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  /* ── Summary cards ── */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 700px) {
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+  }
+
+  .summary-card:nth-child(1)::after { background: var(--border); }
+  .summary-card:nth-child(2)::after { background: var(--valid); }
+  .summary-card:nth-child(3)::after { background: var(--invalid); }
+  .summary-card:nth-child(4)::after { background: var(--primary-light); }
+
+  .summary-card .s-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .summary-card .s-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .s-value.total  { color: var(--text); }
+  .s-value.valid  { color: var(--valid); }
+  .s-value.invalid { color: var(--invalid); }
+  .s-value.warn   { color: var(--accent); }
+
+  /* ── Results section ── */
+  .results-section { display: none; }
+
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.13em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .table-wrapper {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .filter-btn {
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    letter-spacing: 0.03em;
+  }
+
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(15,84,118,0.06);
+    font-weight: 500;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: var(--surface2);
+  }
+
+  thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1.5px solid var(--border);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr.row-valid   { background: var(--valid-bg); }
+  tbody tr.row-invalid { background: var(--invalid-bg); }
+  tbody tr.row-warn    { background: var(--warn-bg); }
+
+  tbody tr:hover { filter: brightness(0.97); }
+
+  td {
+    padding: 11px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.71rem;
+    vertical-align: middle;
+    color: var(--text);
+  }
+
+  td.currency { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .badge.valid {
+    background: var(--valid-bg);
+    color: var(--valid);
+    border: 1px solid var(--valid-border);
+  }
+
+  .badge.invalid {
+    background: var(--invalid-bg);
+    color: var(--invalid);
+    border: 1px solid var(--invalid-border);
+  }
+
+  .badge.warn {
+    background: var(--warn-bg);
+    color: var(--warn-color);
+    border: 1px solid var(--warn-border);
+  }
+
+  .reason-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.63rem;
+    color: var(--invalid);
+    max-width: 240px;
+    line-height: 1.5;
+    white-space: normal;
+  }
+
+  .reason-text.warn { color: var(--warn-color); }
+
+  /* ── Progress bar ── */
+  .progress-bar-wrapper {
+    background: var(--border);
+    border-radius: 4px;
+    height: 3px;
+    overflow: hidden;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--primary-light));
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: none;
+    width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.55s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Empty state ── */
+  .empty-state {
+    padding: 64px 40px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 2;
+  }
+
+  .empty-icon { font-size: 2.4rem; margin-bottom: 12px; opacity: 0.25; }
+
+  /* ── Alert ── */
+  .alert {
+    padding: 13px 18px;
+    border-radius: var(--radius-md);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .alert.error {
+    background: var(--invalid-bg);
+    border: 1.5px solid var(--invalid-border);
+    color: var(--invalid);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">🏷️</div>
+    <div class="header-text">
+      <h1>Validador de <span>Códigos Promocionales</span></h1>
+      <p>CARGA LOS 3 ARCHIVOS EXCEL → EJECUTA VALIDACIÓN → REVISA RESULTADOS</p>
+    </div>
+  </div>
+
+  <div id="alert-box" class="alert error"></div>
+
+  <div class="upload-grid">
+    <!-- Card 1 -->
+    <div class="upload-card" id="card-promo">
+      <div class="card-label"><span>01</span> Códigos Promocionales</div>
+      <div class="card-title">Archivo de Promos</div>
+      <div class="card-desc">Col B = Almacén · Col C = No. Mov.</div>
+      <div class="file-input-wrapper">
+        <input type="file" id="file-promo" accept=".xlsx,.xls">
+        <label class="file-btn" for="file-promo" id="lbl-promo">
+          <span>📂</span> Seleccionar archivo
+        </label>
+      </div>
+      <div class="file-name" id="name-promo"></div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="upload-card" id="card-ventas">
+      <div class="card-label"><span>02</span> Ventas</div>
+      <div class="card-title">Archivo de Ventas</div>
+      <div class="card-desc">Col A = Almacen · Col E = NoMov · Col L = ProdConcat · Col S = TotalVenta · Col AR = Métodos de Pago</div>
+      <div class="file-input-wrapper">
+        <input type="file" id="file-ventas" accept=".xlsx,.xls">
+        <label class="file-btn" for="file-ventas" id="lbl-ventas">
+          <span>📂</span> Seleccionar archivo
+        </label>
+      </div>
+      <div class="file-name" id="name-ventas"></div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="upload-card" id="card-exist">
+      <div class="card-label"><span>03</span> Existencias</div>
+      <div class="card-title">Archivo de Existencias</div>
+      <div class="card-desc">Col A = Almacen · Col C = ProdConcat · Col N = Nombre · Col Q = Publico General</div>
+      <div class="file-input-wrapper">
+        <input type="file" id="file-exist" accept=".xlsx,.xls">
+        <label class="file-btn" for="file-exist" id="lbl-exist">
+          <span>📂</span> Seleccionar archivo
+        </label>
+      </div>
+      <div class="file-name" id="name-exist"></div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-validate" id="btn-run" disabled>
+      <span class="spinner" id="spinner"></span>
+      <span id="btn-text">▶ Ejecutar Validación</span>
+    </button>
+    <span class="status-msg" id="status-msg">Carga los 3 archivos para continuar</span>
+  </div>
+
+  <div class="progress-bar-wrapper" id="progress-wrapper">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="results-section">
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="s-label">Total tickets</div>
+        <div class="s-value total" id="sum-total">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">✅ Válidos</div>
+        <div class="s-value valid" id="sum-valid">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">❌ Inválidos</div>
+        <div class="s-value invalid" id="sum-invalid">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">% Válidos</div>
+        <div class="s-value warn" id="sum-pct">0%</div>
+      </div>
+    </div>
+
+    <div class="section-title">Resultados detallados</div>
+
+    <div class="table-wrapper">
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="valid">✅ Válidos</button>
+        <button class="filter-btn" data-filter="invalid">❌ Inválidos</button>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table id="result-table">
+          <thead>
+            <tr>
+              <th>Almacén</th>
+              <th>No. Mov.</th>
+              <th style="text-align:right">Total Original</th>
+              <th style="text-align:right">Total Pagado</th>
+              <th style="text-align:right">Total Teléfonos</th>
+              <th style="text-align:right">Cód. Promo</th>
+              <th>Resultado</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="empty-icon">🔍</div>
+        No hay registros con ese filtro
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── XLSX mini-parser (no external libs) ──────────────────────────────────────
+// Uses the browser's native FileReader + a minimal OOXML reader built from scratch.
+// We parse binary Excel via the ZIP structure (xlsx = zip of XML files).
+
+// ─── ZIP / XLSX reader ───────────────────────────────────────────────────────
+async function parseXLSX(file) {
+  const buf = await readFileBuffer(file);
+  const zip = unzip(new Uint8Array(buf));
+  const sharedStrings = parseSharedStrings(zip);
+  const workbook = parseWorkbookRels(zip);
+  const sheetName = Object.keys(workbook)[0];
+  const sheetPath = workbook[sheetName];
+  const sheetXML = new TextDecoder().decode(zip[sheetPath] || zip['xl/' + sheetPath]);
+  return parseSheet(sheetXML, sharedStrings);
+}
+
+function readFileBuffer(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = e => res(e.target.result);
+    fr.onerror = rej;
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+// ── Minimal ZIP decompressor using DecompressionStream ──────────────────────
+function unzip(data) {
+  const files = {};
+  let i = 0;
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  while (i < data.length - 4) {
+    const sig = view.getUint32(i, true);
+    if (sig === 0x04034b50) {
+      const flags = view.getUint16(i + 6, true);
+      const method = view.getUint16(i + 8, true);
+      const compSize = view.getUint32(i + 18, true);
+      const uncompSize = view.getUint32(i + 22, true);
+      const fnLen = view.getUint16(i + 26, true);
+      const exLen = view.getUint16(i + 28, true);
+      const fnBytes = data.slice(i + 30, i + 30 + fnLen);
+      const fname = new TextDecoder().decode(fnBytes);
+      const dataStart = i + 30 + fnLen + exLen;
+      const compData = data.slice(dataStart, dataStart + compSize);
+      if (method === 0) {
+        files[fname] = compData;
+      } else if (method === 8) {
+        files[fname] = inflateRaw(compData, uncompSize);
+      }
+      i = dataStart + compSize;
+    } else {
+      i++;
+    }
+  }
+  return files;
+}
+
+// ── Inflate (DEFLATE) implementation ────────────────────────────────────────
+function inflateRaw(data, expectedSize) {
+  try {
+    // Use pako-style manual inflate for browser
+    return inflateDEFLATE(data);
+  } catch(e) {
+    return data; // fallback raw
+  }
+}
+
+function inflateDEFLATE(input) {
+  // Huffman inflate — simplified for Excel XML files
+  const out = [];
+  let ip = 0, op = 0;
+  const bits = [];
+  let bitBuf = 0, bitLen = 0;
+
+  function readBit() {
+    if (bitLen === 0) {
+      bitBuf = input[ip++];
+      bitLen = 8;
+    }
+    const b = bitBuf & 1;
+    bitBuf >>= 1; bitLen--;
+    return b;
+  }
+
+  function readBits(n) {
+    let v = 0;
+    for (let i = 0; i < n; i++) v |= readBit() << i;
+    return v;
+  }
+
+  function buildTable(lens, n) {
+    const counts = new Array(16).fill(0);
+    for (let i = 0; i < n; i++) counts[lens[i]]++;
+    const code = new Array(16).fill(0);
+    for (let i = 1; i < 16; i++) code[i] = (code[i-1] + counts[i-1]) << 1;
+    const table = {};
+    for (let i = 0; i < n; i++) {
+      if (lens[i]) {
+        const c = code[lens[i]]++;
+        let key = '';
+        for (let j = lens[i]-1; j >= 0; j--) key += (c >> j) & 1;
+        table[key] = i;
+      }
+    }
+    return table;
+  }
+
+  function readCode(table) {
+    let key = '';
+    for (let len = 1; len <= 15; len++) {
+      key += readBit();
+      if (key in table) return table[key];
+    }
+    return -1;
+  }
+
+  // Fixed Huffman tables
+  const fixedLitLen = [];
+  for (let i=0;i<144;i++) fixedLitLen.push(8);
+  for (let i=144;i<256;i++) fixedLitLen.push(9);
+  for (let i=256;i<280;i++) fixedLitLen.push(7);
+  for (let i=280;i<288;i++) fixedLitLen.push(8);
+  const fixedDist = new Array(32).fill(5);
+
+  const lenBase=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+  const lenExtra=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  const distBase=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+  const distExtra=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+
+  const outBuf = new Uint8Array(1 << 20); // 1MB initial
+
+  function ensureSpace(n) {
+    while (op + n > outBuf.length) {
+      const bigger = new Uint8Array(outBuf.length * 2);
+      bigger.set(outBuf);
+      // reassign via closure trick
+      outBufRef[0] = bigger;
+    }
+  }
+
+  const outBufRef = [outBuf];
+
+  let bfinal = 0;
+  while (!bfinal) {
+    bfinal = readBit();
+    const btype = readBits(2);
+
+    if (btype === 0) {
+      // Stored block
+      bitBuf = 0; bitLen = 0;
+      const len = input[ip] | (input[ip+1] << 8);
+      ip += 4;
+      for (let i = 0; i < len; i++) {
+        if (op >= outBufRef[0].length) {
+          const bigger = new Uint8Array(outBufRef[0].length * 2);
+          bigger.set(outBufRef[0]);
+          outBufRef[0] = bigger;
+        }
+        outBufRef[0][op++] = input[ip++];
+      }
+    } else {
+      let litTable, distTable;
+      if (btype === 1) {
+        litTable = buildTable(fixedLitLen, 288);
+        distTable = buildTable(fixedDist, 32);
+      } else {
+        const hlit = readBits(5) + 257;
+        const hdist = readBits(5) + 1;
+        const hclen = readBits(4) + 4;
+        const clOrder = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+        const clLens = new Array(19).fill(0);
+        for (let i = 0; i < hclen; i++) clLens[clOrder[i]] = readBits(3);
+        const clTable = buildTable(clLens, 19);
+        const lens = [];
+        while (lens.length < hlit + hdist) {
+          const sym = readCode(clTable);
+          if (sym <= 15) { lens.push(sym); }
+          else if (sym === 16) { const rep = readBits(2)+3; for(let i=0;i<rep;i++) lens.push(lens[lens.length-1]); }
+          else if (sym === 17) { const rep = readBits(3)+3; for(let i=0;i<rep;i++) lens.push(0); }
+          else { const rep = readBits(7)+11; for(let i=0;i<rep;i++) lens.push(0); }
+        }
+        litTable = buildTable(lens.slice(0, hlit), hlit);
+        distTable = buildTable(lens.slice(hlit), hdist);
+      }
+
+      while (true) {
+        const sym = readCode(litTable);
+        if (sym === 256) break;
+        if (sym < 256) {
+          if (op >= outBufRef[0].length) {
+            const bigger = new Uint8Array(outBufRef[0].length * 2);
+            bigger.set(outBufRef[0]);
+            outBufRef[0] = bigger;
+          }
+          outBufRef[0][op++] = sym;
+        } else {
+          const li = sym - 257;
+          const len = lenBase[li] + readBits(lenExtra[li]);
+          const di = readCode(distTable);
+          const dist = distBase[di] + readBits(distExtra[di]);
+          let src = op - dist;
+          for (let i = 0; i < len; i++) {
+            if (op >= outBufRef[0].length) {
+              const bigger = new Uint8Array(outBufRef[0].length * 2);
+              bigger.set(outBufRef[0]);
+              outBufRef[0] = bigger;
+            }
+            outBufRef[0][op++] = outBufRef[0][src++];
+          }
+        }
+      }
+    }
+  }
+
+  return outBufRef[0].slice(0, op);
+}
+
+function parseSharedStrings(zip) {
+  const key = Object.keys(zip).find(k => k.includes('sharedStrings'));
+  if (!key) return [];
+  const xml = new TextDecoder().decode(zip[key]);
+  const strs = [];
+  const re = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) {
+    const inner = m[1];
+    // extract all <t> values, handle xml:space
+    const tRe = /<t(?:[^>]*)>([\s\S]*?)<\/t>/g;
+    let tm, val = '';
+    while ((tm = tRe.exec(inner)) !== null) val += tm[1];
+    strs.push(xmlDecode(val));
+  }
+  return strs;
+}
+
+function parseWorkbookRels(zip) {
+  const relKey = Object.keys(zip).find(k => k.includes('workbook.xml.rels'));
+  if (!relKey) return { Sheet1: 'xl/worksheets/sheet1.xml' };
+  const xml = new TextDecoder().decode(zip[relKey]);
+  const rels = {};
+  const re = /Id="([^"]+)"[^>]*Target="([^"]+)"/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) rels[m[1]] = m[2];
+
+  const wbKey = Object.keys(zip).find(k => k.match(/xl\/workbook\.xml$/));
+  if (!wbKey) return { Sheet1: 'xl/worksheets/sheet1.xml' };
+  const wbXml = new TextDecoder().decode(zip[wbKey]);
+  const result = {};
+  const shRe = /<sheet [^>]*name="([^"]*)"[^>]*r:id="([^"]+)"/g;
+  while ((m = shRe.exec(wbXml)) !== null) {
+    const target = rels[m[2]];
+    if (target) {
+      const full = target.startsWith('xl/') ? target : 'xl/' + target;
+      result[m[1]] = full;
+    }
+  }
+  if (!Object.keys(result).length) return { Sheet1: 'xl/worksheets/sheet1.xml' };
+  return result;
+}
+
+function parseSheet(xml, sharedStrings) {
+  const rows = [];
+  const rowRe = /<row[^>]*>([\s\S]*?)<\/row>/g;
+  const cellRe = /<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+  const valRe = /<v>([\s\S]*?)<\/v>/;
+
+  let rowMatch;
+  while ((rowMatch = rowRe.exec(xml)) !== null) {
+    const rowNum = parseInt(rowMatch[0].match(/r="(\d+)"/)?.[1] || '1');
+    const cells = {};
+    let cellMatch;
+    const rowXML = rowMatch[1];
+    const localCellRe = /<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+    while ((cellMatch = localCellRe.exec(rowXML)) !== null) {
+      const col = cellMatch[1];
+      const attrs = cellMatch[3];
+      const inner = cellMatch[4];
+      const isStr = /t="s"/.test(attrs);
+      const isInline = /t="inlineStr"/.test(attrs);
+      let val = '';
+      if (isInline) {
+        const tv = inner.match(/<t[^>]*>([\s\S]*?)<\/t>/);
+        val = tv ? xmlDecode(tv[1]) : '';
+      } else {
+        const vm = inner.match(/<v>([\s\S]*?)<\/v>/);
+        if (vm) {
+          val = isStr ? (sharedStrings[parseInt(vm[1])] ?? '') : vm[1];
+        }
+      }
+      cells[col] = val;
+    }
+    rows.push({ rowNum, cells });
+  }
+  return rows;
+}
+
+function xmlDecode(s) {
+  return s
+    .replace(/&amp;/g,'&')
+    .replace(/&lt;/g,'<')
+    .replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"')
+    .replace(/&apos;/g,"'")
+    .replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n));
+}
+
+// ── Column helpers ────────────────────────────────────────────────────────────
+function colToNum(col) {
+  let n = 0;
+  for (let c of col) n = n * 26 + (c.charCodeAt(0) - 64);
+  return n; // 1-based
+}
+
+function numToCol(n) {
+  let s = '';
+  while (n > 0) { let r = (n-1) % 26; s = String.fromCharCode(65+r) + s; n = Math.floor((n-1)/26); }
+  return s;
+}
+
+function getCellByColNum(cells, n) {
+  return cells[numToCol(n)] || '';
+}
+
+// ── UI state ──────────────────────────────────────────────────────────────────
+let files = { promo: null, ventas: null, exist: null };
+
+function updateUI() {
+  const allLoaded = files.promo && files.ventas && files.exist;
+  document.getElementById('btn-run').disabled = !allLoaded;
+  document.getElementById('status-msg').textContent = allLoaded
+    ? 'Listo para validar'
+    : 'Carga los 3 archivos para continuar';
+}
+
+function setupFileInput(id, key, cardId, lblId, nameId) {
+  document.getElementById(id).addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    files[key] = file;
+    document.getElementById(nameId).textContent = file.name;
+    document.getElementById(lblId).classList.add('has-file');
+    document.getElementById(lblId).innerHTML = '<span>✅</span> ' + file.name.substring(0, 28);
+    document.getElementById(cardId).classList.add('loaded');
+    updateUI();
+  });
+}
+
+setupFileInput('file-promo','promo','card-promo','lbl-promo','name-promo');
+setupFileInput('file-ventas','ventas','card-ventas','lbl-ventas','name-ventas');
+setupFileInput('file-exist','exist','card-exist','lbl-exist','name-exist');
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+let allResults = [];
+let currentFilter = 'all';
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderTable(allResults, currentFilter);
+  });
+});
+
+// ── MAIN LOGIC ────────────────────────────────────────────────────────────────
+document.getElementById('btn-run').addEventListener('click', async () => {
+  hideAlert();
+  setLoading(true);
+  setProgress(5);
+
+  try {
+    const [promoRows, ventasRows, existRows] = await Promise.all([
+      parseXLSX(files.promo),
+      parseXLSX(files.ventas),
+      parseXLSX(files.exist),
+    ]);
+
+    setProgress(30);
+    setStatus('Procesando datos...');
+
+    const results = validate(promoRows, ventasRows, existRows, (p) => setProgress(30 + p * 0.65));
+
+    setProgress(100);
+    allResults = results;
+    renderSummary(results);
+    renderTable(results, 'all');
+    document.getElementById('results-section').style.display = 'block';
+    document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch(err) {
+    showAlert('Error al procesar los archivos: ' + err.message);
+    console.error(err);
+  }
+
+  setLoading(false);
+  setStatus('Validación completada');
+});
+
+// ── Validate ──────────────────────────────────────────────────────────────────
+function validate(promoRows, ventasRows, existRows, onProgress) {
+  // Skip header row (row 1)
+  const promoData = promoRows.filter(r => r.rowNum > 1);
+  const ventasData = ventasRows.filter(r => r.rowNum > 1);
+  const existData = existRows.filter(r => r.rowNum > 1);
+
+  // Build lookup: existencias by (almacen|prodconcat) → row
+  const existMap = new Map();
+  for (const r of existData) {
+    const almacen = norm(getCellByColNum(r.cells, 1));   // col A
+    const prod    = norm(getCellByColNum(r.cells, 3));   // col C
+    const key = almacen + '|' + prod;
+    if (!existMap.has(key)) existMap.set(key, r);
+  }
+
+  // Build ventas lookup by almacen|nomov → rows[]
+  const ventasMap = new Map();
+  for (const r of ventasData) {
+    const alm  = norm(getCellByColNum(r.cells, 1));   // col A
+    const mov  = norm(getCellByColNum(r.cells, 5));   // col E
+    const key  = alm + '|' + mov;
+    if (!ventasMap.has(key)) ventasMap.set(key, []);
+    ventasMap.get(key).push(r);
+  }
+
+  const results = [];
+  const total = promoData.length;
+
+  for (let idx = 0; idx < promoData.length; idx++) {
+    const pr = promoData[idx];
+    const almacen = norm(getCellByColNum(pr.cells, 2));  // col B
+    const nomov   = norm(getCellByColNum(pr.cells, 3));  // col C
+
+    if (!almacen && !nomov) continue; // blank row
+
+    const key = almacen + '|' + nomov;
+    const ventasLineas = ventasMap.get(key) || [];
+
+    let totalOriginal = 0;
+    let totalPagado   = 0;
+    let totalTelefonos = 0;
+    let codigoPromo   = 0;
+    let metodosStr    = '';
+    let errores       = [];
+
+    if (!ventasLineas.length) {
+      results.push({
+        almacen, nomov, totalOriginal, totalPagado, totalTelefonos,
+        codigoPromo, valido: false, warn: true,
+        motivo: 'Verifica que el rango de fechas sea correcto — no se encontraron ventas para este movimiento'
+      });
+      onProgress((idx / total) * 100);
+      continue;
+    }
+
+    // PASO 6 + 7: sumar TotalVenta y obtener métodos de pago (usar primera fila con dato)
+    for (const vr of ventasLineas) {
+      const tv = parseFloat(getCellByColNum(vr.cells, 19)) || 0;  // col S
+      totalPagado += tv;
+      const mp = getCellByColNum(vr.cells, 44);  // col AR
+      if (mp && !metodosStr) metodosStr = mp;
+    }
+
+    // REGLA 1: Crédito
+    if (/CREDITO/i.test(metodosStr)) {
+      errores.push('Contiene pago A CRÉDITO');
+    }
+
+    // PASO 7: Extraer monto código promocional
+    const promoMatch = metodosStr.match(/C[ÓO]DIGO\s+PROMOCIONAL\s*\$?([\d,]+\.?\d*)/i);
+    codigoPromo = promoMatch ? parseFloat(promoMatch[1].replace(',','')) : 0;
+
+    // PASOS 3 & 4 & 5: Para cada línea de venta buscar existencia
+    for (const vr of ventasLineas) {
+      const prodConcat = norm(getCellByColNum(vr.cells, 12));  // col L
+      const almVenta   = norm(getCellByColNum(vr.cells, 1));    // col A
+
+      const eKey = almVenta + '|' + prodConcat;
+      const eRow = existMap.get(eKey);
+
+      if (eRow) {
+        const precioPublico = parseFloat(getCellByColNum(eRow.cells, 17)) || 0;  // col Q
+        totalOriginal += precioPublico;
+
+        // PASO 5: detectar teléfonos
+        const nombre = getCellByColNum(eRow.cells, 14) || '';  // col N
+        if (
+          nombre.includes('TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL') ||
+          nombre.includes('TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS')
+        ) {
+          totalTelefonos += precioPublico;
+        }
+      }
+    }
+
+    // REGLA 2: Debe haber teléfonos
+    if (totalTelefonos === 0) {
+      errores.push('No se encontraron teléfonos en el ticket');
+    }
+
+    // REGLA 3: Descuento correcto
+    if (totalTelefonos > 0) {
+      const esperado = totalTelefonos * 0.10;
+      const diff = Math.abs(codigoPromo - esperado);
+      if (diff > 1) {
+        errores.push(`Descuento incorrecto: aplicado $${fmt(codigoPromo)}, esperado $${fmt(esperado)} (10% de $${fmt(totalTelefonos)})`);
+      }
+    }
+
+    results.push({
+      almacen, nomov, totalOriginal, totalPagado, totalTelefonos,
+      codigoPromo,
+      valido: errores.length === 0,
+      motivo: errores.join(' | ')
+    });
+
+    onProgress((idx / total) * 100);
+  }
+
+  return results;
+}
+
+function norm(s) {
+  return (s || '').toString().trim().toUpperCase();
+}
+
+function fmt(n) {
+  return Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderSummary(results) {
+  const total   = results.length;
+  const valid   = results.filter(r => r.valido).length;
+  const invalid = total - valid;
+  const pct     = total > 0 ? Math.round((valid/total)*100) : 0;
+
+  document.getElementById('sum-total').textContent   = total;
+  document.getElementById('sum-valid').textContent   = valid;
+  document.getElementById('sum-invalid').textContent = invalid;
+  document.getElementById('sum-pct').textContent     = pct + '%';
+}
+
+function renderTable(results, filter) {
+  const tbody = document.getElementById('table-body');
+  const empty = document.getElementById('empty-state');
+
+  const filtered = filter === 'valid'   ? results.filter(r => r.valido)
+                 : filter === 'invalid' ? results.filter(r => !r.valido)
+                 : results;
+
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map(r => `
+    <tr class="${r.valido ? 'row-valid' : r.warn ? 'row-warn' : 'row-invalid'}">
+      <td>${r.almacen}</td>
+      <td>${r.nomov}</td>
+      <td class="currency">$${fmt(r.totalOriginal)}</td>
+      <td class="currency">$${fmt(r.totalPagado)}</td>
+      <td class="currency">$${fmt(r.totalTelefonos)}</td>
+      <td class="currency">$${fmt(r.codigoPromo)}</td>
+      <td><span class="badge ${r.valido ? 'valid' : r.warn ? 'warn' : 'invalid'}">${r.valido ? '✓ VÁLIDO' : r.warn ? '⚠ ADVERTENCIA' : '✗ INVÁLIDO'}</span></td>
+      <td><span class="reason-text${r.warn ? ' warn' : ''}">${r.motivo || '—'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setLoading(on) {
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+  document.getElementById('btn-text').textContent   = on ? 'Procesando...' : '▶ Ejecutar Validación';
+  document.getElementById('btn-run').disabled        = on;
+  document.getElementById('progress-wrapper').style.display = on ? 'block' : 'none';
+}
+
+function setProgress(p) {
+  document.getElementById('progress-bar').style.width = p + '%';
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function showAlert(msg) {
+  const el = document.getElementById('alert-box');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+
+function hideAlert() {
+  document.getElementById('alert-box').style.display = 'none';
+}
+</script>
+</body>
+</html>

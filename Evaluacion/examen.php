@@ -54,21 +54,21 @@ function seedPreguntas(PDO $conn): void {
 
     $preguntas = [
         [
-            'texto' => '¿Cuál es la función principal del Departamento de Innovación Móvil en CentralCell?',
+            'texto' => '¿Cuál es la función principal del Departamento de Innovación y Tecnología Móvil en CentralCell?',
             'opciones' => [
                 ['A) Atender a los clientes en mostrador', 0],
-                ['B) Surtir todos los accesorios a las sucursales', 1],
+                ['B) Surtir de mercancía a las sucursales', 1],
                 ['C) Realizar mantenimiento de redes', 0],
                 ['D) Desarrollar software interno', 0],
             ],
         ],
         [
-            'texto' => '¿Qué tipo de carga proporcionan los cargadores V8?',
+            'texto' => '¿Qué se necesita para cotizar un financiamiento con PayJoy?',
             'opciones' => [
-                ['A) Carga rápida', 0],
-                ['B) Carga lenta', 0],
-                ['C) Carga normal', 1],
-                ['D) Carga ultrarrápida', 0],
+                ['A) Estados de cuenta bancarios de los últimos 6 meses', 0],
+                ['B) Tener tarjeta de crédito y comprobante de domicilio', 0],
+                ['C) Identificación oficial, una línea celular activa y una selfie', 1],
+                ['D) Tener un aval con propiedad a su nombre', 0],
             ],
         ],
         [
@@ -81,30 +81,30 @@ function seedPreguntas(PDO $conn): void {
             ],
         ],
         [
-            'texto' => '¿A qué hace referencia la dureza 9H en un Glass Full?',
+            'texto' => '¿Qué combinación permite obtener aproximadamente 15 W de potencia en un cargador?',
             'opciones' => [
-                ['A) Resistencia al agua', 0],
-                ['B) Nivel de dureza en la escala Mohs', 1],
-                ['C) Compatibilidad con dispositivos', 0],
-                ['D) Tipo de vidrio antirreflejo', 0],
+                ['A) 5V × 1A', 0],
+                ['B) 5V × 3A', 1],
+                ['C) 5V × 2A', 0],
+                ['D) 10V × 1A', 0],
             ],
         ],
         [
-            'texto' => '¿Qué significa la letra “H” en la dureza 9H de un vidrio templado?',
+            'texto' => '¿Por qué existe la lista de productos negados?',
             'opciones' => [
-                ['A) Horas de resistencia', 0],
-                ['B) Herramienta de corte', 0],
-                ['C) Dureza de un lápiz', 1],
-                ['D) Hidrorepelencia', 0],
+                ['A) Para registrar devoluciones', 0],
+                ['B) Para registrar productos dañados', 0],
+                ['C) Para dar seguimiento a productos sin existencia y evitar perder ventas', 1],
+                ['D) Para controlar garantías', 0],
             ],
         ],
         [
-            'texto' => '¿En qué sucursales se pueden cortar hidrogel de tablet hasta 12.9 pulgadas?',
+            'texto' => 'En smartphones, ¿qué gama de teléfonos manejamos en tienda?',
             'opciones' => [
-                ['A) Reforma y Bella', 1],
-                ['B) Reforma y Boon', 0],
-                ['C) Boon y Bella', 0],
-                ['D) Todas las sucursales', 0],
+                ['A) Baja, media baja y media', 1],
+                ['B) Alta, premium y de lujo', 0],
+                ['C) Solo gama alta', 0],
+                ['D) Baja, media y alta', 0],
             ],
         ],
         [
@@ -117,7 +117,7 @@ function seedPreguntas(PDO $conn): void {
             ],
         ],
         [
-            'texto' => '¿Cuál es la garantía de todos los accesorios de CentralCell?',
+            'texto' => '¿Cuál es la garantía de los productos de CentralCell?',
             'opciones' => [
                 ['A) 1 mes', 0],
                 ['B) 2 meses', 0],
@@ -280,38 +280,126 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" href="../styles.css">
     <style>
-        body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;max-width:980px;margin:0 auto;padding:24px;background:#fafafa;color:#222}
-        .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.05);margin-bottom:16px}
-        h1{margin:0 0 12px}
-        .muted{color:#6b7280}
-        .pregunta{margin:16px 0}
-        .opcion{display:flex;align-items:center;gap:8px;margin:8px 0}
-        .acciones{display:flex;gap:12px;align-items:center;margin-top:16px}
-        .btn{padding:10px 16px;border-radius:12px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
-        .btn.secondary{background:#fff;color:#111}
-        .msg{padding:10px 12px;border-radius:12px;margin:12px 0}
-        .ok{background:#ecfdf5;color:#065f46;border:1px solid #34d399}
-        .err{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5}
-        .resultado{padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0}
-        .correcta{color:#065f46}
-        .incorrecta{color:#9a3412}
-        .campo{display:flex;gap:12px;align-items:center}
-        input[type=text]{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;width:100%}
-        .topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-        .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}
-        .nota{font-size:13px}
-        .divider{height:1px;background:#e5e7eb;margin:16px 0}
-        label.req::after{content:' *';color:#dc2626}
+        /* ---------------------------------------------------
+           Estilos complementarios específicos de esta página.
+           No se toca styles.css: todo lo que falta se agrega aquí
+           reutilizando los tokens de diseño ya definidos.
+           --------------------------------------------------- */
+        .badge{
+            display:inline-flex;align-items:center;gap:6px;
+            background:var(--secondary-container);
+            color:var(--on-secondary-container);
+            padding:6px 14px;border-radius:var(--radius-full);
+            font-size:12px;font-weight:700;letter-spacing:0.03em;
+            white-space:nowrap;
+        }
+        .topbar{
+            display:flex;align-items:center;justify-content:space-between;
+            gap:var(--space-md);flex-wrap:wrap;
+            margin:var(--space-xl) 0 var(--space-md);
+        }
+        .topbar h1{margin:0;}
+
+        .msg{
+            display:flex;gap:var(--space-md);align-items:flex-start;
+            border-radius:0 var(--radius-lg) var(--radius-lg) 0;
+            padding:var(--space-md) var(--space-lg);
+            margin:0 0 var(--space-lg);font-size:14px;font-weight:600;
+        }
+        .msg.ok{
+            background:rgba(109,245,225,0.18);
+            border-left:4px solid var(--secondary);
+            color:var(--on-secondary-container);
+        }
+        .msg.err{
+            background:var(--error-container);
+            border-left:4px solid var(--error);
+            color:var(--on-error-container);
+        }
+
+        .campo{margin-bottom:6px;}
+        label.req{font-size:14px;font-weight:700;color:var(--on-surface);}
+        label.req::after{content:" *";color:var(--error);}
+
+        input#nombre{
+            width:100%;padding:12px 14px;margin:6px 0 0;
+            border:1px solid var(--outline-variant);
+            border-radius:var(--radius-lg);
+            font-family:'Inter',sans-serif;font-size:15px;
+            background:var(--surface-container-lowest);color:var(--on-surface);
+        }
+        input#nombre:focus{outline:2px solid var(--primary);outline-offset:1px;}
+
+        .divider{height:1px;background:var(--outline-variant);margin:var(--space-lg) 0;}
+
+        .pregunta{
+            padding:var(--space-lg) 0;
+            border-top:1px solid var(--outline-variant);
+        }
+        .pregunta:first-of-type{border-top:none;padding-top:var(--space-md);}
+        .pregunta strong{
+            display:block;margin-bottom:var(--space-md);
+            font-size:15px;line-height:22px;color:var(--on-surface);
+        }
+
+        label.opcion{
+            display:flex;align-items:center;gap:10px;
+            padding:10px 14px;margin-bottom:8px;
+            border:1px solid var(--outline-variant);
+            border-radius:var(--radius-lg);
+            background:var(--surface-container-low);
+            font-size:14px;color:var(--on-surface-variant);
+            cursor:pointer;transition:border-color .15s ease, background .15s ease;
+        }
+        label.opcion:hover{border-color:var(--primary);}
+        label.opcion:has(input:checked){
+            border-color:var(--primary);
+            background:rgba(29,78,216,0.08);
+            color:var(--on-surface);font-weight:600;
+        }
+        label.opcion input{accent-color:var(--primary);width:16px;height:16px;flex:0 0 auto;}
+
+        .acciones{
+            display:flex;align-items:center;gap:var(--space-md);
+            flex-wrap:wrap;margin-top:var(--space-xl);
+        }
+        .btn.secondary{background:var(--surface-container-high);color:var(--on-surface);}
+        .nota.muted{font-size:12px;color:var(--outline);}
+
+        .resultado h2{margin-top:0;}
+        .resultado ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-md);}
+        .resultado ol li{
+            border:1px solid var(--outline-variant);
+            border-radius:var(--radius-lg);
+            padding:var(--space-md) var(--space-lg);
+            background:var(--surface-container-low);
+        }
+        .resultado .correcta{color:var(--on-secondary-container);}
+        .resultado .incorrecta{color:var(--on-error-container);}
+        .resultado .correcta::before{content:"✓ ";font-weight:700;}
+        .resultado .incorrecta::before{content:"✕ ";font-weight:700;}
+
+        /* Sidebar / topheader toggle helpers (JS controla las clases open/show) */
+        .sidebar-nav a{cursor:pointer;}
+
+        /* Autocomplete jQuery UI con la tipografía del sistema */
+        .ui-autocomplete{
+            font-family:'Inter',sans-serif;font-size:14px;
+            border:1px solid var(--outline-variant);border-radius:var(--radius-lg);
+            box-shadow:0 4px 12px rgba(17,28,45,0.12);z-index:1000;
+        }
+        .ui-menu-item{padding:2px 4px;}
     </style>
-    <link rel="stylesheet" href="css/css.css">
     <script>
     $(function(){
         let autocompleteData = [];
         $("#nombre").autocomplete({
             source: function(request, response){
                 $.ajax({
-                    url: "../capacitados/buscar_colaborador.php",
+                    url: "../garantias/vendedor/buscar_colaborador.php",
                     dataType: "json",
                     data: { term: request.term },
                     success: function(data){
@@ -338,89 +426,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if(autocompleteData.length>0){ $("#nombre").val(autocompleteData[0].label); }
             }
         });
+
+        // Toggle del sidebar en móvil
+        $("#menuToggle").on('click', function(){
+            $("#sidebar").addClass('open');
+            $("#sidebarOverlay").addClass('show');
+        });
+        $("#sidebarClose, #sidebarOverlay").on('click', function(){
+            $("#sidebar").removeClass('open');
+            $("#sidebarOverlay").removeClass('show');
+        });
     });
     </script>
 </head>
 <body>
-<nav>
-        <h1 id="titulo">Innovación móvil Capacitación</h1>
-        <input id="checkbox2" type="checkbox">
-        <label class="toggle toggle2" for="checkbox2">
-            <div id="bar4" class="bars"></div>
-            <div id="bar5" class="bars"></div>
-            <div id="bar6" class="bars"></div>
-        </label>
-        <ul id="menu">
-            
-            <li><a href="index.php">Inicio Capacitados</a></li>
-            <li><a href="material.php" >Material</a></li>
-            <li><a href="examen.php">Cuestionario</a></li>
-        </ul>
-    </nav>
-    <p>.</p><br><br><br><br><br><br>
-    <div class="topbar">
-        <h1>Examen – Innovación Móvil</h1>
-        <span class="badge">10 preguntas de opción múltiple</span>
-    </div>
 
-    <?php if ($mensaje): ?>
-        <div class="msg <?php echo $resultado ? 'ok' : 'err'; ?>"><?php echo htmlspecialchars($mensaje); ?></div>
-    <?php endif; ?>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <?php if (!$resultado): ?>
-    <form method="POST" class="card" autocomplete="off">
-        <div class="campo">
-            <label class="req" for="nombre">Nombre del colaborador</label>
-        </div>
-        <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($colaboradorNombre); ?>" required>
-        <div class="divider"></div>
-
-        <?php foreach ($cuestionario as $idx => $p): ?>
-            <div class="pregunta">
-                <strong><?php echo ($idx+1) . '. ' . htmlspecialchars($p['texto']); ?></strong>
-                <?php foreach ($p['opciones'] as $op): ?>
-                    <label class="opcion">
-                        <input type="radio" name="q_<?php echo (int)$p['pid']; ?>" value="<?php echo (int)$op['oid']; ?>" required>
-                        <span><?php echo htmlspecialchars($op['texto']); ?></span>
-                    </label>
-                <?php endforeach; ?>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <div>
+                <h2 class="sidebar-brand text-headline-sm">CentralCell</h2>
+                <p class="sidebar-sub text-label-sm">Innovación Móvil</p>
             </div>
-        <?php endforeach; ?>
-
-        <div class="acciones">
-            <button type="submit" class="btn">Enviar examen</button>
-            <button type="reset" class="btn secondary">Limpiar</button>
-            <span class="nota muted">Tu nombre se vincula con la BD automáticamente. Si no existe, se crea.</span>
+            <button class="sidebar-close material-symbols-outlined" id="sidebarClose" type="button">close</button>
         </div>
-    </form>
-    <?php else: ?>
-        <div class="card resultado">
-            <h2>Resultado</h2>
-            <p><strong>Puntaje:</strong> <?php echo (int)$resultado['puntos']; ?> / <?php echo (int)$resultado['total']; ?></p>
-            <div class="divider"></div>
-            <ol>
-                <?php foreach ($resultado['detalle'] as $d): ?>
-                    <br><li>
-                        <div><strong><?php echo htmlspecialchars($d['pregunta']); ?></strong></div>
-                        <div class="<?php echo $d['correcta'] ? 'correcta' : 'incorrecta'; ?>"><br>
-                            Tu respuesta: <?php echo htmlspecialchars($d['respuesta']); ?>
-                            <?php if (!$d['correcta']): ?>
-                                <?php
-                                // Mostrar la correcta
-                                $stmt = $conn->prepare('SELECT texto_opcion FROM opciones_respuesta WHERE id_pregunta = :pid AND es_correcta = 1 LIMIT 1');
-                                $stmt->execute([':pid' => $d['pid']]);
-                                $corr = $stmt->fetchColumn();
-                                ?>
-                                <span> | Correcta: <strong><?php echo htmlspecialchars($corr ?: 'N/D'); ?></strong></span>
-                            <?php endif; ?>
+        <nav class="sidebar-nav">
+            <a class="sidebar-link" href="index.html">
+                <span class="material-symbols-outlined">home</span> Inicio Capacitados
+            </a>
+            <a class="sidebar-link" href="material.html">
+                <span class="material-symbols-outlined">menu_book</span> Material
+            </a>
+            <a class="sidebar-link active" href="examen.php">
+                <span class="material-symbols-outlined">quiz</span> Cuestionario
+            </a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="topheader">
+            <div class="topheader-left">
+                <button class="menu-toggle material-symbols-outlined" id="menuToggle" type="button">menu</button>
+                <h2 class="text-headline-sm">Examen – Innovación Móvil</h2>
+            </div>
+        </header>
+
+        <div class="container">
+
+            <div class="topbar">
+                <h1 class="text-headline-md">Examen – Innovación Móvil</h1>
+                <span class="badge">10 preguntas de opción múltiple</span>
+            </div>
+
+            <?php if ($mensaje): ?>
+                <div class="msg <?php echo $resultado ? 'ok' : 'err'; ?>"><?php echo htmlspecialchars($mensaje); ?></div>
+            <?php endif; ?>
+
+            <?php if (!$resultado): ?>
+            <form method="POST" class="lesson" autocomplete="off">
+                <div class="lesson-body">
+                    <div class="campo">
+                        <label class="req" for="nombre">Nombre del colaborador</label>
+                    </div>
+                    <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($colaboradorNombre); ?>" required>
+                    <div class="divider"></div>
+
+                    <?php foreach ($cuestionario as $idx => $p): ?>
+                        <div class="pregunta">
+                            <strong><?php echo ($idx+1) . '. ' . htmlspecialchars($p['texto']); ?></strong>
+                            <?php foreach ($p['opciones'] as $op): ?>
+                                <label class="opcion">
+                                    <input type="radio" name="q_<?php echo (int)$p['pid']; ?>" value="<?php echo (int)$op['oid']; ?>" required>
+                                    <span><?php echo htmlspecialchars($op['texto']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
                         </div>
-                    </li>
-                <?php endforeach; ?>
-            </ol>
-            <div class="acciones" style="margin-top:12px;">
-                <a class="btn secondary" href="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">Hacer otro intento</a>
-            </div>
+                    <?php endforeach; ?>
+
+                    <div class="acciones">
+                        <button type="submit" class="btn btn-primary">Enviar examen</button>
+                        <button type="reset" class="btn btn-outline">Limpiar</button>
+                        <span class="nota muted">Tu nombre se vincula con la BD automáticamente. Si no existe, se crea.</span>
+                    </div>
+                </div>
+            </form>
+            <?php else: ?>
+                <div class="lesson resultado">
+                    <div class="lesson-body">
+                        <h2 class="text-headline-sm">Resultado</h2>
+                        <p><strong>Puntaje:</strong> <?php echo (int)$resultado['puntos']; ?> / <?php echo (int)$resultado['total']; ?></p>
+                        <div class="divider"></div>
+                        <ol>
+                            <?php foreach ($resultado['detalle'] as $d): ?>
+                                <li>
+                                    <div><strong><?php echo htmlspecialchars($d['pregunta']); ?></strong></div>
+                                    <div class="<?php echo $d['correcta'] ? 'correcta' : 'incorrecta'; ?>">
+                                        Tu respuesta: <?php echo htmlspecialchars($d['respuesta']); ?>
+                                        <?php if (!$d['correcta']): ?>
+                                            <?php
+                                            // Mostrar la correcta
+                                            $stmt = $conn->prepare('SELECT texto_opcion FROM opciones_respuesta WHERE id_pregunta = :pid AND es_correcta = 1 LIMIT 1');
+                                            $stmt->execute([':pid' => $d['pid']]);
+                                            $corr = $stmt->fetchColumn();
+                                            ?>
+                                            <span> | Correcta: <strong><?php echo htmlspecialchars($corr ?: 'N/D'); ?></strong></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                        <div class="acciones" style="margin-top:12px;">
+                            <a class="btn btn-outline" href="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">Hacer otro intento</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
         </div>
-    <?php endif; ?>
+    </div>
 </body>
 </html>

@@ -62,156 +62,248 @@ $modelos = obtenerModelos();
 
 <!DOCTYPE html>
 <html lang="es">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRUD Modelos</title>
-    <link rel="stylesheet" href="estilos.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../styles.css?v=<?php echo time(); ?>">
     <style>
-        .mensaje {
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-weight: bold;
+        /* ---------------------------------------------------
+           Estilos complementarios específicos de esta página.
+           No se toca styles.css: todo lo que falta (mensajes,
+           autocomplete, aviso de modo, tabla, toggle del
+           sidebar) se agrega aquí reutilizando los tokens ya
+           definidos.
+           --------------------------------------------------- */
+        .topbar{
+            display:flex;align-items:center;justify-content:space-between;
+            gap:var(--space-md);flex-wrap:wrap;
+            margin:var(--space-xl) 0 var(--space-md);
         }
-        .mensaje.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .topbar h1{margin:0;}
+
+        .mensaje{
+            display:flex;gap:var(--space-md);align-items:flex-start;
+            border-radius:0 var(--radius-lg) var(--radius-lg) 0;
+            padding:var(--space-md) var(--space-lg);
+            margin:0 0 var(--space-lg);font-size:14px;font-weight:600;
         }
-        .mensaje.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .mensaje.success{
+            background:rgba(109,245,225,0.18);
+            border-left:4px solid var(--secondary);
+            color:var(--on-secondary-container);
         }
-        .mensaje.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+        .mensaje.warning{
+            background:#fff3cd;
+            border-left:4px solid #ffc107;
+            color:#7a5b00;
         }
-        .autocomplete-list {
-            list-style: none;
-            padding: 0;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            max-height: 200px;
-            overflow-y: auto;
-            background: white;
+        .mensaje.error{
+            background:var(--error-container);
+            border-left:4px solid var(--error);
+            color:var(--on-error-container);
         }
-        .autocomplete-list li {
-            padding: 10px;
-            cursor: pointer;
+
+        .info-modo{
+            display:flex;gap:var(--space-md);align-items:flex-start;
+            background:rgba(29,78,216,0.08);
+            border-left:4px solid var(--primary);
+            border-radius:0 var(--radius-lg) var(--radius-lg) 0;
+            padding:var(--space-md) var(--space-lg);
+            margin:0 0 var(--space-lg);
+            font-size:14px;color:var(--on-surface);
         }
-        .autocomplete-list li:hover,
-        .autocomplete-list li.active {
-            background: #007bff;
-            color: white;
+        .info-modo.admin{
+            background:rgba(109,245,225,0.18);
+            border-left-color:var(--secondary);
         }
-        .info-modo {
-            padding: 10px;
-            background: #e7f3ff;
-            border-left: 4px solid #2196F3;
-            margin-bottom: 20px;
+
+        .section-title{
+            font-size:14px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
+            color:var(--outline);margin:0 0 var(--space-md);
         }
+
+        .campo{margin-bottom:var(--space-lg);position:relative;}
+        .campo label{
+            display:block;font-size:14px;font-weight:700;
+            color:var(--on-surface);margin-bottom:6px;
+        }
+        input[type="text"]{
+            width:100%;padding:12px 14px;
+            border:1px solid var(--outline-variant);
+            border-radius:var(--radius-lg);
+            font-family:'Inter',sans-serif;font-size:15px;
+            background:var(--surface-container-lowest);color:var(--on-surface);
+        }
+        input[type="text"]:focus{outline:2px solid var(--primary);outline-offset:1px;}
+
+        ul.autocomplete-list{
+            list-style:none;margin:4px 0 0;padding:0;
+            position:absolute;left:0;right:0;z-index:60;
+            background:var(--surface-container-lowest);
+            border:1px solid var(--outline-variant);
+            border-radius:var(--radius-lg);
+            box-shadow:0 4px 12px rgba(17,28,45,0.12);
+            max-height:200px;overflow-y:auto;
+        }
+        ul.autocomplete-list:empty{display:none;}
+        ul.autocomplete-list li{
+            padding:10px 14px;font-size:14px;color:var(--on-surface-variant);
+            cursor:pointer;border-bottom:1px solid var(--outline-variant);
+        }
+        ul.autocomplete-list li:last-child{border-bottom:none;}
+        ul.autocomplete-list li:hover,
+        ul.autocomplete-list li.active{
+            background:var(--surface-container-high);color:var(--on-surface);
+        }
+
+        .acciones{margin-top:var(--space-lg);}
+
+        .table-responsive{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+        table.data-table{width:100%;border-collapse:collapse;font-size:14px;}
+        table.data-table thead th{
+            text-align:left;padding:12px var(--space-md);
+            background:var(--surface-container-high);
+            color:var(--on-surface-variant);
+            font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;
+            border-bottom:1px solid var(--outline-variant);
+            white-space:nowrap;
+        }
+        table.data-table thead th:first-child{border-top-left-radius:var(--radius-lg);}
+        table.data-table thead th:last-child{border-top-right-radius:var(--radius-lg);}
+        table.data-table tbody td{
+            padding:12px var(--space-md);
+            border-bottom:1px solid var(--outline-variant);
+            color:var(--on-surface);vertical-align:middle;
+        }
+        table.data-table tbody tr:hover{background:var(--surface-container-low);}
+        table.data-table tbody tr:last-child td{border-bottom:none;}
+
+        .sin-permisos{color:var(--outline);font-size:13px;}
     </style>
 </head>
 <body>
 
-<header class="main-header">
-    <!-- Checkbox PRIMERO, antes de todo -->
-    <input type="checkbox" id="check">
-    
-    <div class="header-top">
-        <h1 class="titulo">
-            <span class="logo-circle">
-                <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" />
-            </span>  
-                 Agregar modelos
-        </h1>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- Botón hamburguesa animado -->
-        <label class="bar" for="check">
-            <span class="top"></span>
-            <span class="middle"></span>
-            <span class="bottom"></span>
-        </label>
-    </div>
-
-    <nav id="menu">
-        <ul>
-             <li><a href="consultar.php">Consultar Compatibilidades 🔍</a></li>
-                <li><a href="ingresar.php">Atrás 🔙</a></li>
-    </nav>
-</header>
-
-    <h1>CRUD de Modelos</h1>
-
-    <?php if ($es_admin === 2): ?>
-        <div class="info-modo">
-            ℹ️ <strong>Modo Usuario:</strong> Solo puedes agregar modelos de marcas existentes. 
-            Para agregar una marca nueva, contacta al administrador.
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <div>
+                <h2 class="sidebar-brand text-headline-sm">CentralCell</h2>
+                <p class="sidebar-sub text-label-sm">Compatibilidades</p>
+            </div>
+            <button class="sidebar-close material-symbols-outlined" id="sidebarClose" type="button">close</button>
         </div>
-    <?php else: ?>
-        <div class="info-modo" style="background: #e8f5e9; border-left-color: #4CAF50;">
-            👨‍💼 <strong>Modo Administrador:</strong> Tienes todos los permisos.
-        </div>
-    <?php endif; ?>
+        <nav class="sidebar-nav">
+            <a class="sidebar-link" href="consultar.php">
+                <span class="material-symbols-outlined">search</span> Consultar Compatibilidades
+            </a>
+            <a class="sidebar-link" href="ingresar.php">
+                <span class="material-symbols-outlined">arrow_back</span> Atrás
+            </a>
+        </nav>
+    </aside>
 
-    <?php if ($mensaje): ?>
-        <div class="mensaje <?= $tipo_mensaje ?>">
-            <?= htmlspecialchars($mensaje) ?>
-        </div>
-    <?php endif; ?>
+    <div class="main">
+        <header class="topheader">
+            <div class="topheader-left">
+                <button class="menu-toggle material-symbols-outlined" id="menuToggle" type="button">menu</button>
+                <span class="logo-circle" style="display:inline-flex;width:32px;height:32px;background:#fff;border-radius:50%;justify-content:center;align-items:center;overflow:hidden;flex:0 0 auto;">
+                    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" style="width:24px;height:24px;object-fit:contain;" />
+                </span>
+                <h2 class="text-headline-sm">Agregar modelos</h2>
+            </div>
+        </header>
 
-    <h2>Agregar Modelo</h2>
-    <form method="post" id="formAgregar">
-        <input type="hidden" name="accion" value="insertar">
-        <input type="hidden" id="marca_valida" value="0">
-        
-        <label for="marca">Marca:</label>
-        <input type="text" 
-               name="marca" 
-               id="marca" 
-               autocomplete="off" 
-               placeholder="Escribe la marca..." 
-               required>
-        <ul id="lista_marcas" class="autocomplete-list"></ul>
-        <br><br>
-        
-        <label for="modelo">Modelo:</label>
-        <input type="text" name="modelo" id="modelo" required>
-        <br><br>
-        
-        <button type="submit">Agregar</button>
-    </form>
+        <div class="container">
 
-    <h2>Lista de Modelos</h2>
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>ID</th>
-            <th>Marca</th>
-            <th>Modelo</th>
-            <th>Acciones</th>
-        </tr>
-        <?php foreach ($modelos as $m): ?>
-        <tr>
-            <td><?= $m['id'] ?></td>
-            <td><?= htmlspecialchars($m['marca']) ?></td>
-            <td><?= htmlspecialchars($m['modelo']) ?></td>
-            <td>
-                <?php if ($es_admin === 1): ?>
-                    <form style="display:inline;" method="post">
-                        <input type="hidden" name="accion" value="eliminar">
-                        <input type="hidden" name="id" value="<?= $m['id'] ?>">
-                        <button type="submit" onclick="return confirm('¿Eliminar este modelo?')">Eliminar</button>
+            <div class="topbar">
+                <h1 class="text-headline-md">CRUD de Modelos</h1>
+            </div>
+
+            <?php if ($es_admin === 2): ?>
+                <div class="info-modo">
+                    ℹ️ <strong>Modo Usuario:</strong> Solo puedes agregar modelos de marcas existentes.
+                    Para agregar una marca nueva, contacta al administrador.
+                </div>
+            <?php else: ?>
+                <div class="info-modo admin">
+                    👨‍💼 <strong>Modo Administrador:</strong> Tienes todos los permisos.
+                </div>
+            <?php endif; ?>
+
+            <?php if ($mensaje): ?>
+                <div class="mensaje <?= $tipo_mensaje ?>">
+                    <?= htmlspecialchars($mensaje) ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="lesson">
+                <div class="lesson-body">
+                    <p class="section-title">Agregar Modelo</p>
+                    <form method="post" id="formAgregar">
+                        <input type="hidden" name="accion" value="insertar">
+                        <input type="hidden" id="marca_valida" value="0">
+
+                        <div class="campo">
+                            <label for="marca">Marca:</label>
+                            <input type="text"
+                                   name="marca"
+                                   id="marca"
+                                   autocomplete="off"
+                                   placeholder="Escribe la marca..."
+                                   required>
+                            <ul id="lista_marcas" class="autocomplete-list"></ul>
+                        </div>
+
+                        <div class="campo">
+                            <label for="modelo">Modelo:</label>
+                            <input type="text" name="modelo" id="modelo" required>
+                        </div>
+
+                        <div class="acciones">
+                            <button type="submit" class="btn btn-primary">Agregar</button>
+                        </div>
                     </form>
-                <?php else: ?>
-                    <span style="color: #999;">Sin permisos</span>
-                <?php endif; ?>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
+                </div>
+            </div>
+
+            <div class="lesson" style="margin-top:var(--space-xl);">
+                <div class="lesson-body">
+                    <p class="section-title">Lista de Modelos</p>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <tr>
+                                <th>ID</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Acciones</th>
+                            </tr>
+                            <?php foreach ($modelos as $m): ?>
+                            <tr>
+                                <td><?= $m['id'] ?></td>
+                                <td><?= htmlspecialchars($m['marca']) ?></td>
+                                <td><?= htmlspecialchars($m['modelo']) ?></td>
+                                <td>
+                                    <?php if ($es_admin === 1): ?>
+                                        <form style="display:inline;" method="post">
+                                            <input type="hidden" name="accion" value="eliminar">
+                                            <input type="hidden" name="id" value="<?= $m['id'] ?>">
+                                            <button type="submit" class="btn btn-outline" onclick="return confirm('¿Eliminar este modelo?')">Eliminar</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="sin-permisos">Sin permisos</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 
 <script>
 const esAdmin = <?= $es_admin ?>;
@@ -291,6 +383,27 @@ formAgregar.addEventListener('submit', function(e) {
         alert('⚠️ Debes seleccionar una marca de la lista. Si la marca no aparece, contacta al administrador.');
         return false;
     }
+});
+
+// Toggle del sidebar en móvil
+document.addEventListener('DOMContentLoaded', function(){
+    var menuToggle = document.getElementById('menuToggle');
+    var sidebarClose = document.getElementById('sidebarClose');
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar(){
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+    }
+    function closeSidebar(){
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    }
+
+    if (menuToggle) menuToggle.addEventListener('click', openSidebar);
+    if (sidebarClose) sidebarClose.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
 });
 </script>
 </body>

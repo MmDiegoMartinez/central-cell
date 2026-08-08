@@ -8,106 +8,207 @@ include_once '../funciones.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tickets de Mayor Precio — IM & TM</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="../styles.css">
+
+  
   <style>
-body{font-family:Arial,sans-serif;margin:18px;background:#f7f7f7;color:#222}
-h1{margin-top:0}
-.controls{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-button.btn{background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
-button.btn:disabled{background:#999;cursor:not-allowed}
-table{border-collapse:collapse;width:100%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:20px}
-th,td{padding:8px 6px;border:1px solid #e1e1e1;text-align:center;font-size:13px}
-th{background:#2f6fa6;color:#fff;position:sticky;top:0;z-index:1}
-.note{font-size:13px;color:#333;margin-top:6px}
+    /* ── Contenedor de controles ── */
+    .controls{
+      display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-md);
+      margin-top:var(--space-lg);
+    }
 
-/* ── Filtro de tipo de ticket ── */
-.tipo-tabs{display:flex;gap:0;margin-bottom:16px;border-radius:10px;overflow:hidden;
-           border:1px solid #ddd;width:fit-content;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.tipo-tab{padding:10px 22px;cursor:pointer;font-weight:600;font-size:13px;
-          background:#f0f4f8;color:#555;border:none;transition:background .2s;white-space:nowrap}
-.tipo-tab:not(:last-child){border-right:1px solid #ddd}
-.tipo-tab.active-mix{background:linear-gradient(135deg,#f5576c,#4facfe);color:#fff}
-.tipo-tab.active-im {background:linear-gradient(135deg,#f5576c,#f093fb);color:#fff}
-.tipo-tab.active-tm {background:linear-gradient(135deg,#4facfe,#00b4d8);color:#fff}
+    /* ── Botón de subir archivo (reemplaza la animación de carpetas) ── */
+    .file-upload{display:flex;}
+    .boton{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 18px;border-radius:var(--radius-lg);
+      background:var(--surface-container-high);
+      border:1px solid var(--outline-variant);
+      color:var(--on-surface);font-size:14px;font-weight:600;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .boton:hover{background:var(--surface-container-highest);border-color:var(--primary);}
+    .boton .material-symbols-outlined{font-size:20px;color:var(--primary);}
 
-/* Badges en tabla */
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;color:#fff}
-.badge-im{background:#f5576c}.badge-tm{background:#4facfe}.badge-mix{background:linear-gradient(135deg,#f5576c,#4facfe)}
+    /* ── Mensaje / nota de estado ── */
+    .note{
+      margin-top:var(--space-md);
+      font-size:14px;color:var(--on-surface-variant);
+      min-height:20px;
+      display:flex;align-items:center;gap:6px;
+    }
+    .note .material-symbols-outlined{font-size:18px;color:var(--primary);}
 
-/* Modal */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-               background:rgba(0,0,0,.6);justify-content:center;align-items:center;z-index:9999}
-.modal-box{background:#fff;padding:24px;border-radius:12px;width:72%;max-height:82%;overflow:auto}
-.modal-box h3{margin-top:0}
-.modal-box table{font-size:13px}
-.modal-box th{background:#2f6fa6;color:#fff}
+    /* ── Loader simple (reemplaza la animación de sol/nube) ── */
+    .center-container{display:flex;justify-content:center;}
+    .loader-container{
+      display:flex;align-items:center;gap:var(--space-sm);
+      padding:var(--space-md) 0;
+      color:var(--primary);font-size:14px;font-weight:600;
+    }
+    .loader-container .material-symbols-outlined{
+      font-size:22px;animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+    /* ── Tabs de tipo de ticket ── */
+    .tipo-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:var(--space-lg);}
+    .tipo-tab{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 16px;border-radius:var(--radius-lg);
+      border:1px solid var(--outline-variant);
+      background:var(--surface-container-lowest);
+      color:var(--on-surface-variant);font-size:14px;font-weight:600;
+      transition:background .15s ease,border-color .15s ease,color .15s ease;
+    }
+    .tipo-tab .material-symbols-outlined{font-size:18px;}
+    .tipo-tab:hover{border-color:var(--primary);color:var(--primary);}
+    .tipo-tab.active-mix{background:var(--primary-fixed);border-color:var(--primary);color:var(--on-primary-fixed);}
+    .tipo-tab.active-im {background:var(--primary-container);border-color:var(--primary);color:var(--on-primary-container);}
+    .tipo-tab.active-tm {background:var(--surface-container-high);border-color:var(--tertiary);color:var(--tertiary);}
+
+    /* ── Badges ── */
+    .badge{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:3px 10px;border-radius:var(--radius-full);
+      font-size:11px;font-weight:700;
+    }
+    .badge .material-symbols-outlined{font-size:14px;}
+    .badge-mix{background:var(--primary-fixed);color:var(--on-primary-fixed);}
+    .badge-im {background:var(--primary-container);color:var(--on-primary-container);}
+    .badge-tm {background:var(--surface-container-high);color:var(--tertiary);}
+
+    /* ── Tabla de tickets ── */
+    #tablaContainer{margin-top:var(--space-lg);overflow-x:auto;}
+    #tablaContainer table{width:100%;border-collapse:collapse;font-size:13px;}
+    #tablaContainer thead th{
+      text-align:center;padding:10px 12px;white-space:nowrap;
+      background:var(--surface-container-high);
+      color:var(--on-surface-variant);
+      font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+      border-bottom:1px solid var(--outline-variant);
+    }
+    #tablaContainer tbody td{
+      padding:9px 12px;text-align:center;white-space:nowrap;
+      border-bottom:1px solid var(--outline-variant);
+      color:var(--on-surface);
+    }
+    #tablaContainer tbody tr:hover{background:var(--surface-container-low);}
+    #tablaContainer .btn{padding:6px 12px;font-size:12px;}
+
+    /* ── Modal de detalle ── */
+    .modal-overlay{
+      display:none;position:fixed;inset:0;z-index:1000;
+      background:rgba(17,28,45,0.5);backdrop-filter:blur(4px);
+      align-items:center;justify-content:center;padding:var(--space-md);
+    }
+    .modal-box{
+      background:var(--surface-container-lowest);
+      border-radius:var(--radius-xl);
+      padding:var(--space-xl);
+      max-width:640px;width:100%;max-height:85vh;overflow-y:auto;
+      box-shadow:0 20px 60px rgba(12,18,26,0.25);
+    }
+    .modal-box h3{margin:0 0 var(--space-md);font-size:17px;color:var(--on-surface);}
+    .modal-box table{width:100%;border-collapse:collapse;font-size:13px;}
+    .modal-box thead th{
+      text-align:center;padding:8px 10px;
+      background:var(--surface-container-high);
+      color:var(--on-surface-variant);
+      font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+    }
+    .modal-box tbody td{
+      padding:8px 10px;text-align:center;
+      border-bottom:1px solid var(--outline-variant);
+      color:var(--on-surface);
+    }
+    #totalTicket{
+      display:flex;align-items:center;gap:6px;
+      font-weight:700;margin-top:var(--space-md);color:var(--on-surface);
+    }
+    #totalTicket .material-symbols-outlined{font-size:18px;color:var(--secondary);}
   </style>
-  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li>
-          <a href="index.php" class="menu-link">
-            <span class="logo-container">
-              <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25"/>
-            </span>
-            Home
-          </a>
-        </li>
-      </ul>
-    </div>
+
+<!-- TOP HEADER -->
+<header class="topheader">
+  <div class="topheader-left">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="26" height="26" style="border-radius:6px;">
+    <h2 class="text-headline-sm">Tickets de Mayor Precio — IM &amp; TM</h2>
+  </div>
+  <nav class="topnav">
+    <a href="../garantias/validador/validador.php">Home</a>
+    <a href="modulos.html">Panel de Herramientas</a>
   </nav>
 </header>
 
-<div class="container">
-  <h1>📄 Tickets de Mayor Precio — IM & TM</h1>
+<div class="main" style="margin-left:0;">
+  <div class="container">
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
+    <div class="lesson">
+      <div class="lesson-body">
+        <div class="eyebrow">Tickets destacados</div>
+        <h1 class="text-headline-lg" style="margin:8px 0 4px;display:flex;align-items:center;gap:10px;">
+          <span class="material-symbols-outlined" style="font-size:30px;color:var(--primary);">receipt_long</span>
+          Tickets de Mayor Precio — IM &amp; TM
+        </h1>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0;">
+          Sube tu archivo Excel para ver los tickets con mayor monto, separados por tipo
+        </p>
+
+        <div class="controls">
+          <div class="file-upload">
+            <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
+            <button class="boton" id="fileButton" type="button">
+              <span class="material-symbols-outlined">attach_file</span>
+              <span class="text">Seleccionar Archivo</span>
+            </button>
+          </div>
+          <button id="btnProcesar" class="btn btn-primary" disabled>
+            <span class="material-symbols-outlined">play_arrow</span>
+            Procesar Archivo
+          </button>
+          <button id="btnDescargar" class="btn btn-secondary" style="display:none">
+            <span class="material-symbols-outlined">download</span>
+            Descargar Resumen Excel
+          </button>
         </div>
-        <div class="active_line"></div>
-        <span class="text">Seleccionar Archivo</span>
+
+        <div id="estado" class="note"></div>
+
+        <div class="center-container">
+          <div id="loader" class="loader-container" style="display:none;">
+            <span class="material-symbols-outlined">progress_activity</span>
+            <span>Procesando archivo...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Selector de tipo de ticket ── -->
+    <div class="tipo-tabs" id="tipoTabs" style="display:none">
+      <button class="tipo-tab active-mix" data-tipo="MIX" onclick="cambiarTipo('MIX',this)">
+        <span class="material-symbols-outlined">call_split</span>
+        Tickets Mixtos <span id="cntMIX" class="badge badge-mix">0</span>
+      </button>
+      <button class="tipo-tab" data-tipo="IM" onclick="cambiarTipo('IM',this)">
+        <span class="material-symbols-outlined">smartphone</span>
+        Solo IM <span id="cntIM" class="badge badge-im">0</span>
+      </button>
+      <button class="tipo-tab" data-tipo="TM" onclick="cambiarTipo('TM',this)">
+        <span class="material-symbols-outlined">devices</span>
+        Solo TM <span id="cntTM" class="badge badge-tm">0</span>
       </button>
     </div>
-    <button id="btnProcesar"  class="btn" disabled>Procesar Archivo</button>
-    <button id="btnDescargar" class="btn" style="display:none">⬇ Descargar Resumen Excel</button>
+
+    <div id="tablaContainer"></div>
+
   </div>
 
-  <div id="estado" class="note"></div>
-
-  <div class="center-container">
-    <div id="loader" class="loader-container" style="display:none;">
-      <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-      <span class="sun sunshine"></span><span class="sun"></span>
-      <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-    </div>
-  </div>
-
-  <!-- ── Selector de tipo de ticket ── -->
-  <div class="tipo-tabs" id="tipoTabs" style="display:none">
-    <button class="tipo-tab active-mix" data-tipo="MIX" onclick="cambiarTipo('MIX',this)">
-      🔀 Tickets Mixtos <span id="cntMIX" class="badge badge-mix">0</span>
-    </button>
-    <button class="tipo-tab" data-tipo="IM" onclick="cambiarTipo('IM',this)">
-      📱 Solo IM <span id="cntIM" class="badge badge-im">0</span>
-    </button>
-    <button class="tipo-tab" data-tipo="TM" onclick="cambiarTipo('TM',this)">
-      📲 Solo TM <span id="cntTM" class="badge badge-tm">0</span>
-    </button>
-  </div>
-
-  <div id="tablaContainer"></div>
+ 
 </div>
 
 <!-- ── Modal detalle ticket ── -->
@@ -120,10 +221,16 @@ th{background:#2f6fa6;color:#fff;position:sticky;top:0;z-index:1}
       </thead>
       <tbody id="modalBody"></tbody>
     </table>
-    <p id="totalTicket" style="font-weight:700;margin-top:10px"></p>
+    <p id="totalTicket"></p>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="btnDescargarTicket" class="btn">⬇ Descargar este Ticket</button>
-      <button class="btn" style="background:#888" onclick="cerrarModal()">Cerrar</button>
+      <button id="btnDescargarTicket" class="btn btn-secondary">
+        <span class="material-symbols-outlined">download</span>
+        Descargar este Ticket
+      </button>
+      <button class="btn btn-outline" onclick="cerrarModal()">
+        <span class="material-symbols-outlined">close</span>
+        Cerrar
+      </button>
     </div>
   </div>
 </div>
@@ -150,13 +257,13 @@ document.getElementById('btnDescargarTicket').addEventListener('click', descarga
    PROCESAR
 ══════════════════════════════════════════════════ */
 function procesarArchivo(file){
-  estado.innerText='📊 Cargando archivo...';
+  estado.innerHTML='<span class="material-symbols-outlined">bar_chart</span> Cargando archivo...';
   document.getElementById('loader').style.display='flex';
   const reader=new FileReader();
   reader.onload=e=>{
     const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
     const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
-    if(json.length<2){ estado.innerText='⚠️ Archivo sin datos.'; document.getElementById('loader').style.display='none'; return; }
+    if(json.length<2){ estado.innerHTML='<span class="material-symbols-outlined">warning</span> Archivo sin datos.'; document.getElementById('loader').style.display='none'; return; }
     analizarDatos(json);
     document.getElementById('loader').style.display='none';
   };
@@ -164,7 +271,7 @@ function procesarArchivo(file){
 }
 
 function analizarDatos(json){
-  estado.innerText='🧮 Procesando...';
+  estado.innerHTML='<span class="material-symbols-outlined">calculate</span> Procesando...';
   const enc=json[0];
 
   /* Detectar índices por nombre de columna */
@@ -215,7 +322,7 @@ function analizarDatos(json){
   document.getElementById('cntTM').innerText  = todosTickets.filter(tk=>tk.tieneTM).length;
 
   document.getElementById('tipoTabs').style.display='';
-  btnDescargar.style.display='inline-block';
+  btnDescargar.style.display='inline-flex';
   tipoActual='MIX';
 
   /* Activar tab MIX visualmente */
@@ -225,7 +332,7 @@ function analizarDatos(json){
   });
 
   mostrarTabla();
-  estado.innerText=`✅ ${todosTickets.length} tickets · Mixtos: ${todosTickets.filter(t=>t.tipo==='MIX').length} · Con IM: ${todosTickets.filter(t=>t.tieneIM).length} · Con TM: ${todosTickets.filter(t=>t.tieneTM).length}`;
+  estado.innerHTML=`<span class="material-symbols-outlined">check_circle</span> ${todosTickets.length} tickets · Mixtos: ${todosTickets.filter(t=>t.tipo==='MIX').length} · Con IM: ${todosTickets.filter(t=>t.tieneIM).length} · Con TM: ${todosTickets.filter(t=>t.tieneTM).length}`;
 }
 
 /* ══════════════════════════════════════════════════
@@ -260,9 +367,9 @@ function mostrarTabla(){
 
   /* Badge de tipo */
   const badgeTipo=(tipo)=>{
-    if(tipo==='MIX')  return `<span class="badge badge-mix">🔀 Mixto</span>`;
-    if(tipo==='IM')   return `<span class="badge badge-im">📱 IM</span>`;
-    return                  `<span class="badge badge-tm">📲 TM</span>`;
+    if(tipo==='MIX')  return `<span class="badge badge-mix"><span class="material-symbols-outlined">call_split</span>Mixto</span>`;
+    if(tipo==='IM')   return `<span class="badge badge-im"><span class="material-symbols-outlined">smartphone</span>IM</span>`;
+    return                  `<span class="badge badge-tm"><span class="material-symbols-outlined">devices</span>TM</span>`;
   };
 
   let html=`<table><thead><tr>
@@ -283,7 +390,7 @@ function mostrarTabla(){
       <td>${esc(tk.vendedor)}</td>
       <td>$${totalVista.toFixed(2)}</td>
       <td>${prodsVista.length}</td>
-      <td><button class="btn" onclick='verTicket("${esc(tk.ticket)}","${esc(tk.almacen)}","${tipoActual}")'>Ver detalles</button></td>
+      <td><button class="btn btn-outline" onclick='verTicket("${esc(tk.ticket)}","${esc(tk.almacen)}","${tipoActual}")'>Ver detalles</button></td>
     </tr>`;
   });
   html+='</tbody></table>';
@@ -300,9 +407,13 @@ function verTicket(ticket, almacen, depto){
   const deptoFiltro = depto || 'MIX';
   ticketActual={...tk, deptoVista: deptoFiltro};
 
-  const tipoLabel = tk.tipo==='MIX' ? '🔀 Mixto' : (tk.tipo==='IM' ? '📱 Solo IM' : '📲 Solo TM');
+  const tipoLabel = tk.tipo==='MIX'
+    ? '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:-3px;">call_split</span> Mixto'
+    : (tk.tipo==='IM'
+        ? '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:-3px;">smartphone</span> Solo IM'
+        : '<span class="material-symbols-outlined" style="font-size:15px;vertical-align:-3px;">devices</span> Solo TM');
   document.getElementById('modalTitulo').innerHTML=
-    `Ticket <strong>${esc(tk.ticket)}</strong> — ${esc(tk.almacen)} (${esc(tk.vendedor)}) &nbsp;<span style="font-size:13px;color:#888">${tipoLabel}</span>`;
+    `Ticket <strong>${esc(tk.ticket)}</strong> — ${esc(tk.almacen)} (${esc(tk.vendedor)}) &nbsp;<span style="font-size:13px;color:var(--on-surface-variant)">${tipoLabel}</span>`;
 
   let html='';
   /* Filtrar productos según el depto de la pestaña activa */
@@ -312,8 +423,8 @@ function verTicket(ticket, almacen, depto){
   const prods=prodsModal;
   prods.forEach(p=>{
     const badge=p.depto==='IM'
-      ?`<span class="badge badge-im">📱 IM</span>`
-      :`<span class="badge badge-tm">📲 TM</span>`;
+      ?`<span class="badge badge-im"><span class="material-symbols-outlined">smartphone</span>IM</span>`
+      :`<span class="badge badge-tm"><span class="material-symbols-outlined">devices</span>TM</span>`;
     html+=`<tr>
       <td>${badge}</td>
       <td style="text-align:left">${esc(p.producto)}</td>
@@ -322,7 +433,7 @@ function verTicket(ticket, almacen, depto){
     </tr>`;
   });
   document.getElementById('modalBody').innerHTML=html;
-  document.getElementById('totalTicket').innerText=`💰 Total del ticket: $${tk.total.toFixed(2)}`;
+  document.getElementById('totalTicket').innerHTML=`<span class="material-symbols-outlined">payments</span> Total del ticket: $${tk.total.toFixed(2)}`;
   document.getElementById('modal').style.display='flex';
 }
 
@@ -376,14 +487,6 @@ function descargarTicket(){
 
 /* ── Helpers ── */
 function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-/* ── Menú hamburguesa ── */
-document.getElementById('menu-check').addEventListener('change',function(){
-  const m=document.getElementById('nav-menu');
-  m.style.opacity=this.checked?'1':'0';
-  m.style.visibility=this.checked?'visible':'hidden';
-  m.style.pointerEvents=this.checked?'auto':'none';
-});
 </script>
 </body>
 </html>

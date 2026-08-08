@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herramientas · Centralcell</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+
+  body{background:var(--background);}
+
+  /* --- Barra de navegación superior (idéntica al dashboard de capacitación) --- */
+  .dash-topbar{
+    position:sticky;top:0;z-index:40;
+    background:rgba(249,249,255,0.85);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--outline-variant);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 var(--space-xl);height:64px;
+  }
+  .dash-brand{display:flex;align-items:center;gap:10px;color:var(--primary);font-weight:700;font-size:16px;}
+  .dash-brand .material-symbols-outlined{font-size:22px;}
+  .dash-nav{display:flex;align-items:center;gap:var(--space-xl);}
+  .dash-nav a, .dash-nav span{
+    font-size:14px;font-weight:600;color:var(--on-surface-variant);
+    display:flex;align-items:center;gap:6px;
+    padding:8px 4px;border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .dash-nav a:hover{color:var(--primary);}
+  .dash-nav .current{color:var(--primary);border-bottom-color:var(--primary);}
+  .dash-nav-toggle{display:none;color:var(--primary);font-size:26px;background:none;}
+
+  @media (max-width:720px){
+    .dash-topbar{padding:0 var(--space-md);}
+    .dash-nav{
+      display:none;position:absolute;top:64px;left:0;right:0;
+      background:var(--surface-container-lowest);
+      border-bottom:1px solid var(--outline-variant);
+      flex-direction:column;align-items:flex-start;gap:0;
+      padding:var(--space-sm) var(--space-md) var(--space-md);
+      box-shadow:0 8px 16px rgba(17,28,45,0.08);
+    }
+    .dash-nav.open{display:flex;}
+    .dash-nav a, .dash-nav span{width:100%;padding:12px 4px;border-bottom:1px solid var(--outline-variant);}
+    .dash-nav-toggle{display:inline-flex;}
+  }
+
+  /* --- Encabezado --- */
+  .mod-hero{max-width:var(--container-max);margin:0 auto;padding:var(--space-2xl) var(--space-xl) var(--space-lg);}
+  .mod-hero h1{margin:8px 0 0;}
+  .mod-hero p{color:var(--on-surface-variant);margin-top:var(--space-sm);max-width:640px;}
+
+  .mod-wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--space-xl) var(--space-3xl);}
+
+  /* --- Etiquetas de sección --- */
+  .section-label{
+    display:flex;align-items:center;gap:10px;
+    margin:var(--space-2xl) 0 var(--space-md);
+    color:var(--outline);font-size:12px;font-weight:700;
+    letter-spacing:0.1em;text-transform:uppercase;
+  }
+  .section-label:first-of-type{margin-top:0;}
+  .section-label::after{content:"";flex:1;height:1px;background:var(--outline-variant);}
+
+  /* --- Grid de módulos --- */
+  .module-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+    gap:var(--space-lg);
+  }
+  @media (max-width:520px){
+    .module-grid{grid-template-columns:repeat(2,1fr);gap:var(--space-sm);}
+  }
+
+  /* --- Tarjeta de módulo (imagen cuadrada, overlay solo en hover) --- */
+  .module-card{
+    position:relative;
+    display:block;
+    aspect-ratio:1/1;
+    border-radius:var(--radius-xl);
+    overflow:hidden;
+    isolation:isolate;
+    box-shadow:0 1px 2px rgba(17,28,45,0.06);
+    transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s cubic-bezier(.2,.8,.2,1);
+    outline:none;
+  }
+  .module-card:hover,
+  .module-card:focus-visible{
+    transform:translateY(-6px);
+    box-shadow:0 20px 40px rgba(17,28,45,0.22);
+  }
+  .module-card:focus-visible{outline:2px solid var(--primary);outline-offset:3px;}
+
+  /* superficie / "imagen" del módulo: degradado + icono, sin foto real */
+  .module-art{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .module-card:hover .module-art,
+  .module-card:focus-visible .module-art{transform:scale(1.08);}
+
+  .module-art::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 25% 20%, rgba(255,255,255,0.16), transparent 45%),
+      radial-gradient(circle at 80% 85%, rgba(0,0,0,0.12), transparent 55%);
+  }
+  .module-art .material-symbols-outlined{
+    position:relative;z-index:1;
+    font-size:56px;color:rgba(255,255,255,0.92);
+    font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 48;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+  }
+
+  .art-1{background:linear-gradient(135deg,#1d4ed8,#004191);}
+  .art-2{background:linear-gradient(135deg,#006b5f,#0037b0);}
+  .art-3{background:linear-gradient(135deg,#004191,#006f64);}
+  .art-4{background:linear-gradient(135deg,#0058be,#00332b);}
+
+  /* overlay de información: el título siempre está visible,
+     la descripción solo aparece al hacer hover / focus */
+  .module-overlay{
+    position:absolute;inset:0;z-index:2;
+    display:flex;flex-direction:column;justify-content:flex-end;
+    padding:var(--space-md);
+    background:linear-gradient(180deg, rgba(17,28,45,0) 55%, rgba(9,14,26,0.78) 100%);
+    -webkit-backdrop-filter:blur(0px);backdrop-filter:blur(0px);
+    transition:background .35s ease, backdrop-filter .35s ease;
+  }
+  .module-card:hover .module-overlay,
+  .module-card:focus-visible .module-overlay{
+    background:linear-gradient(180deg, rgba(17,28,45,0) 20%, rgba(9,14,26,0.88) 100%);
+    -webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);
+  }
+
+  /* título: siempre visible */
+  .module-overlay h3{
+    margin:0;color:#fff;font-size:15px;font-weight:700;line-height:20px;
+    text-shadow:0 2px 8px rgba(0,0,0,0.35);
+  }
+
+  /* descripción: oculta por defecto, aparece con el hover */
+  .module-overlay p{
+    margin:0;color:rgba(255,255,255,0.85);font-size:12.5px;line-height:17px;
+    max-height:0;opacity:0;
+    transform:translateY(6px);
+    transition:max-height .35s ease, opacity .3s ease, transform .35s ease, margin-top .35s ease;
+  }
+  .module-card:hover .module-overlay p,
+  .module-card:focus-visible .module-overlay p{
+    max-height:80px;opacity:1;margin-top:6px;
+    transform:translateY(0);
+  }
+
+  @media (max-width:520px){
+    .module-art .material-symbols-outlined{font-size:38px;}
+    .module-overlay h3{font-size:13px;}
+    .module-overlay p{font-size:11px;line-height:15px;}
+  }
+
+  /* --- Accesos frecuentes (discreto, franja compacta tipo "chips") --- */
+  .quick-access{
+    max-width:var(--container-max);margin:0 auto;
+    padding:0 var(--space-xl);
+  }
+  .quick-access-inner{
+    display:flex;align-items:center;gap:var(--space-sm);
+    flex-wrap:wrap;
+    padding:10px 14px;
+    border:1px solid var(--outline-variant);
+    border-radius:999px;
+    background:var(--surface-container-lowest);
+  }
+  .quick-access-label{
+    display:flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--outline);
+    padding-right:8px;margin-right:2px;
+    border-right:1px solid var(--outline-variant);
+    white-space:nowrap;
+  }
+  .quick-access-label .material-symbols-outlined{font-size:15px;}
+  .quick-chip{
+    display:flex;align-items:center;gap:6px;
+    font-size:12.5px;font-weight:600;color:var(--on-surface-variant);
+    background:var(--surface-container-low);
+    border:1px solid transparent;
+    padding:6px 12px;border-radius:999px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+    white-space:nowrap;
+  }
+  .quick-chip .material-symbols-outlined{font-size:16px;}
+  .quick-chip:hover, .quick-chip:focus-visible{
+    background:var(--primary);color:#fff;
+    border-color:var(--primary);
+    transform:translateY(-1px);
+  }
+  @media (max-width:720px){
+    .quick-access-inner{
+      border-radius:var(--radius-lg);
+      overflow-x:auto;
+      -ms-overflow-style:none;scrollbar-width:none;
+    }
+    .quick-access-inner::-webkit-scrollbar{display:none;}
+    .quick-access-label{border-right:none;padding-right:0;margin-right:0;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .module-card, .module-art, .module-overlay, .module-overlay p, .quick-chip{
+      transition:none !important;
+    }
+    .module-card:hover{transform:none;}
+    .module-art{transform:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<!-- BARRA DE NAVEGACIÓN -->
+<header class="dash-topbar">
+  <div class="dash-brand">
+    <span class="material-symbols-outlined">dashboard</span>
+    Centralcell · Herramientas
+  </div>
+  <button class="dash-nav-toggle material-symbols-outlined" id="navToggle" aria-label="Abrir menú">menu</button>
+  <nav class="dash-nav" id="dashNav">
+    <a href="../garantias/validador/validador.php">
+      <span class="material-symbols-outlined" style="font-size:18px;">home</span> Home
+    </a>
+    <span class="current">
+      <span class="material-symbols-outlined" style="font-size:18px;">grid_view</span> Módulos
+    </span>
+   
+  </nav>
+</header>
+
+<!-- ENCABEZADO -->
+<section class="mod-hero">
+  <span class="eyebrow">Sistema Centralcell</span>
+  <h1 class="text-headline-lg">Panel de Herramientas</h1>
+  <p class="text-body-md">Accede directamente a los reportes y herramientas de análisis. Pasa el cursor sobre cada tarjeta para ver el detalle del módulo.</p>
+</section>
+
+<!-- ACCESOS FRECUENTES (discreto, ordenado por frecuencia de uso) -->
+<div class="quick-access">
+  <div class="quick-access-inner">
+    <span class="quick-access-label">
+      <span class="material-symbols-outlined">bolt</span> Frecuentes
+    </span>
+    <a class="quick-chip" href="../existencias/index.php">
+      <span class="material-symbols-outlined">warehouse</span> Existencias de Almacenes
+    </a>
+    <a class="quick-chip" href="../garantias/validador/colaboradores.php">
+      <span class="material-symbols-outlined">groups</span> Colaboradores
+    </a>
+     <a class="quick-chip" href="../garantias/validador/maquinas.php">
+      <span class="material-symbols-outlined">store</span> Control de Equipos
+    </a>
+    <a class="quick-chip" href="../garantias/validador/guardar_imagen.php">
+      <span class="material-symbols-outlined">photo_library</span> Gestor de Imágenes
+    </a>
+    <a class="quick-chip" href="semanaventas.php">
+      <span class="material-symbols-outlined">bar_chart</span> Análisis de Ventas
+    </a>
+    <a class="quick-chip" href="telefonos.html">
+      <span class="material-symbols-outlined">smartphone</span> Reconocimiento Ventas Teléfonos
+    </a>
+  </div>
+</div><br>
+
+<main class="mod-wrap">
+
+  <!-- VENTAS Y DESEMPEÑO -->
+  <div class="section-label">Ventas y desempeño</div>
+  <div class="module-grid">
+
+    <a class="module-card" href="semanaventas.php">
+      <div class="module-art art-1"><span class="material-symbols-outlined">bar_chart</span></div>
+      <div class="module-overlay">
+        <h3>Análisis de Ventas</h3>
+        <p>Analiza ventas, metas y desempeño por tienda y vendedor.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="telefonos.html">
+      <div class="module-art art-2"><span class="material-symbols-outlined">smartphone</span></div>
+      <div class="module-overlay">
+        <h3>Reconocimiento Ventas Teléfonos</h3>
+        <p>Genera tarjetas con el desempeño de ventas de teléfonos de cada vendedor.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analisis_general.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">insights</span></div>
+      <div class="module-overlay">
+        <h3>Análisis Multisemana</h3>
+        <p>Compara el desempeño semanal de vendedores y sucursales.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="comparativo_mensual.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">calendar_month</span></div>
+      <div class="module-overlay">
+        <h3>Comparativo Mensual</h3>
+        <p>Detecta aumentos y disminuciones de ventas por mes.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="comparativo_semanal.php">
+      <div class="module-art art-1"><span class="material-symbols-outlined">date_range</span></div>
+      <div class="module-overlay">
+        <h3>Comparativo Semanal</h3>
+        <p>Detecta aumentos y disminuciones de ventas por semana.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="comparativo_meses.html">
+      <div class="module-art art-2"><span class="material-symbols-outlined">event_repeat</span></div>
+      <div class="module-overlay">
+        <h3>Comparativo de Ventas por Períodos</h3>
+        <p>Compara dos períodos de ventas para identificar cambios por categoría y tienda.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="topproductos.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">military_tech</span></div>
+      <div class="module-overlay">
+        <h3>Productos Más Vendidos</h3>
+        <p>Consulta los productos más vendidos.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="ticket.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">receipt_long</span></div>
+      <div class="module-overlay">
+        <h3>Tickets Premium</h3>
+        <p>Tickets Premium.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analizador_ventas_payjoy.html">
+      <div class="module-art art-1"><span class="material-symbols-outlined">payments</span></div>
+      <div class="module-overlay">
+        <h3>Ventas PayJoy por Vendedor</h3>
+        <p>Obtén el ranking de ventas PayJoy por vendedor.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="reporte_mobo.html">
+      <div class="module-art art-2"><span class="material-symbols-outlined">summarize</span></div>
+      <div class="module-overlay">
+        <h3>Reporte de Ventas MOBO</h3>
+        <p>Carga el archivo de ventas y genera automáticamente reportes de ventas MOBO por sucursal y categoría, listos para descargar en Excel.</p>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- INVENTARIO Y PRODUCTOS -->
+  <div class="section-label">Inventario y productos</div>
+  <div class="module-grid">
+
+    <a class="module-card" href="analisisproductos.html">
+      <div class="module-art art-4"><span class="material-symbols-outlined">inventory_2</span></div>
+      <div class="module-overlay">
+        <h3>Análisis de Inventario</h3>
+        <p>Cruza compras, ventas y existencias para una mejor toma de decisiones.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="inventario_series.html">
+      <div class="module-art art-1"><span class="material-symbols-outlined">qr_code_scanner</span></div>
+      <div class="module-overlay">
+        <h3>Escaneo de Series</h3>
+        <p>Verifica equipos mediante el escaneo de números de serie.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analisis_fundas_ventas_existencias.php">
+      <div class="module-art art-2"><span class="material-symbols-outlined">compare_arrows</span></div>
+      <div class="module-overlay">
+        <h3>Ventas vs Existencias Fundas</h3>
+        <p>Reporte que compara ventas e inventario por modelo y sucursal de fundas.</p>
+      </div>
+    </a>
+    <a class="module-card" href="analisis_celulares_ventas_existencias.php">
+      <div class="module-art art-2"><span class="material-symbols-outlined">smartphone</span></div>
+      <div class="module-overlay">
+        <h3>Ventas vs Existencias Celulares</h3>
+        <p>Reporte que compara ventas e inventario por modelo y sucursal de celulares.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="protectores.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">shield</span></div>
+      <div class="module-overlay">
+        <h3>Análisis de Protectores</h3>
+        <p>Analiza las ventas de protectores por sucursal y vendedor.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="hidrogel-polimero.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">water_drop</span></div>
+      <div class="module-overlay">
+        <h3>Ventas de Hidrogel y Protection Pro</h3>
+        <p>Analiza cuántos protectores de pantalla se vendieron.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analizador-proveedor.html">
+      <div class="module-art art-1"><span class="material-symbols-outlined">local_shipping</span></div>
+      <div class="module-overlay">
+        <h3>Análisis de Compras por Proveedor</h3>
+        <p>Analiza las compras de un proveedor y compáralas con el inventario y las ventas.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="comparador_imei.html">
+      <div class="module-art art-2"><span class="material-symbols-outlined">difference</span></div>
+      <div class="module-overlay">
+        <h3>Comparador de Series IMEI / ICCID</h3>
+        <p>Compara dos listas de IMEI o ICCID e identifica coincidencias y diferencias.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="transferencias_costos.html">
+      <div class="module-art art-3"><span class="material-symbols-outlined">sync_alt</span></div>
+      <div class="module-overlay">
+        <h3>Análisis de Transferencias</h3>
+        <p>Carga los archivos de transferencias y existencias para generar un reporte con costos, precios y movimientos entre almacenes.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../existencias/inventario.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">fact_check</span></div>
+      <div class="module-overlay">
+        <h3>Inventarios</h3>
+        <p>Apartado para hacer inventario en todas las sucursales.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="rotacion-smartwhach.html">
+      <div class="module-art art-3"><span class="material-symbols-outlined">watch</span></div>
+      <div class="module-overlay">
+        <h3>Rotación Smartwatch</h3>
+        <p>Analiza ventas y existencias de smartwatches por sucursal y modelo para identificar rotación, detectar faltantes o excedentes y redistribuir el inventario.</p>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- GARANTÍAS Y MERMAS -->
+  <div class="section-label">Garantías y mermas</div>
+  <div class="module-grid">
+
+    <a class="module-card" href="reporte_garantias.php">
+      <div class="module-art art-1"><span class="material-symbols-outlined">gpp_maybe</span></div>
+      <div class="module-overlay">
+        <h3>Mermas vs Ventas</h3>
+        <p>Compara mermas contra ventas por sucursal.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analisis_mermas.php">
+      <div class="module-art art-2"><span class="material-symbols-outlined">report</span></div>
+      <div class="module-overlay">
+        <h3>Mermas Frecuentes</h3>
+        <p>Identifica los productos con mayor incidencia de merma.</p>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ADMINISTRACIÓN Y HERRAMIENTAS -->
+  <div class="section-label">Administración y herramientas</div>
+  <div class="module-grid">
+
+    <a class="module-card" href="../existencias/index.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">warehouse</span></div>
+      <div class="module-overlay">
+        <h3>Existencias de Almacenes</h3>
+        <p>Consulta y actualiza las existencias de productos en todos los almacenes.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../capacitados/capa.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">school</span></div>
+      <div class="module-overlay">
+        <h3>Capacitación</h3>
+        <p>Consulta el material de capacitación y revisa qué colaboradores han completado su formación.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../garantias/validador/colaboradores.php">
+      <div class="module-art art-1"><span class="material-symbols-outlined">groups</span></div>
+      <div class="module-overlay">
+        <h3>Colaboradores</h3>
+        <p>Consulta la información de los vendedores, su estatus dentro de la empresa y el estado de su cuenta de PayJoy.</p>
+      </div>
+    </a>
+     <a class="module-card" href="../garantias/validador/maquinas.php">
+      <div class="module-art art-1"><span class="material-symbols-outlined">store</span></div>
+      <div class="module-overlay">
+        <h3>Control de Equipos</h3>
+        <p>Administra las máquinas y credenciales asignadas a cada sucursal desde un solo lugar.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../garantias/validador/guardar_imagen.php">
+      <div class="module-art art-2"><span class="material-symbols-outlined">photo_library</span></div>
+      <div class="module-overlay">
+        <h3>Gestor de Imágenes</h3>
+        <p>Guarda imágenes para utilizarlas en diferentes módulos y procesos del sistema.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../compatibilidades/consultar.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">phonelink</span></div>
+      <div class="module-overlay">
+        <h3>Compatibilidad de Accesorios</h3>
+        <p>Consulta qué fundas y protectores de pantalla son compatibles con cada modelo de teléfono.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../garantias/validador/sucursales.php">
+      <div class="module-art art-4"><span class="material-symbols-outlined">storefront</span></div>
+      <div class="module-overlay">
+        <h3>Sucursales</h3>
+        <p>Administra la información de las sucursales y consulta sus metas de venta.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing" target="_blank" rel="noopener">
+      <div class="module-art art-1"><span class="material-symbols-outlined">assignment_late</span></div>
+      <div class="module-overlay">
+        <h3>Bitácora de Productos Negados</h3>
+        <p>Consulta el registro de productos que fueron rechazados o no autorizados durante la venta en tienda.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="../garantias/validador/validadores.php">
+      <div class="module-art art-2"><span class="material-symbols-outlined">verified_user</span></div>
+      <div class="module-overlay">
+        <h3>Validadores</h3>
+        <p>Administra las cuentas y permisos de los usuarios encargados de validar garantías y procesos.</p>
+      </div>
+    </a>
+    <a class="module-card" href="descuentos/index.php">
+      <div class="module-art art-3"><span class="material-symbols-outlined">local_offer</span></div>
+      <div class="module-overlay">
+        <h3>Ofertas</h3>
+        <p>Gestiona y controla el uso de códigos promocionales.</p>
+      </div>
+    </a>
+
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="mod-wrap" style="max-width:var(--container-max);margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;width:100%;gap:var(--space-md);padding-left:var(--space-xl);padding-right:var(--space-xl);">
+    <span>© <span id="current-year"></span> Centralcell · Panel de Herramientas</span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+
+  // Menú móvil
+  const navToggle = document.getElementById('navToggle');
+  const dashNav = document.getElementById('dashNav');
+  navToggle.addEventListener('click', () => {
+    const open = dashNav.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+</script>
+
+</body>
+</html>

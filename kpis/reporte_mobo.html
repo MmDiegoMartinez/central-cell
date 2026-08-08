@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CentralCell · Reporte de Ventas MOBO</title>
+
+<link rel="stylesheet" href="../styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntico al del Comparador de Series / Analizador PayJoy) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Tracker de progreso (Cargar / Filtrar / Agrupar / Exportar) */
+  .tracker{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:700px){ .tracker{grid-template-columns:1fr 1fr;} }
+
+  .step{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-left:4px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    transition:all .2s ease;
+  }
+  .step .n{
+    display:flex;align-items:center;gap:8px;
+    font-weight:700;font-size:13px;color:var(--on-surface-variant);
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+  .step .dot{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;
+    background:var(--outline-variant);color:var(--on-surface);
+    font-size:12px;font-weight:700;
+  }
+  .step .label{margin-top:6px;font-size:14px;font-weight:600;color:var(--on-surface);}
+  .step .detail{margin-top:4px;font-size:12px;color:var(--on-surface-variant);}
+
+  .step.active{border-left-color:var(--primary);background:var(--surface);}
+  .step.active .dot{background:var(--primary);color:var(--on-primary,#fff);}
+  .step.done{border-left-color:#00838F;background:var(--surface);}
+  .step.done .dot{background:#00838F;color:#fff;}
+  .step.error{border-left-color:#C0392B;background:var(--surface);}
+  .step.error .dot{background:#C0392B;color:#fff;}
+
+  /* Zona de carga de archivo */
+  .dropzone{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;text-align:center;
+    padding:var(--space-lg);
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--primary);background:var(--surface);}
+  .dropzone .icon{
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(0,131,143,0.12);color:#00838F;margin-bottom:4px;
+  }
+  .dropzone .icon .material-symbols-outlined{font-size:24px;}
+  .dropzone .main{font-size:14px;font-weight:600;color:var(--on-surface);}
+  .dropzone .hint{font-size:12px;color:var(--on-surface-variant);}
+  #fileInput{display:none;}
+
+  .filerow{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:var(--space-sm);
+    padding:10px 14px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    font-size:13px;
+  }
+  .filerow .name{font-weight:600;color:var(--on-surface);}
+  .filerow .size{color:var(--on-surface-variant);margin-left:4px;}
+  .filerow button{
+    border:none;background:none;color:#C0392B;font-weight:600;
+    font-size:13px;cursor:pointer;
+  }
+
+  .errbox{
+    display:none;margin-top:var(--space-sm);
+    padding:12px 14px;border-radius:var(--radius-lg);
+    background:rgba(192,57,43,0.10);color:#C0392B;
+    font-size:13px;line-height:1.5;
+  }
+  .errbox.show{display:block;}
+
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin:var(--space-md) 0;}
+
+  .btn-amber{
+    background:#B5651D;color:#fff;border:1px solid #B5651D;
+  }
+  .btn-amber:hover{background:#96541a;}
+
+  .log{
+    display:none;margin-top:var(--space-sm);
+    max-height:180px;overflow-y:auto;
+    padding:10px 12px;border-radius:var(--radius-lg);
+    border:1px solid var(--outline-variant);
+    background:var(--surface-container-low);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--on-surface-variant);
+  }
+  .log.show{display:block;}
+  .log .ln{padding:2px 0;}
+  .log .ln.ok{color:#00838F;}
+  .log .ln.err{color:#C0392B;}
+
+  /* Resultados */
+  .results{display:none;}
+  .results.show{display:block;}
+
+  .kpis{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:700px){ .kpis{grid-template-columns:1fr 1fr;} }
+
+  .kpi{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    text-align:center;
+  }
+  .kpi .v{font-size:24px;font-weight:700;color:var(--on-surface);}
+  .kpi .l{margin-top:4px;font-size:12px;color:var(--on-surface-variant);}
+  .kpi.amber .v{color:#B5651D;}
+
+  .tbl-title{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    font-weight:700;font-size:15px;color:var(--on-surface);
+    margin:var(--space-lg) 0 var(--space-sm);
+  }
+  .tag{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+    background:rgba(0,131,143,0.12);color:#00838F;
+  }
+
+  .tblwrap{
+    overflow-x:auto;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    margin-bottom:var(--space-md);
+  }
+  .tblwrap table{width:100%;border-collapse:collapse;font-size:13px;}
+  .tblwrap thead th{
+    text-align:left;padding:10px 14px;
+    background:var(--surface-container-low);
+    color:var(--on-surface-variant);
+    font-size:12px;text-transform:uppercase;letter-spacing:.03em;
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .tblwrap tbody td{
+    padding:9px 14px;border-bottom:1px solid var(--outline-variant);
+    color:var(--on-surface);
+  }
+  .tblwrap tbody tr:last-child td{border-bottom:none;}
+  .tblwrap td.num{text-align:right;font-variant-numeric:tabular-nums;}
+
+  .page-footer{
+    margin-top:var(--space-lg);
+    padding-top:var(--space-md);
+    border-top:1px solid var(--outline-variant);
+    font-size:12px;color:var(--on-surface-variant);
+    text-align:center;
+  }
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Reporte de Ventas MOBO</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Herramientas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Reporte de <span>Ventas MOBO</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">insights</span> Sube el Excel de ventas y genera el resumen MOBO por almacén y categoría</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">receipt_long</span></div>
+        <div>
+          <h3 style="margin:0">Genera tu reporte automáticamente</h3>
+          <p>Sube el Excel de ventas y obtén el resumen de ventas MOBO por almacén, el desglose por categoría, y los reportes de detalle — con formato, filtros y totales listos para auditar.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga y procesa el archivo</h3>
+        </div>
+
+        <div class="tracker" id="tracker">
+          <div class="step" data-step="1"><div class="n"><span class="dot">1</span>Cargar</div><div class="label">Leer archivo</div><div class="detail" id="d1">Esperando archivo…</div></div>
+          <div class="step" data-step="2"><div class="n"><span class="dot">2</span>Filtrar</div><div class="label">Innovación Móvil + MOBO</div><div class="detail" id="d2">—</div></div>
+          <div class="step" data-step="3"><div class="n"><span class="dot">3</span>Agrupar</div><div class="label">Por almacén y categoría</div><div class="detail" id="d3">—</div></div>
+          <div class="step" data-step="4"><div class="n"><span class="dot">4</span>Exportar</div><div class="label">Generar .xlsx (4 hojas)</div><div class="detail" id="d4">—</div></div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="icon"><span class="material-symbols-outlined">upload_file</span></div>
+          <div class="main">Arrastra tu archivo aquí o <b>haz clic para seleccionarlo</b></div>
+          <div class="hint">.XLSX · columnas requeridas: Almacen, N1, N3, ProdConcat, TotalVenta</div>
+        </div>
+        <input type="file" id="fileInput" accept=".xlsx">
+        <div class="filerow" id="filerow" style="display:none;">
+          <div><span class="name" id="fname"></span><span class="size" id="fsize"></span></div>
+          <button id="clearFile">Quitar</button>
+        </div>
+
+        <div class="errbox" id="errbox"></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="processBtn" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>
+            Procesar archivo
+          </button>
+          <button class="btn btn-amber" id="downloadBtn" style="display:none;">
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Descargar Excel del reporte
+          </button>
+        </div>
+
+        <div class="log" id="log"></div>
+      </section>
+
+      <section class="step-section results" id="results">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Resultados</h3>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="v" id="kpiRows">0</div><div class="l">Filas leídas</div></div>
+          <div class="kpi"><div class="v" id="kpiInnov">0</div><div class="l">Filas Innovación Móvil</div></div>
+          <div class="kpi amber"><div class="v" id="kpiMobo">0</div><div class="l">Filas MOBO</div></div>
+          <div class="kpi"><div class="v" id="kpiAlm">0</div><div class="l">Almacenes detectados</div></div>
+        </div>
+
+        <div class="tbl-title">Resumen MOBO por almacén <span class="tag">Hoja 1</span></div>
+        <div class="tblwrap"><table id="tbl1"></table></div>
+
+        <div class="tbl-title">Resumen por categoría MOBO y almacén <span class="tag">Hoja 3 · primeras 12 filas</span></div>
+        <div class="tblwrap"><table id="tbl2"></table></div>
+
+        <div class="tbl-title">Resumen por categoría MOBO · todas las sucursales <span class="tag">Hoja 5</span></div>
+        <div class="tblwrap"><table id="tbl3"></table></div>
+      </section>
+
+      <div class="page-footer">El procesamiento ocurre completamente en tu navegador — el archivo no se sube a ningún servidor.</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const REQUIRED_COLS = ['almacen','n1','n3','prodconcat','totalventa'];
+const N1_TARGET = 'INNOVACION MOVIL';
+
+let currentFile = null;
+let reportData = null; // filled after processing
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const filerow = document.getElementById('filerow');
+const fname = document.getElementById('fname');
+const fsize = document.getElementById('fsize');
+const clearFile = document.getElementById('clearFile');
+const processBtn = document.getElementById('processBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const errbox = document.getElementById('errbox');
+const logEl = document.getElementById('log');
+
+dropzone.addEventListener('click', () => fileInput.click());
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
+clearFile.addEventListener('click', () => resetFile());
+
+function setFile(f){
+  if(!f.name.toLowerCase().endsWith('.xlsx')){
+    showError('El archivo debe ser un .xlsx');
+    return;
+  }
+  currentFile = f;
+  fname.textContent = f.name;
+  fsize.textContent = ' · ' + (f.size/1024).toFixed(0) + ' KB';
+  filerow.style.display='flex';
+  processBtn.disabled = false;
+  hideError();
+  resetPipeline();
+}
+function resetFile(){
+  currentFile = null;
+  fileInput.value = '';
+  filerow.style.display='none';
+  processBtn.disabled = true;
+  downloadBtn.style.display='none';
+  document.getElementById('results').classList.remove('show');
+  resetPipeline();
+}
+
+function showError(msg){ errbox.innerHTML = msg; errbox.classList.add('show'); }
+function hideError(){ errbox.classList.remove('show'); }
+
+function resetPipeline(){
+  for(let i=1;i<=4;i++){
+    const step = document.querySelector('.step[data-step="'+i+'"]');
+    step.classList.remove('active','done','error');
+    document.getElementById('d'+i).textContent = '—';
+  }
+  document.getElementById('d1').textContent = 'Esperando archivo…';
+  logEl.classList.remove('show');
+  logEl.innerHTML = '';
+}
+
+function setStep(n, state, detail){
+  const step = document.querySelector('.step[data-step="'+n+'"]');
+  step.classList.remove('active','done','error');
+  step.classList.add(state);
+  if(detail !== undefined) document.getElementById('d'+n).textContent = detail;
+}
+
+function log(msg, cls){
+  logEl.classList.add('show');
+  const ln = document.createElement('div');
+  ln.className = 'ln' + (cls ? ' '+cls : '');
+  ln.textContent = msg;
+  logEl.appendChild(ln);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+processBtn.addEventListener('click', async () => {
+  if(!currentFile) return;
+  hideError();
+  resetPipeline();
+  processBtn.disabled = true;
+  downloadBtn.style.display = 'none';
+  document.getElementById('results').classList.remove('show');
+
+  try{
+    await runPipeline(currentFile);
+  }catch(err){
+    console.error(err);
+    showError('<b>No se pudo procesar el archivo.</b><br>' + err.message);
+    log('Error: ' + err.message, 'err');
+  }finally{
+    processBtn.disabled = false;
+  }
+});
+
+function cellValue(row, col){
+  const cell = row.getCell(col);
+  let v = cell.value;
+  if(v && typeof v === 'object'){
+    if('result' in v) v = v.result;
+    else if('text' in v) v = v.text;
+    else if('richText' in v) v = v.richText.map(r=>r.text).join('');
+  }
+  return v;
+}
+function asString(v){ return (v===undefined||v===null) ? '' : v.toString().trim(); }
+function asNumber(v){
+  if(typeof v === 'number') return v;
+  if(v===undefined||v===null||v==='') return 0;
+  let s = v.toString().trim();
+  let negative = false;
+  if(/^\(.*\)$/.test(s)){ negative = true; s = s.slice(1,-1); }
+  if(s.trim().startsWith('-')) negative = true;
+  const n = parseFloat(s.replace(/[^0-9.]/g,''));
+  if(isNaN(n)) return 0;
+  return negative ? -n : n;
+}
+
+async function runPipeline(file){
+  // STEP 1 — cargar
+  setStep(1,'active','Leyendo archivo…');
+  log('Leyendo ' + file.name + '…');
+  const buffer = await file.arrayBuffer();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+  const ws = wb.worksheets[0];
+  if(!ws) throw new Error('El archivo no contiene hojas de cálculo.');
+
+  const headerRow = ws.getRow(1);
+  const headerMap = {}; // lowercase name -> column index
+  const columnOrder = []; // {name, col} in original order
+  headerRow.eachCell({includeEmpty:false}, (cell, colNumber) => {
+    const name = asString(cell.value);
+    if(name){
+      headerMap[name.toLowerCase()] = colNumber;
+      columnOrder.push({name, col:colNumber});
+    }
+  });
+
+  const missing = REQUIRED_COLS.filter(c => !(c in headerMap));
+  if(missing.length){
+    setStep(1,'error','Faltan columnas');
+    throw new Error('No se encontraron las columnas requeridas: ' + missing.join(', ') + '. Verifica los encabezados del archivo.');
+  }
+
+  const colAlmacen = headerMap['almacen'];
+  const colN1 = headerMap['n1'];
+  const colN3 = headerMap['n3'];
+  const colProd = headerMap['prodconcat'];
+  const colTotal = headerMap['totalventa'];
+
+  let totalRows = 0;
+  const totalDataRows = ws.rowCount - 1;
+  log('Archivo cargado: ' + totalDataRows + ' filas de datos, ' + columnOrder.length + ' columnas.');
+  setStep(1,'done', totalDataRows.toLocaleString() + ' filas · ' + columnOrder.length + ' columnas');
+
+  // STEP 2 — filtrar
+  setStep(2,'active','Aplicando filtros…');
+  await new Promise(r=>setTimeout(r,150));
+
+  const moboDetail = [];
+  let innovCount = 0;
+  let moboCount = 0;
+  const almacenesSet = new Set();
+  const almacenDisplay = new Map(); // clave normalizada -> nombre a mostrar
+  const sumAlmacenTodas = new Map(); // TODAS las ventas de Innovación Móvil por sucursal (no solo MOBO), solo para comparar
+
+  function normKey(s){ return s.toString().trim().replace(/\s+/g,' ').toUpperCase(); }
+
+  ws.eachRow({includeEmpty:false}, (row, rowNumber) => {
+    if(rowNumber === 1) return;
+    totalRows++;
+    const n1 = asString(cellValue(row, colN1));
+    if(n1 !== N1_TARGET) return;
+    innovCount++;
+
+    const almacenRaw = (asString(cellValue(row, colAlmacen)) || 'Sin almacén').replace(/\s+/g,' ');
+    const almacen = normKey(almacenRaw); // clave de agrupación normalizada
+    if(!almacenDisplay.has(almacen)) almacenDisplay.set(almacen, almacenRaw);
+    almacenesSet.add(almacen);
+    const total = asNumber(cellValue(row, colTotal));
+    sumAlmacenTodas.set(almacen, (sumAlmacenTodas.get(almacen)||0) + total);
+
+    // Todo lo de aquí en adelante (Hoja 2, 3, 4, 5) es SOLO productos MOBO
+    const prod = (cellValue(row, colProd) || '').toString();
+    if(!prod.toLowerCase().includes('mobo')) return;
+    moboCount++;
+
+    const rowData = {};
+    columnOrder.forEach(c => { rowData[c.name] = cellValue(row, c.col); });
+    // Aseguramos que el detalle guarde el MISMO número limpio que se usó para sumar,
+    // así el total del detalle siempre cuadra con el resumen.
+    const totalColName = columnOrder.find(c => c.col === colTotal).name;
+    rowData[totalColName] = total;
+
+    const n3 = (asString(cellValue(row, colN3)) || 'Sin categoría').replace(/\s+/g,' ');
+    moboDetail.push({ __almacen: almacen, __n3: n3, __total: total, data: rowData });
+  });
+
+  const catDetail = moboDetail; // Hoja 3/4/5 se construyen sobre las mismas filas MOBO
+
+  log('Filas con N1 = "Innovación Móvil": ' + innovCount.toLocaleString());
+  log('De esas, filas con producto MOBO: ' + moboCount.toLocaleString());
+  setStep(2,'done', innovCount.toLocaleString() + ' Innovación Móvil · ' + moboCount.toLocaleString() + ' MOBO');
+
+  // STEP 3 — agrupar
+  setStep(3,'active','Agrupando y sumando…');
+  await new Promise(r=>setTimeout(r,150));
+
+  const sumAlmacen = new Map();
+  almacenesSet.forEach(key => sumAlmacen.set(key, 0)); // todas las sucursales con Innovación Móvil, aunque no tengan MOBO
+  moboDetail.forEach(r => sumAlmacen.set(r.__almacen, (sumAlmacen.get(r.__almacen)||0) + r.__total));
+
+  const sumCat = new Map(); // key: almacen||n3 -> {almacen, n3, total} — SOLO categorías de productos MOBO
+  catDetail.forEach(r => {
+    const key = r.__almacen + '||' + r.__n3;
+    if(!sumCat.has(key)) sumCat.set(key, {almacen:r.__almacen, categoria:r.__n3, total:0});
+    sumCat.get(key).total += r.__total;
+  });
+
+  const resumenAlmacen = Array.from(sumAlmacen.entries())
+    .map(([almacen,total]) => {
+      const totalTodas = sumAlmacenTodas.get(almacen) || 0;
+      const pct = totalTodas > 0 ? (total / totalTodas) * 100 : 0;
+      return { almacen: almacenDisplay.get(almacen) || almacen, total, totalTodas, pct };
+    })
+    .sort((a,b) => a.almacen.localeCompare(b.almacen));
+
+  const resumenCategoria = Array.from(sumCat.values())
+    .map(r => ({almacen: almacenDisplay.get(r.almacen) || r.almacen, categoria:r.categoria, total:r.total}))
+    .sort((a,b) => a.almacen.localeCompare(b.almacen) || a.categoria.localeCompare(b.categoria));
+
+  // Resumen por categoría MOBO, sumando TODAS las sucursales juntas
+  const sumCatTotal = new Map();
+  catDetail.forEach(r => sumCatTotal.set(r.__n3, (sumCatTotal.get(r.__n3)||0) + r.__total));
+  const resumenCategoriaTotal = Array.from(sumCatTotal.entries())
+    .map(([categoria,total]) => ({categoria, total}))
+    .sort((a,b) => b.total - a.total);
+
+  log('Almacenes con ventas MOBO: ' + resumenAlmacen.length);
+  log('Combinaciones almacén + categoría: ' + resumenCategoria.length);
+  log('Categorías distintas (todas las sucursales): ' + resumenCategoriaTotal.length);
+  setStep(3,'done', resumenAlmacen.length + ' almacenes · ' + resumenCategoriaTotal.length + ' categorías');
+
+  // Una tabla por categoría, con TODAS las sucursales (0 si esa sucursal no vendió esa categoría)
+  const almacenesKeysOrdenados = Array.from(almacenesSet)
+    .sort((a,b) => (almacenDisplay.get(a)||a).localeCompare(almacenDisplay.get(b)||b));
+  const categoriasOrdenadas = Array.from(sumCatTotal.keys()).sort((a,b) => a.localeCompare(b));
+  const tablasPorCategoria = categoriasOrdenadas.map(categoria => {
+    const filas = almacenesKeysOrdenados.map(almKey => {
+      const display = almacenDisplay.get(almKey) || almKey;
+      const key = almKey + '||' + categoria;
+      const total = sumCat.has(key) ? sumCat.get(key).total : 0;
+      return { almacen: display, total };
+    });
+    return { categoria, filas };
+  });
+
+  // STEP 4 — exportar
+  setStep(4,'active','Construyendo Excel…');
+  await new Promise(r=>setTimeout(r,150));
+
+  const outBuffer = await buildOutputWorkbook({
+    resumenAlmacen,
+    resumenCategoria,
+    resumenCategoriaTotal,
+    tablasPorCategoria
+  });
+
+  const today = new Date().toISOString().slice(0,10);
+  const filename = 'Reporte_Ventas_MOBO_' + today + '.xlsx';
+
+  const blob = new Blob([outBuffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+
+  downloadBtn.style.display = 'inline-block';
+  downloadBtn.onclick = () => triggerDownload(url, filename);
+
+  // auto-download
+  triggerDownload(url, filename);
+
+  log('Archivo generado: ' + filename, 'ok');
+  setStep(4,'done', filename);
+
+  // render preview
+  renderResults({
+    totalRows, innovCount, moboCount, almacenesCount: resumenAlmacen.length,
+    resumenAlmacen, resumenCategoria, resumenCategoriaTotal
+  });
+}
+
+function triggerDownload(url, filename){
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function buildOutputWorkbook({resumenAlmacen, resumenCategoria, resumenCategoriaTotal, tablasPorCategoria}){
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CentralCell';
+  wb.created = new Date();
+
+  const HEADER_FILL = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1F3A3C'} };
+  const HEADER_FONT = { bold:true, color:{argb:'FFE9EDF2'}, size:11 };
+  const TOTAL_FILL = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFCE9C7'} };
+  const TOTAL_FONT = { bold:true, color:{argb:'FF241A04'} };
+  const CURRENCY_FMT = '"$"#,##0.00';
+  const BORDER = { bottom:{style:'thin', color:{argb:'FFDDE3EA'}} };
+
+  function styleHeader(row){
+    row.eachCell(cell => {
+      cell.fill = HEADER_FILL;
+      cell.font = HEADER_FONT;
+      cell.alignment = {vertical:'middle'};
+    });
+    row.height = 20;
+  }
+
+  function autoWidth(ws, colsInfo){
+    colsInfo.forEach((info, idx) => {
+      const column = ws.getColumn(idx+1);
+      let max = info.header ? info.header.toString().length : 10;
+      column.eachCell({includeEmpty:false}, cell => {
+        const val = cell.value;
+        const len = (val===undefined||val===null) ? 0 : val.toString().length;
+        if(len > max) max = len;
+      });
+      column.width = Math.min(Math.max(max + 2, 10), 45);
+    });
+  }
+
+  // Hoja 1: Resumen MOBO por Almacén
+  const ws1 = wb.addWorksheet('Resumen MOBO Almacén');
+  ws1.columns = [
+    { header:'Almacén', key:'almacen' },
+    { header:'Total Venta MOBO', key:'total' }
+  ];
+  styleHeader(ws1.getRow(1));
+  let grandTotal1 = 0;
+  resumenAlmacen.forEach(r => {
+    ws1.addRow({almacen:r.almacen, total:r.total});
+    grandTotal1 += r.total;
+  });
+  ws1.getColumn('total').numFmt = CURRENCY_FMT;
+  const totalRow1 = ws1.addRow({almacen:'TOTAL GENERAL', total:grandTotal1});
+  totalRow1.eachCell(cell => { cell.fill = TOTAL_FILL; cell.font = TOTAL_FONT; });
+  ws1.autoFilter = { from:'A1', to:'B1' };
+  ws1.views = [{ state:'frozen', ySplit:1 }];
+  autoWidth(ws1, ws1.columns);
+
+  // Hoja 2: Resumen por Categoría MOBO (almacén + categoría, tabla larga)
+  const ws3 = wb.addWorksheet('Resumen Categoría MOBO');
+  ws3.columns = [
+    { header:'Almacén', key:'almacen' },
+    { header:'Categoría', key:'categoria' },
+    { header:'Total Venta', key:'total' }
+  ];
+  styleHeader(ws3.getRow(1));
+  let grandTotal3 = 0;
+  resumenCategoria.forEach(r => {
+    ws3.addRow({almacen:r.almacen, categoria:r.categoria, total:r.total});
+    grandTotal3 += r.total;
+  });
+  ws3.getColumn('total').numFmt = CURRENCY_FMT;
+  const totalRow3 = ws3.addRow({almacen:'TOTAL GENERAL', categoria:'', total:grandTotal3});
+  totalRow3.eachCell(cell => { cell.fill = TOTAL_FILL; cell.font = TOTAL_FONT; });
+  ws3.autoFilter = { from:'A1', to:'C1' };
+  ws3.views = [{ state:'frozen', ySplit:1 }];
+  autoWidth(ws3, ws3.columns);
+
+  // Hoja 3: Resumen por Categoría MOBO — todas las sucursales juntas
+  const ws5 = wb.addWorksheet('Resumen Categoría MOBO Total');
+  ws5.columns = [
+    { header:'Categoría', key:'categoria' },
+    { header:'Total Venta', key:'total' }
+  ];
+  styleHeader(ws5.getRow(1));
+  let grandTotal5 = 0;
+  resumenCategoriaTotal.forEach(r => {
+    ws5.addRow({categoria:r.categoria, total:r.total});
+    grandTotal5 += r.total;
+  });
+  ws5.getColumn('total').numFmt = CURRENCY_FMT;
+  const totalRow5 = ws5.addRow({categoria:'TOTAL GENERAL', total:grandTotal5});
+  totalRow5.eachCell(cell => { cell.fill = TOTAL_FILL; cell.font = TOTAL_FONT; });
+  ws5.autoFilter = { from:'A1', to:'B1' };
+  ws5.views = [{ state:'frozen', ySplit:1 }];
+  autoWidth(ws5, ws5.columns);
+
+  // Hoja 4: Categorías por Sucursal — una tabla apilada por cada categoría MOBO,
+  // con TODAS las sucursales (0 si esa sucursal no vendió esa categoría)
+  const wsCat = wb.addWorksheet('Categorías por Sucursal');
+  let r = 1;
+  tablasPorCategoria.forEach(tabla => {
+    const titleRow = wsCat.getRow(r);
+    titleRow.getCell(1).value = tabla.categoria;
+    titleRow.getCell(1).font = { bold:true, size:13, color:{argb:'FFB5651D'} };
+    wsCat.mergeCells(r,1,r,2);
+    r++;
+
+    const headerRow = wsCat.getRow(r);
+    headerRow.getCell(1).value = 'Almacén';
+    headerRow.getCell(2).value = 'Total Venta';
+    headerRow.eachCell(cell => { cell.fill = HEADER_FILL; cell.font = HEADER_FONT; });
+    r++;
+
+    let catTotal = 0;
+    tabla.filas.forEach(f => {
+      const row = wsCat.getRow(r);
+      row.getCell(1).value = f.almacen;
+      row.getCell(2).value = f.total;
+      row.getCell(2).numFmt = CURRENCY_FMT;
+      catTotal += f.total;
+      r++;
+    });
+
+    const totalRow = wsCat.getRow(r);
+    totalRow.getCell(1).value = 'Total ' + tabla.categoria;
+    totalRow.getCell(2).value = catTotal;
+    totalRow.getCell(2).numFmt = CURRENCY_FMT;
+    totalRow.eachCell(cell => { cell.fill = TOTAL_FILL; cell.font = TOTAL_FONT; });
+    r += 2; // fila en blanco antes de la siguiente tabla
+  });
+  let maxLenCat = 12;
+  wsCat.getColumn(1).eachCell({includeEmpty:false}, cell => {
+    const len = (cell.value||'').toString().length;
+    if(len > maxLenCat) maxLenCat = len;
+  });
+  wsCat.getColumn(1).width = Math.min(maxLenCat + 2, 40);
+  wsCat.getColumn(2).width = 20;
+
+  return await wb.xlsx.writeBuffer();
+}
+
+function fmtMoney(n){
+  return '$' + n.toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function renderResults({totalRows, innovCount, moboCount, almacenesCount, resumenAlmacen, resumenCategoria, resumenCategoriaTotal}){
+  document.getElementById('kpiRows').textContent = totalRows.toLocaleString();
+  document.getElementById('kpiInnov').textContent = innovCount.toLocaleString();
+  document.getElementById('kpiMobo').textContent = moboCount.toLocaleString();
+  document.getElementById('kpiAlm').textContent = almacenesCount.toLocaleString();
+
+  const tbl1 = document.getElementById('tbl1');
+  let h1 = '<thead><tr><th>Almacén</th><th style="text-align:right;">Total venta MOBO</th></tr></thead><tbody>';
+  resumenAlmacen.forEach(r => {
+    h1 += '<tr><td>'+escapeHtml(r.almacen)+'</td><td class="num">'+fmtMoney(r.total)+'</td></tr>';
+  });
+  h1 += '</tbody>';
+  tbl1.innerHTML = h1;
+
+  const tbl2 = document.getElementById('tbl2');
+  let h2 = '<thead><tr><th>Almacén</th><th>Categoría</th><th style="text-align:right;">Total venta</th></tr></thead><tbody>';
+  resumenCategoria.slice(0,12).forEach(r => {
+    h2 += '<tr><td>'+escapeHtml(r.almacen)+'</td><td>'+escapeHtml(r.categoria)+'</td><td class="num">'+fmtMoney(r.total)+'</td></tr>';
+  });
+  h2 += '</tbody>';
+  tbl2.innerHTML = h2;
+
+  const tbl3 = document.getElementById('tbl3');
+  let h3 = '<thead><tr><th>Categoría</th><th style="text-align:right;">Total venta (todas las sucursales)</th></tr></thead><tbody>';
+  resumenCategoriaTotal.forEach(r => {
+    h3 += '<tr><td>'+escapeHtml(r.categoria)+'</td><td class="num">'+fmtMoney(r.total)+'</td></tr>';
+  });
+  h3 += '</tbody>';
+  tbl3.innerHTML = h3;
+
+  document.getElementById('results').classList.add('show');
+}
+
+function escapeHtml(s){
+  return s.toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

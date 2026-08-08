@@ -5,96 +5,220 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Distribución Celulares — TECNOLOGIA MOVIL</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<link rel="stylesheet" href="../styles.css">
 <style>
-.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-input[type=file],input[type=text]{padding:8px;border-radius:6px;border:1px solid #ccc}
-button{padding:8px 14px;background:#2f6fa6;color:white;border:none;border-radius:6px;cursor:pointer}
-.list{margin-top:20px;background:white;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.1);overflow:hidden}
-.item{padding:10px 14px;border-bottom:1px solid #eee;cursor:pointer}
-.item:hover{background:#f0f6ff}
-.brand{font-weight:bold;color:#00b4d8}
-.model{font-size:14px}
+  
+  .sidebar-brand-logo{display:flex;align-items:center;gap:10px;}
+  .sidebar-brand-logo img{border-radius:6px;}
 
-/* Badge tipo */
-.tipo-badge{
-  display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;
-  border-radius:10px;margin-left:6px;vertical-align:middle;
-}
-.tipo-badge.smartphone{background:#e0f7fa;color:#00838f}
-.tipo-badge.basico{background:#ede7f6;color:#5c6bc0}
+  /* ── Controles (subir archivo + buscar) ── */
+  .controls{display:flex;gap:var(--space-md);align-items:center;flex-wrap:wrap;margin-bottom:var(--space-md);}
+  #inputFile{display:none;}
+  .file-button{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 18px;border-radius:var(--radius-lg);
+    font-size:14px;font-weight:600;letter-spacing:0.02em;
+    background:var(--surface-container-high);color:var(--on-surface);
+    border:1px solid var(--outline-variant);
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .file-button:hover{border-color:var(--primary);transform:translateY(-1px);}
+  .file-button .material-symbols-outlined{font-size:18px;}
 
-.panel{position:fixed;top:0;right:0;width:420px;height:100%;background:white;
-       box-shadow:-4px 0 10px rgba(0,0,0,.15);padding:20px;overflow:auto;display:none}
-.store{padding:8px;border-bottom:1px solid #ddd;cursor:pointer}
-.store:hover{background:#eef4ff}
-.store.total-row{background:#e3f2fd;font-weight:bold;color:#1976d2;cursor:default}
-.product-detail{margin-top:10px;background:#f5f7fa;padding:10px;border-radius:6px}
+  #search{
+    flex:1;min-width:220px;padding:10px 14px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    font-family:'Inter',sans-serif;font-size:14px;
+    background:var(--surface-container-lowest);color:var(--on-surface);
+  }
+  #search:focus{outline:2px solid var(--primary);outline-offset:1px;}
 
-/* Filtros tipo */
-.filtro-tipo{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.filtro-btn{padding:6px 14px;border-radius:20px;border:2px solid #ccc;background:white;
-            cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
-.filtro-btn.activo{border-color:#00838f;background:#e0f7fa;color:#00838f}
-.filtro-btn.activo.basico{border-color:#5c6bc0;background:#ede7f6;color:#5c6bc0}
+  /* ── Filtros por tipo ── */
+  .filtro-tipo{display:flex;gap:10px;margin-bottom:var(--space-lg);flex-wrap:wrap;}
+  .filtro-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 16px;border-radius:var(--radius-full);
+    border:1px solid var(--outline-variant);background:var(--surface-container-lowest);
+    color:var(--on-surface-variant);font-size:13px;font-weight:600;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .filtro-btn .material-symbols-outlined{font-size:16px;}
+  .filtro-btn.activo{border-color:var(--primary);background:rgba(29,78,216,0.08);color:var(--primary);}
+  .filtro-btn.activo.basico{border-color:var(--tertiary);background:rgba(29,78,216,0.08);color:var(--tertiary);}
+
+  /* ── Lista de resultados ── */
+  .list{
+    background:var(--surface-container-lowest);
+    border:1px solid rgba(196,197,215,0.4);
+    border-radius:var(--radius-xl);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(17,28,45,0.04);
+  }
+  .item{padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--outline-variant);cursor:pointer;transition:background .15s ease;}
+  .item:last-child{border-bottom:none;}
+  .item:hover{background:var(--surface-container-low);}
+  .brand{font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;font-size:14px;}
+  .model{font-size:13px;color:var(--on-surface-variant);margin-top:2px;}
+
+  .tipo-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:11px;font-weight:700;padding:3px 10px;border-radius:var(--radius-full);
+  }
+  .tipo-badge .material-symbols-outlined{font-size:13px;}
+  .tipo-badge.smartphone{background:rgba(29,78,216,0.1);color:var(--primary);}
+  .tipo-badge.basico{background:rgba(29,78,216,0.08);color:var(--tertiary);}
+
+  /* ── Loader ── */
+  .loader-container{
+    display:none;align-items:center;justify-content:center;padding:var(--space-2xl) 0;
+  }
+  .spinner-ring{
+    width:44px;height:44px;border-radius:50%;
+    border:4px solid var(--surface-container-high);
+    border-top-color:var(--primary);
+    animation:girar .9s linear infinite;
+  }
+  @keyframes girar{to{transform:rotate(360deg);}}
+
+  /* ── Panel lateral de detalle ── */
+  .panel{
+    position:fixed;top:0;right:0;width:420px;max-width:100%;height:100%;
+    background:var(--surface-container-lowest);
+    box-shadow:-8px 0 24px rgba(17,28,45,0.14);
+    padding:var(--space-xl);overflow-y:auto;display:none;z-index:60;
+    border-left:1px solid var(--outline-variant);
+  }
+  #panelTitle{margin:0 0 var(--space-md);font-size:16px;font-weight:700;color:var(--on-surface);}
+
+  #downloadBtn{
+    display:none;align-items:center;gap:8px;
+    padding:10px 16px;border-radius:var(--radius-lg);
+    font-size:13px;font-weight:600;
+    background:var(--primary);color:var(--on-primary);
+    margin-bottom:var(--space-md);
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  #downloadBtn:hover{opacity:0.9;transform:translateY(-1px);}
+  #downloadBtn .material-symbols-outlined{font-size:16px;}
+
+  .store{
+    padding:10px 12px;border-bottom:1px solid var(--outline-variant);
+    cursor:pointer;font-size:13px;color:var(--on-surface);border-radius:var(--radius-lg);
+  }
+  .store:hover{background:var(--surface-container-low);}
+  .store.total-row{background:rgba(29,78,216,0.08);font-weight:700;color:var(--primary);cursor:default;}
+
+  .product-detail{margin-top:var(--space-md);}
+  .product-detail h4{margin:0 0 8px;font-size:13px;color:var(--on-surface-variant);}
+  .product-detail-item{
+    border-bottom:1px solid var(--outline-variant);padding:8px 4px;font-size:13px;color:var(--on-surface);
+  }
 </style>
-<link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li><a href="index.php">Home</a></li>
-        <li><a href="ventascelulares.php">🛍️ Ventas por Modelo</a></li>
-        <li><a href="analisis_celulares_ventas_existencias.php">📊 Análisis Ventas vs Existencias</a></li>
-      </ul>
-    </div>
-  </nav>
-</header>
 
-<div class="container">
-  <h1>📦 Distribución Celulares — TECNOLOGIA MOVIL</h1>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" hidden/>
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-brand-logo">
+        <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+        <div>
+          <p class="sidebar-brand text-headline-sm">Central Cell</p>
+          <p class="sidebar-sub text-label-sm">Panel de Análisis de Celulares</p>
         </div>
-        <div class="active_line"></div>
-        <span class="text">Seleccionar Existencias</span>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">
+        <span class="material-symbols-outlined">close</span>
       </button>
     </div>
-    <input type="text" id="search" placeholder="Buscar modelo...">
+
+    <nav class="sidebar-nav">
+      <p class="sidebar-label">Navegación</p>
+      <a href="../garantias/validador/validador.php" class="sidebar-link">
+        <span class="material-symbols-outlined">home</span>
+        Home
+      </a>
+      <a href="modulos.html" class="sidebar-link">
+        <span class="material-symbols-outlined">bar_chart</span>
+        Panel de Herramientas
+      </a>
+      <a href="analisis_celulares_ventas_existencias.php" class="sidebar-link">
+        <span class="material-symbols-outlined">swap_horiz</span>
+        Ventas vs Existencias
+      </a>
+      <a href="celularesstock.php" class="sidebar-link active">
+        <span class="material-symbols-outlined">inventory_2</span>
+        Distribución por Modelo
+      </a>
+      <a href="ventascelulares.php" class="sidebar-link">
+        <span class="material-symbols-outlined">storefront</span>
+        Ventas por Modelo
+      </a>
+      
+    </nav>
+
+    <div class="sidebar-foot">
+      <p class="text-label-sm" style="color:var(--outline)">Innovación Móvil</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topheader">
+      <div class="topheader-left">
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <h2 class="text-headline-sm" style="margin:0">Distribución Celulares</h2>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <div class="lesson">
+        <div class="lesson-body">
+
+          <span class="eyebrow">Reportes</span>
+          <h1 class="text-headline-lg" style="margin:6px 0 var(--space-lg);display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="font-size:26px;color:var(--primary);">inventory_2</span>
+            Distribución Celulares — TECNOLOGIA MOVIL
+          </h1>
+
+          <div class="controls">
+            <input id="inputFile" type="file" accept=".xlsx,.xls"/>
+            <button class="file-button" id="fileButton" type="button">
+              <span class="material-symbols-outlined">upload_file</span>
+              Seleccionar Existencias
+            </button>
+            <input type="text" id="search" placeholder="Buscar modelo...">
+          </div>
+
+          <!-- Filtros por tipo -->
+          <div class="filtro-tipo">
+            <button class="filtro-btn activo" data-tipo="TODOS"><span class="material-symbols-outlined">apps</span> Todos</button>
+            <button class="filtro-btn" data-tipo="SMARTPHONE"><span class="material-symbols-outlined">smartphone</span> Smartphone</button>
+            <button class="filtro-btn basico" data-tipo="EQUIPO_BASICO"><span class="material-symbols-outlined">dialpad</span> Equipo Básico</button>
+          </div>
+
+          <div id="list" class="list"></div>
+          <div id="loader" class="loader-container">
+            <div class="spinner-ring"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Filtros por tipo -->
-  <div class="filtro-tipo">
-    <button class="filtro-btn activo" data-tipo="TODOS">📋 Todos</button>
-    <button class="filtro-btn" data-tipo="SMARTPHONE">📱 Smartphone</button>
-    <button class="filtro-btn basico" data-tipo="EQUIPO_BASICO">📟 Equipo Básico</button>
+  <div id="panel" class="panel">
+    <h3 id="panelTitle"></h3>
+    <button id="downloadBtn" type="button"><span class="material-symbols-outlined">download</span> Descargar Distribución</button>
+    <div id="stores"></div>
+    <div id="productDetail" class="product-detail"></div>
   </div>
-
-  <div id="list" class="list"></div>
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-    <span class="sun sunshine"></span><span class="sun"></span>
-    <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-  </div>
-</div>
-
-<div id="panel" class="panel">
-  <h3 id="panelTitle"></h3>
-  <button id="downloadBtn" style="display:none;margin-bottom:10px;">📥 Descargar Distribución</button>
-  <div id="stores"></div>
-  <div id="productDetail" class="product-detail"></div>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -205,14 +329,15 @@ function renderList(){
     .sort((a,b)=> b.total - a.total)
     .forEach(({ marca, modelo, tipo, total })=>{
       const badgeClass = tipo === 'SMARTPHONE' ? 'smartphone' : 'basico';
-      const badgeLabel = tipo === 'SMARTPHONE' ? '📱 Smartphone' : '📟 Básico';
+      const badgeIcon  = tipo === 'SMARTPHONE' ? 'smartphone' : 'dialpad';
+      const badgeLabel = tipo === 'SMARTPHONE' ? 'Smartphone' : 'Básico';
 
       const div = document.createElement("div");
       div.className = "item";
       div.innerHTML = `
         <div class="brand">
           ${marca}
-          <span class="tipo-badge ${badgeClass}">${badgeLabel}</span>
+          <span class="tipo-badge ${badgeClass}"><span class="material-symbols-outlined">${badgeIcon}</span>${badgeLabel}</span>
         </div>
         <div class="model">${modelo} — ${total} pzas</div>
       `;
@@ -228,9 +353,11 @@ function abrirModelo(marca, modelo, tipo){
   tipoActivo   = tipo;
 
   panel.style.display = "block";
-  const tipoLabel = tipo === 'SMARTPHONE' ? '📱 Smartphone' : '📟 Equipo Básico';
-  panelTitle.textContent = `${marca} — ${modelo} · ${tipoLabel}`;
-  downloadBtn.style.display = "block";
+  const tipoLabel = tipo === 'SMARTPHONE'
+    ? '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">smartphone</span> Smartphone'
+    : '<span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">dialpad</span> Equipo Básico';
+  panelTitle.innerHTML = `${marca} — ${modelo} · ${tipoLabel}`;
+  downloadBtn.style.display = "inline-flex";
   storesDiv.innerHTML    = "";
   productDetail.innerHTML= "";
 
@@ -271,7 +398,7 @@ function mostrarProductos(almacen, productos){
   productDetail.innerHTML = `<h4>${almacen}</h4>`;
   productos.sort((a,b)=>b.existencia-a.existencia).forEach(p=>{
     const d = document.createElement("div");
-    d.style.cssText = "border-bottom:1px solid #ddd;padding:6px";
+    d.className = "product-detail-item";
     d.innerHTML = `<b>${p.prodConcat}</b><br>Barcode: ${p.barcode}<br>Existencia: ${p.existencia}`;
     productDetail.appendChild(d);
   });
@@ -326,12 +453,24 @@ downloadBtn.onclick = ()=>{
   );
 };
 
-document.getElementById('menu-check').addEventListener('change', function(){
-  const m = document.getElementById('nav-menu');
-  m.style.opacity       = this.checked ? '1' : '0';
-  m.style.visibility    = this.checked ? 'visible' : 'hidden';
-  m.style.pointerEvents = this.checked ? 'auto' : 'none';
-});
+/* ── Control del sidebar en móvil ── */
+const sidebar        = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const menuToggle      = document.getElementById('menuToggle');
+const sidebarClose    = document.getElementById('sidebarClose');
+
+function abrirSidebar(){
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.add('show');
+}
+function cerrarSidebar(){
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+}
+
+menuToggle.addEventListener('click', abrirSidebar);
+sidebarClose.addEventListener('click', cerrarSidebar);
+sidebarOverlay.addEventListener('click', cerrarSidebar);
 </script>
 </body>
 </html>

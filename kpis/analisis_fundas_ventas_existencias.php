@@ -1,296 +1,217 @@
 <!DOCTYPE html>
 <html lang="es">
-  
+
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Análisis Ventas vs Existencias - INNOVACION MOVIL</title>
+<link rel="stylesheet" href="../styles.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-<link rel="stylesheet" href="estilos.css">
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+  #existenciasFile,
+  #ventasFile{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f6ff;
-  min-height: 100vh;
-}
+  .file-status{
+    font-size:13px;
+    color:var(--on-surface-variant);
+    margin-top:10px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .file-status.success{color:var(--secondary);font-weight:600;}
+  .method-card .btn{margin-top:2px;}
+  .method-card.loaded{border-color:var(--secondary);background:rgba(109,245,225,0.10);}
 
+  .loader{
+    display:none;
+    align-items:center;justify-content:center;gap:var(--space-md);
+    padding:var(--space-lg);margin-top:var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+  }
+  .loader.active{display:flex;}
+  .spinner{
+    width:22px;height:22px;border-radius:50%;
+    border:3px solid var(--outline-variant);
+    border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loader-text{font-size:14px;font-weight:600;color:var(--on-surface-variant);}
 
+  #analyzeBtn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-
-
-.container {
-  max-width: 900px;
-  margin: 40px auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(47,111,166,0.15);
-  padding: 40px;
-}
-
-h1 {
-  color: #2f6fa6;
-  margin-bottom: 30px;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.upload-section {
-  display: grid;
-  gap: 25px;
-  margin-bottom: 30px;
-}
-
-.file-group {
-  background: #f8fafc;
-  padding: 20px;
-  border-radius: 10px;
-  border: 2px solid #e3f2fd;
-  transition: all 0.3s;
-}
-
-.file-group:hover {
-  border-color: #2f6fa6;
-}
-
-.file-group h3 {
-  color: #2f6fa6;
-  margin-bottom: 15px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.file-upload {
-  position: relative;
-}
-
-input[type=file] {
-  display: none;
-}
-
-.file-button {
-  display: block;
-  width: 100%;
-  padding: 14px 20px;
-  background: #306F94;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.file-button:hover {
-  background: #25527a;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(47,111,166,0.3);
-}
-
-.file-button.loaded {
-  background: #28a745;
-}
-
-.file-button.loaded:hover {
-  background: #218838;
-}
-
-.file-status {
-  margin-top: 12px;
-  padding: 10px;
-  background: white;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #6c757d;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  border: 1px solid #e9ecef;
-}
-
-.file-status.success {
-  color: #28a745;
-  font-weight: 600;
-  border-color: #28a745;
-  background: #f0fff4;
-}
-
-.analyze-section {
-  text-align: center;
-  padding: 30px 0;
-  border-top: 2px solid #e3f2fd;
-  margin-top: 20px;
-}
-
-#analyzeBtn {
-  padding: 16px 50px;
-  background: linear-gradient(135deg, #2f6fa6 0%, #1e4d7a 100%);
-  color: white;
-  border: none;
-  border-radius: 50px;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(47,111,166,0.3);
-}
-
-#analyzeBtn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 25px rgba(47,111,166,0.5);
-}
-
-#analyzeBtn:disabled {
-  background: #adb5bd;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-
-.loader {
-  display: none;
-  text-align: center;
-  padding: 20px;
-}
-
-.loader.active {
-  display: block;
-}
-
-.spinner {
-  border: 4px solid #e3f2fd;
-  border-top: 4px solid #2f6fa6;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 15px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loader-text {
-  color: #2f6fa6;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.instructions {
-  background: #e3f2fd;
-  padding: 20px;
-  border-radius: 10px;
-  margin-top: 25px;
-  border-left: 4px solid #2f6fa6;
-}
-
-.instructions h3 {
-  color: #2f6fa6;
-  margin-bottom: 12px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.instructions ul {
-  margin-left: 20px;
-  color: #495057;
-  line-height: 1.8;
-}
-
-.instructions li {
-  margin-bottom: 6px;
-}
+  .sidebar-brand-logo{display:flex;align-items:center;gap:10px;}
+  .sidebar-brand-logo img{border-radius:6px;}
 </style>
 </head>
+
 <body>
 
-<header>
-<nav>
-        <div class="nav-inner">
-            <!-- Botón hamburguesa -->
-            <label class="bar-menu">
-                <input type="checkbox" id="menu-check">
-                <span class="top"></span>
-                <span class="middle"></span>
-                <span class="bottom"></span>
-            </label>
-
-            <ul id="nav-menu">
-                 <li> <a href="index.php">
-          
-          Home
-        </a></li>
-      <li><a href="fundasstock.php">📦 Distribución Fundas</a></li>
-      <li><a href="ventasfundas.php">🛍️ Ventas por Modelo</a></li>
-            </ul>
-        </div>
-    </nav>
-</header>
-
-<div class="container">
-  <h1>📊 Análisis de Ventas vs Existencias</h1>
-  
-  <div class="upload-section">
-    <div class="file-group">
-      <h3>1️⃣ Archivo de Existencias</h3>
-      <div class="file-upload">
-        <input type="file" id="existenciasFile" accept=".xlsx,.xls">
-        <button class="file-button" id="existenciasBtn">
-          📦 Seleccionar Archivo de Existencias
-        </button>
-        <div class="file-status" id="existenciasStatus">
-          Esperando archivo...
-        </div>
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-brand-logo">
+      <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+      <div>
+        <p class="sidebar-brand text-headline-sm">Central Cell</p>
+        <p class="sidebar-sub text-label-sm">Panel de Análisis de Fundas</p>
       </div>
     </div>
-
-    <div class="file-group">
-      <h3>2️⃣ Archivo de Ventas por Ticket</h3>
-      <div class="file-upload">
-        <input type="file" id="ventasFile" accept=".xlsx,.xls">
-        <button class="file-button" id="ventasBtn">
-          🛍️ Seleccionar Archivo de Ventas
-        </button>
-        <div class="file-status" id="ventasStatus">
-          Esperando archivo...
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="analyze-section">
-    <button id="analyzeBtn" disabled>
-      🚀 Generar Reporte Completo
+    <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">
+      <span class="material-symbols-outlined">close</span>
     </button>
   </div>
 
-  <div class="loader" id="loader">
-    <div class="spinner"></div>
-    <div class="loader-text">Generando reporte Excel...</div>
+  <nav class="sidebar-nav">
+    <p class="sidebar-label">Navegación</p>
+    <a href="../garantias/validador/validador.php" class="sidebar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="sidebar-link">
+      <span class="material-symbols-outlined">dashboard</span>
+      Panel de Herramientas
+    </a>
+
+    <a href="analisis_fundas_ventas_existencias.php" class="sidebar-link active">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      Ventas vs Existencias
+    </a>
+
+    <a href="fundasstock.php" class="sidebar-link">
+      <span class="material-symbols-outlined">inventory_2</span>
+      Distribución Fundas
+    </a>
+    <a href="ventasfundas.php" class="sidebar-link">
+      <span class="material-symbols-outlined">storefront</span>
+      Ventas por Modelo
+    </a>
+    <a href="analisis_fundas.php" class="sidebar-link">
+      <span class="material-symbols-outlined">sell</span>
+      Ventas Por Marca
+    </a>
+  </nav>
+
+  <div class="sidebar-foot">
+    <p class="text-label-sm" style="color:var(--outline)">Innovación Móvil</p>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===================== MAIN ===================== -->
+<div class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <h2 class="text-headline-sm" style="margin:0">Análisis Ventas vs Existencias</h2>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="lesson">
+      <div class="lesson-body">
+
+        <span class="eyebrow">Reportes</span>
+        <h1 class="text-headline-lg" style="margin:6px 0 0">Análisis de Ventas vs Existencias</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px">storefront</span> Innovación Móvil</span>
+        </div>
+
+        <div class="intro-panel">
+          <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+          <div>
+            <h3 style="margin:0">Genera tu reporte comparativo</h3>
+            <p>Carga los archivos de existencias y ventas para construir automáticamente el Excel comparativo por modelo y almacén.</p>
+          </div>
+        </div>
+
+        <!-- Paso 1: Carga de archivos -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">1</div>
+            <h3 class="step-title text-headline-sm">Carga tus archivos</h3>
+          </div>
+
+          <div class="method-grid">
+            <div class="method-card" id="existenciasCard">
+              <h4><span class="material-symbols-outlined">inventory_2</span> Archivo de Existencias</h4>
+              <input type="file" id="existenciasFile" accept=".xlsx,.xls">
+              <button class="btn btn-outline btn-block" id="existenciasBtn" type="button">
+                <span class="material-symbols-outlined">upload_file</span>
+                Seleccionar Archivo de Existencias
+              </button>
+              <div class="file-status" id="existenciasStatus">
+                <span class="material-symbols-outlined" style="font-size:16px">schedule</span>
+                Esperando archivo...
+              </div>
+            </div>
+
+            <div class="method-card" id="ventasCard">
+              <h4><span class="material-symbols-outlined">shopping_bag</span> Archivo de Ventas por Ticket</h4>
+              <input type="file" id="ventasFile" accept=".xlsx,.xls">
+              <button class="btn btn-outline btn-block" id="ventasBtn" type="button">
+                <span class="material-symbols-outlined">upload_file</span>
+                Seleccionar Archivo de Ventas
+              </button>
+              <div class="file-status" id="ventasStatus">
+                <span class="material-symbols-outlined" style="font-size:16px">schedule</span>
+                Esperando archivo...
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Paso 2: Generar reporte -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">2</div>
+            <h3 class="step-title text-headline-sm">Genera el reporte</h3>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="analyzeBtn" disabled type="button">
+            <span class="material-symbols-outlined">rocket_launch</span>
+            Generar Reporte Completo
+          </button>
+
+          <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">Generando reporte Excel...</div>
+          </div>
+        </section>
+
+        <!-- Instrucciones -->
+        <div class="takeaway">
+          <div class="icon-badge"><span class="material-symbols-outlined">checklist</span></div>
+          <div>
+            <h4>Instrucciones</h4>
+            <ul class="step-list check">
+              <li>Carga el archivo de <strong>Existencias</strong> (inventario actual)</li>
+              <li>Carga el archivo de <strong>Ventas por Ticket</strong></li>
+              <li>Presiona el botón para generar el reporte automáticamente</li>
+              <li>El Excel mostrará una tabla con columnas: Modelo | Almacén | Ventas | Existencias</li>
+              <li>Los modelos están ordenados por ventas (mayor a menor)</li>
+              <li>Si un almacén no vendió, aparecerá 0 en ventas</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
-  <div class="instructions">
-    <h3>📋 Instrucciones:</h3>
-    <ul>
-      <li>Carga el archivo de <strong>Existencias</strong> (inventario actual)</li>
-      <li>Carga el archivo de <strong>Ventas por Ticket</strong></li>
-      <li>Presiona el botón para generar el reporte automáticamente</li>
-      <li>El Excel mostrará una tabla con columnas: Modelo | Almacén | Ventas | Existencias</li>
-      <li>Los modelos están ordenados por ventas (mayor a menor)</li>
-      <li>Si un almacén no vendió, aparecerá 0 en ventas</li>
-    </ul>
-  </div>
+  
+
 </div>
 
 <script>
@@ -343,9 +264,10 @@ function cargarExistencias(file) {
       });
     }
 
-    existenciasStatus.textContent = `✅ ${existenciasData.length} registros cargados`;
+    existenciasStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">check_circle</span> ' + existenciasData.length + ' registros cargados';
     existenciasStatus.classList.add('success');
     existenciasBtn.classList.add('loaded');
+    document.getElementById('existenciasCard').classList.add('loaded');
     verificarArchivos();
   };
   reader.readAsArrayBuffer(file);
@@ -401,9 +323,10 @@ function cargarVentas(file) {
       });
     }
 
-    ventasStatus.textContent = `✅ ${ventasData.length} registros cargados`;
+    ventasStatus.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">check_circle</span> ' + ventasData.length + ' registros cargados';
     ventasStatus.classList.add('success');
     ventasBtn.classList.add('loaded');
+    document.getElementById('ventasCard').classList.add('loaded');
     verificarArchivos();
   };
   reader.readAsArrayBuffer(file);
@@ -593,20 +516,27 @@ async function generarReporte() {
 }
 </script>
 
-  <script>
-    // Controlar menú hamburguesa
-    document.getElementById('menu-check').addEventListener('change', function() {
-        const menu = document.getElementById('nav-menu');
-        if (this.checked) {
-            menu.style.opacity = '1';
-            menu.style.visibility = 'visible';
-            menu.style.pointerEvents = 'auto';
-        } else {
-            menu.style.opacity = '0';
-            menu.style.visibility = 'hidden';
-            menu.style.pointerEvents = 'none';
-        }
-    });
+<script>
+  // Control del sidebar en móvil (equivalente visual al menú hamburguesa anterior)
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const menuToggle = document.getElementById('menuToggle');
+  const sidebarClose = document.getElementById('sidebarClose');
+
+  function abrirSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('show');
+  }
+  function cerrarSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+  }
+
+  menuToggle.addEventListener('click', abrirSidebar);
+  sidebarClose.addEventListener('click', cerrarSidebar);
+  sidebarOverlay.addEventListener('click', cerrarSidebar);
+
+  document.getElementById('anioActual').textContent = new Date().getFullYear();
 </script>
 
 </body>
