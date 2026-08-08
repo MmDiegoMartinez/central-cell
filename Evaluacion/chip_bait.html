@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Guía de instalación de Chip Bait - Innovación Móvil">
+    <meta name="author" content="Diego Fernando Martínez Santiago">
+    <link rel="stylesheet" href="css/css.css">
+    <link rel="stylesheet" href="css/videos.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <title>Instalación de Chip Bait</title>
+    <style>
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h1 id="titulo">Capacitación Tecnología Móvil</h1>
+        <input id="checkbox2" type="checkbox">
+        <label class="toggle toggle2" for="checkbox2">
+            <div id="bar4" class="bars"></div>
+            <div id="bar5" class="bars"></div>
+            <div id="bar6" class="bars"></div>
+        </label>
+        <ul id="menu">
+            <li><a href="index.html">Inicio</a></li>
+            
+            <li><a href="material.html">◀️ Atrás</a></li>
+        </ul>
+    </nav>
+
+    <script>
+        function closeMenu() {
+            document.getElementById("checkbox2").checked = false;
+        }
+    </script>
+
+    <div class="contenedorpartdos">
+
+        <div class="inicio">
+            <h1>📶 Instalación de Chip Bait</h1><br>
+            <p><b>Sigue estos pasos para activar correctamente una línea Bait en el teléfono del cliente.</b></p>
+        </div>
+
+        <div class="imagendos">
+            <div class="inicio">
+                <iframe
+                    width="400"
+                    height="270"
+                    src="https://drive.google.com/file/d/11LzUwUrrBv-BMXCyvQwbUBalrAJC9rt1/preview"
+                    title="Video: Instalación de Chip Bait"
+                    frameborder="0"
+                    allow="autoplay"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="barra">
+
+        <h4>✅ Pasos Correctos</h4><br>
+
+        <h4>🔹 PASO 1: Verificar Compatibilidad del Equipo</h4><br>
+        <p>En el teclado de llamadas del teléfono del cliente, marcar:</p><br>
+        <p><b>*#06#</b></p><br>
+        <p>Esto mostrará el <b>IMEI</b> del equipo.</p><br>
+        <p>👉 Ingresar ese IMEI en el portal:</p><br>
+        <p>
+            <a href="https://mibait.com/compatibilidad" target="_blank"><b>🌐 mibait.com/compatibilidad</b></a>
+        </p><br>
+        <p>Este portal te dirá si el equipo puede tener señal Bait.</p><br>
+        <p>✔ Si es compatible → continuar con los siguientes pasos.</p><br><br>
+
+        <h4>🔹 PASO 2: Insertar el Chip</h4><br>
+        <p>👉 Insertar el chip Bait en el teléfono del cliente.</p><br>
+        <p>👉 Esperar el <b>mensaje de confirmación</b>.</p><br>
+        <p>⚠️ Este mensaje puede tardar dependiendo de la saturación de la plataforma de Bait.</p><br>
+        <p>Es posible que el chip ya dé señal antes de recibir el mensaje — esperar un momento.</p><br><br>
+
+        <h4>🔹 PASO 3: Mensajes de Activación</h4><br>
+        <p>Después de esperar, llegará un mensaje confirmando:</p><br>
+        <p>
+            <ul style="list-style-type: disc; padding-left: 20px; margin: 0;">
+                <li>La recarga de <b>$100 pesos</b> por defecto</li>
+                <li>Que la <b>línea ya está activa</b></li>
+            </ul>
+        </p><br><br>
+
+        <h4>🔹 PASO 4: Registro del Cliente (Vinculación)</h4><br>
+        <p>El mensaje de activación incluirá un <b>enlace</b> para vincular el número con el cliente.</p><br>
+        <p>👉 Abrir ese enlace, preferentemente desde <b>Google Chrome</b>.</p><br>
+        <p>El proceso es sencillo, solo seguir las indicaciones de la plataforma:</p><br>
+        <p>
+            <ul style="list-style-type: disc; padding-left: 20px; margin: 0;">
+                <li>Número telefónico</li>
+                <li>CURP del cliente</li>
+                <li>Reconocimiento facial</li>
+            </ul>
+        </p><br>
+        <p>✔ Una vez terminado el proceso → <b>¡La línea está lista!</b></p><br><br>
+
+        <h4>❌ Importante</h4><br>
+        <p>- Si <b>no se completa el registro</b> del cliente, la línea <b>no funcionará</b>.</p><br><br>
+
+        <h4>🔧 Solución de Problemas (Sin señal)</h4><br>
+        <p>Si el chip no da señal, intentar lo siguiente:</p><br>
+        <p>
+            <ul style="list-style-type: disc; padding-left: 20px; margin: 0;">
+                <li>Activar el <b>Roaming de datos</b></li>
+                <li>En tipo de APN → dejarlo en <b>por defecto</b></li>
+            </ul>
+        </p><br>
+        <p>Esto puede solucionar el problema de señal.</p><br><br>
+
+        <h4>💡 Dato Curioso — Consultar Saldo</h4><br>
+        <p>Para consultar el saldo en Bait:</p><br>
+        <p>👉 Envía un SMS con la palabra <b>SALDO</b> al número <b>52142</b></p><br>
+        <p>Te llegará un mensaje con tu saldo disponible.</p><br><br>
+
+        
+
+    </div>
+
+</body>
+
+<footer>
+    <p>&copy; <span id="year"></span> Diego - Innovación Móvil.</p>
+</footer>
+
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
+
+</html>

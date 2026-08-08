@@ -1672,7 +1672,6 @@ function procesarArchivoExcel(string $rutaArchivo): array
             return $resultado;
         }
 
-        // Abrir el archivo .xlsx como ZIP
         $zip = new ZipArchive();
         if ($zip->open($rutaArchivo) !== true) {
             $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
@@ -2070,7 +2069,233 @@ function procesarArchivoExceltel(string $rutaArchivo): array
 
     return $resultado;
 }
+ 
+/**
+ * Valida una fila y retorna el motivo de rechazo o null si es válida.
+ */
+function validarFila(
+    string $almacen,
+    string $descripcion,
+    int    $existencia,
+    string $barcodeId,
+    ?float $publicoGeneral
+): ?string {
+    if (empty($almacen))       return 'Almacén vacío';
+    if (empty($descripcion))   return 'Descripción vacía';
+    if (empty($barcodeId))     return 'Falta código de barras (columna M)';
+    if ($existencia <= 0)      return 'Existencia inválida o cero';
+    if ($publicoGeneral === null || $publicoGeneral < 0) {
+        return 'Precio inválido o ausente (columna Q)';
+    }
+ 
+    // Descripción demasiado corta (probable basura)
+    if (strlen($descripcion) < 3) return 'Descripción demasiado corta';
+ 
+    return null; // fila válida
+}
 
+
+function registrarFechaExistencias(PDO $conn): bool
+{
+    try {
+        // Hora México via PHP (no depende de las timezone tables de MySQL)
+        $tz     = new DateTimeZone('America/Mexico_City');
+        $ahora  = (new DateTime('now', $tz))->format('Y-m-d H:i:s');
+
+        $stmt = $conn->query("SELECT id FROM fechaexistencias LIMIT 1");
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($fila) {
+            $upd = $conn->prepare(
+                "UPDATE fechaexistencias SET fecha = :fecha WHERE id = :id"
+            );
+            $upd->execute([':fecha' => $ahora, ':id' => $fila['id']]);
+        } else {
+            $ins = $conn->prepare(
+                "INSERT INTO fechaexistencias (fecha) VALUES (:fecha)"
+            );
+            $ins->execute([':fecha' => $ahora]);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log('registrarFechaExistencias error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function procesarArchivoExceltel(string $rutaArchivo): array
+{
+    $resultado = [
+        'exito'               => false,
+        'registros_insertados' => 0,
+        'registros_omitidos'  => [],
+        'mensaje'             => '',
+    ];
+
+    // ── Categorías permitidas (columna N) ────────────────────────
+    $categoriasPermitidas = [
+        'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS',
+        'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL',
+        'TECNOLOGIA MOVIL>EQUIPO BASICO',
+        'TECNOLOGIA MOVIL>SMARTWHATCH',
+    ];
+
+    try {
+        if (!eliminarExistencias()) {
+            $resultado['mensaje'] = 'Error al eliminar registros existentes';
+            return $resultado;
+        }
+        if (!reiniciarIDsExistencias()) {
+            $resultado['mensaje'] = 'Error al reiniciar IDs';
+            return $resultado;
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($rutaArchivo) !== true) {
+            $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
+            return $resultado;
+        }
+
+        $sheetXml         = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        $zip->close();
+
+        // ── Shared strings ──────────────────────────────────────────
+        $sharedStrings = [];
+        if ($sharedStringsXml) {
+            $xmlSS = new SimpleXMLElement($sharedStringsXml);
+            foreach ($xmlSS->si as $si) {
+                $texto = '';
+                if (isset($si->t)) {
+                    $texto = (string) $si->t;
+                } else {
+                    foreach ($si->r as $r) {
+                        $texto .= (string) $r->t;
+                    }
+                }
+                $sharedStrings[] = $texto;
+            }
+        }
+
+        // ── Parsear hoja ─────────────────────────────────────────────
+        $xmlSheet    = new SimpleXMLElement($sheetXml);
+        $primeraFila = true;
+        $filasValidas = [];
+        $omitidos     = [];
+        $cacheAlmacen = [];
+
+        foreach ($xmlSheet->sheetData->row as $row) {
+            if ($primeraFila) {
+                $primeraFila = false;
+                continue;
+            }
+
+            $numFila = (int) $row['r'];
+
+            // ── Leer celdas ──────────────────────────────────────────
+            $celdas = [];
+            foreach ($row->c as $c) {
+                preg_match('/^([A-Z]+)/', (string) $c['r'], $m);
+                $col = $m[1];
+                $v   = isset($c->v) ? (string) $c->v : '';
+                if (isset($c['t']) && $c['t'] == 's') {
+                    $v = $sharedStrings[(int) $v] ?? '';
+                }
+                $celdas[$col] = $v;
+            }
+
+            // ── Extraer campos ───────────────────────────────────────
+            $almacenCompleto = trim($celdas['A'] ?? '');
+            $descripcion     = trim($celdas['C'] ?? '');
+            $existencia      = (int) ($celdas['H'] ?? 0);
+            $barcodeId       = trim($celdas['M'] ?? '');
+            $nombreCategoria = trim($celdas['N'] ?? '');
+            $publicoGeneral  = isset($celdas['Q']) && $celdas['Q'] !== ''
+                                   ? (float) $celdas['Q']
+                                   : null;
+
+            // ── FILTROS SILENCIOSOS (sin reportar) ───────────────────
+            if (stripos($almacenCompleto, 'Almacén general') !== false) continue;
+            if ($existencia == 0) continue;
+
+            // ── FILTRO POR CATEGORÍA (silencioso) ────────────────────
+            if (!in_array($nombreCategoria, $categoriasPermitidas, true)) continue;
+
+            // ── VALIDACIONES CON REPORTE ─────────────────────────────
+            $motivo = validarFila(
+                $almacenCompleto,
+                $descripcion,
+                $existencia,
+                $barcodeId,
+                $publicoGeneral
+            );
+
+            if ($motivo !== null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto ?: '(vacío)',
+                    'descripcion' => $descripcion     ?: '(vacío)',
+                    'motivo'      => $motivo,
+                ];
+                continue;
+            }
+
+            // ── Resolver almacén ─────────────────────────────────────
+            $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0)
+                ? trim(substr($almacenCompleto, strlen('Central Cell ')))
+                : $almacenCompleto;
+
+            if (!array_key_exists($nombreAlmacen, $cacheAlmacen)) {
+                $cacheAlmacen[$nombreAlmacen] = obtenerIDSucursal($nombreAlmacen);
+            }
+            $idAlmacen = $cacheAlmacen[$nombreAlmacen];
+
+            if ($idAlmacen === null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto,
+                    'descripcion' => $descripcion,
+                    'motivo'      => 'Almacén no encontrado en la base de datos',
+                ];
+                continue;
+            }
+
+            $filasValidas[] = [
+                'fila'           => $numFila,
+                'almacen'        => $idAlmacen,
+                'almacenNombre'  => $almacenCompleto,
+                'descripcion'    => $descripcion,
+                'existencia'     => $existencia,
+                'barcodeId'      => $barcodeId,
+                'categoria'      => $nombreCategoria,
+                'publicoGeneral' => $publicoGeneral ?? 0.0,
+            ];
+        }
+
+        // ── Inserción masiva ─────────────────────────────────────────
+        $conn = conectarBD();
+        $bulk = insertarExistenciasBulk($conn, $filasValidas);
+
+        $resultado['exito']                = true;
+        $resultado['registros_insertados'] = $bulk['insertados'];
+        $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
+
+        registrarFechaExistencias($conn);
+
+        $total   = $bulk['insertados'];
+        $errores = count($resultado['registros_omitidos']);
+
+        $resultado['mensaje'] = $errores > 0
+            ? "Proceso completado. $total insertados, $errores con errores."
+            : "Proceso completado exitosamente. $total registros insertados.";
+
+    } catch (Exception $e) {
+        $resultado['mensaje'] = 'Error: ' . $e->getMessage();
+    }
+
+    return $resultado;
+}
 //aqui es el buscador 
 //Obtiene el nombre de un almacén por su ID
 function obtenerNombreAlmacen(int $idAlmacen): ?string {

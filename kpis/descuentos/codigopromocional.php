@@ -40,12 +40,21 @@ caption{text-align:left;font-weight:600;padding:8px;}
             </label>
 
             <ul id="nav-menu">
-                <li>
-        <a href="index.php" class="menu-link">
+               <li>
+        <a href="../../garantias/validador/validador.php" class="menu-link">
           <span class="logo-container">
-            <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo Central Cell" class="logo" width="25" height="25" />
-
+            <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
           </span>
+          Home
+        </a>
+      </li>
+      <li>
+        <li>
+        <a href="../index.php" class="menu-link">
+          Panel KPIs
+        </a>
+      </li>
+        <a href="index.php" class="menu-link">
           Atras
         </a>
       </li>

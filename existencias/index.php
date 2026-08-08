@@ -72,6 +72,7 @@ $validador_id = $_SESSION['validador_id'];
     </style>
 </head>
 <body>
+    
 
     <div class="container">
 
