@@ -1,10 +1,11 @@
 <?php
 function conectarBD(): PDO {
-    // Datos de conexión para entorno local
-    $host = 'localhost';
+    // Datos de conexión personalizados
+   $host = 'localhost';
     $usuario = 'root';
     $password = ''; // En XAMPP por defecto no hay contraseña para root
     $base_datos = 'if0_39427481_tienda_garantias';
+
 
     $dsn = "mysql:host=$host;dbname=$base_datos;charset=utf8mb4";
 
@@ -20,7 +21,6 @@ function conectarBD(): PDO {
         throw new Exception("No se pudo conectar a la base de datos. Por favor, intente más tarde.");
     }
 }
-
 
 function guardarGarantia($datos) {
     $conn = conectarBD();
@@ -887,38 +887,58 @@ function obtenerModelosPorMarca(string $marca): array {
     }
 }
 
-function actualizarGarantiasDiario(PDO $conn) {
+function actualizarGarantiasDiario(PDO $conn, $validador_id) {
     $hoy = date("Y-m-d");
+   
 
     // Revisar si ya se ejecutó hoy
     $sqlCheck = "SELECT id FROM actualizaciones_diarias WHERE fecha = :fecha";
     $stmtCheck = $conn->prepare($sqlCheck);
     $stmtCheck->execute([':fecha' => $hoy]);
-    if ($stmtCheck->fetch()) {
-        return 0; // Ya se ejecutó hoy
+    $existe = $stmtCheck->fetch();
+  
+    
+    if ($existe) {
+        return 0;
     }
 
-    // Consulta de actualización
-    $sql = "UPDATE garantia 
+    try {
+        // A los 2 días, si no tiene anotación, marcar como no llegó
+        $sqlNoLlego = "
+            UPDATE garantia
             SET anotaciones_validador = 'Merma o Garantia No Llego'
             WHERE estatus = 'Anotado'
-              AND (anotaciones_validador IS NULL OR anotaciones_validador = '') 
-              AND DATEDIFF(CURDATE(), fecha) > 3";
+              AND (anotaciones_validador IS NULL OR anotaciones_validador = '')
+              AND DATEDIFF(CURDATE(), fecha) > 2
+        ";
+        $stmtNoLlego = $conn->prepare($sqlNoLlego);
+        $stmtNoLlego->execute();
+        $afectadosNoLlego = $stmtNoLlego->rowCount();
+        
 
-    try {
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
-        $afectados = $stmt->rowCount();
-        $stmt = null;
+        // A los 3 días, cerrar automáticamente
+        $sqlCerrar = "
+            UPDATE garantia
+            SET estatus = 'Cerrada',
+                id_validador = :validador_id
+            WHERE estatus = 'Anotado'
+              AND DATEDIFF(CURDATE(), fecha) > 2
+        ";
+        $stmtCerrar = $conn->prepare($sqlCerrar);
+        $stmtCerrar->execute([':validador_id' => $validador_id]);
+        $afectadosCerrar = $stmtCerrar->rowCount();
+       
 
-        // Registrar la fecha de ejecución en la BD
+        // Registrar la ejecución del día
         $sqlInsert = "INSERT INTO actualizaciones_diarias (fecha) VALUES (:fecha)";
         $stmtInsert = $conn->prepare($sqlInsert);
-        $stmtInsert->execute([':fecha' => $hoy]);
+        $result = $stmtInsert->execute([':fecha' => $hoy]);
+      
 
-        return $afectados;
+        return $afectadosNoLlego + $afectadosCerrar;
 
     } catch (PDOException $e) {
+        echo "ERROR PDO: " . $e->getMessage() . "<br>";
         error_log("Error en actualizarGarantiasDiario: " . $e->getMessage());
         return 0;
     }
@@ -1589,12 +1609,12 @@ function insertarExistenciasBulk(PDO $conn, array $filas): array
         // Construir placeholders: (?,?,?,?,?,?,?)
         $placeholders = implode(
             ', ',
-            array_fill(0, count($chunk), '(?,?,?,?,?,?)')
+            array_fill(0, count($chunk), '(?,?,?,?,?,?,?)')
         );
  
         $sql = "INSERT INTO existencias
-                    (almacen, descripcion, existencia, BarcodeId, categoria, publico_general)
-                VALUES $placeholders";
+            (almacen, descripcion, existencia, BarcodeId, categoria, publico_general, ListaSeries)
+        VALUES $placeholders";
  
         $params = [];
         foreach ($chunk as $fila) {
@@ -1604,6 +1624,7 @@ function insertarExistenciasBulk(PDO $conn, array $filas): array
             $params[] = $fila['barcodeId'];
             $params[] = $fila['categoria'];
             $params[] = $fila['publicoGeneral'];
+            $params[] = $fila['listaSeries'] !== '' ? $fila['listaSeries'] : null;
         }
  
         try {
@@ -1639,6 +1660,258 @@ function procesarArchivoExcel(string $rutaArchivo): array
         'registros_insertados' => 0,
         'registros_omitidos'  => [],
         'mensaje'             => '',
+    ];
+
+    try {
+        if (!eliminarExistencias()) {
+            $resultado['mensaje'] = 'Error al eliminar registros existentes';
+            return $resultado;
+        }
+        if (!reiniciarIDsExistencias()) {
+            $resultado['mensaje'] = 'Error al reiniciar IDs';
+            return $resultado;
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($rutaArchivo) !== true) {
+            $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
+            return $resultado;
+        }
+
+        $sheetXml         = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+        $zip->close();
+
+        // ── Shared strings → acceso O(1) por índice ──────────────────
+        $sharedStrings = [];
+        if ($sharedStringsXml) {
+            $xmlSS = new SimpleXMLElement($sharedStringsXml);
+            foreach ($xmlSS->si as $si) {
+                $sharedStrings[] = isset($si->t)
+                    ? (string) $si->t
+                    : implode('', array_map(fn($r) => (string) $r->t, iterator_to_array($si->r)));
+            }
+            unset($xmlSS);
+        }
+
+        // ── Categorías especiales como set O(1) ──────────────────────
+        $categoriasConCero = array_flip([
+            'tecnologia movil>smartphone>batycell',
+            'tecnologia movil>smartphone>propios',
+        ]);
+
+        // ── Parsear hoja ─────────────────────────────────────────────
+        $xmlSheet       = new SimpleXMLElement($sheetXml);
+        $primeraFila    = true;
+        $filasValidas   = [];
+        $omitidos       = [];
+        $cacheAlmacen   = [];
+        $barcodesVistos = [];
+
+        foreach ($xmlSheet->sheetData->row as $row) {
+            if ($primeraFila) { $primeraFila = false; continue; }
+
+            $numFila = (int) $row['r'];
+
+            // ── Leer celdas ──────────────────────────────────────────
+            $celdas = [];
+            foreach ($row->c as $c) {
+                preg_match('/^([A-Z]+)/', (string) $c['r'], $m);
+                $v = isset($c->v) ? (string) $c->v : '';
+                $celdas[$m[1]] = (isset($c['t']) && $c['t'] == 's')
+                    ? ($sharedStrings[(int) $v] ?? '')
+                    : $v;
+            }
+
+            // ── Extraer campos para filtros tempranos ─────────────────
+            $almacenCompleto = trim($celdas['A'] ?? '');
+            $nombreCategoria = trim($celdas['N'] ?? '');
+
+            // ── FILTROS SILENCIOSOS tempranos ─────────────────────────
+            if (stripos($almacenCompleto, 'Almacén general')    !== false) continue;
+            if (stripos($nombreCategoria, 'SOLUCIONES TECNICAS') !== false) continue;
+
+            $existencia  = (int)   ($celdas['H'] ?? 0);
+            $descripcion = trim($celdas['C'] ?? '');
+            $barcodeId   = trim($celdas['M'] ?? '');
+            $listaSeries = trim($celdas['J'] ?? '');
+
+            // ── Lógica existencia = 0 ─────────────────────────────────
+            if ($existencia === 0) {
+                // Categoría no especial → omitir
+                if (!isset($categoriasConCero[strtolower($nombreCategoria)])) continue;
+                // Campos mínimos vacíos → omitir
+                if ($descripcion === '' || $barcodeId === '')                  continue;
+                // Barcode ya registrado → deduplicar
+                if (isset($barcodesVistos[$barcodeId]))                        continue;
+
+                $barcodesVistos[$barcodeId] = true;
+                $filasValidas[] = [
+                    'fila'           => $numFila,
+                    'almacen'        => null,  // NULL respeta la FK con sucursales
+                    'almacenNombre'  => '',
+                    'descripcion'    => $descripcion,
+                    'existencia'     => 0,
+                    'barcodeId'      => $barcodeId,
+                    'categoria'      => $nombreCategoria,
+                    'publicoGeneral' => 0.0,
+                    'listaSeries'    => $listaSeries,
+                ];
+                continue;
+            }
+
+            // ── Extraer precio (solo si existencia > 0) ───────────────
+            $publicoGeneral = isset($celdas['Q']) && $celdas['Q'] !== ''
+                ? (float) $celdas['Q']
+                : null;
+
+            // ── VALIDACIONES CON REPORTE ──────────────────────────────
+            $motivo = validarFila(
+                $almacenCompleto,
+                $descripcion,
+                $existencia,
+                $barcodeId,
+                $publicoGeneral
+            );
+
+            if ($motivo !== null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto ?: '(vacío)',
+                    'descripcion' => $descripcion     ?: '(vacío)',
+                    'motivo'      => $motivo,
+                ];
+                continue;
+            }
+
+            // ── Resolver almacén con caché O(1) ──────────────────────
+            $nombreAlmacen = str_starts_with($almacenCompleto, 'Central Cell ')
+                ? trim(substr($almacenCompleto, 13))
+                : $almacenCompleto;
+
+            if (!array_key_exists($nombreAlmacen, $cacheAlmacen)) {
+                $cacheAlmacen[$nombreAlmacen] = obtenerIDSucursal($nombreAlmacen);
+            }
+            $idAlmacen = $cacheAlmacen[$nombreAlmacen];
+
+            if ($idAlmacen === null) {
+                $omitidos[] = [
+                    'fila'        => $numFila,
+                    'almacen'     => $almacenCompleto,
+                    'descripcion' => $descripcion,
+                    'motivo'      => 'Almacén no encontrado en la base de datos',
+                ];
+                continue;
+            }
+
+            $barcodesVistos[$barcodeId] = true;
+            $filasValidas[] = [
+                'fila'           => $numFila,
+                'almacen'        => $idAlmacen,
+                'almacenNombre'  => $almacenCompleto,
+                'descripcion'    => $descripcion,
+                'existencia'     => $existencia,
+                'barcodeId'      => $barcodeId,
+                'categoria'      => $nombreCategoria,
+                'publicoGeneral' => $publicoGeneral ?? 0.0,
+                'listaSeries'    => $listaSeries,
+            ];
+        }
+
+        unset($xmlSheet, $sharedStrings);
+
+        // ── Inserción masiva ──────────────────────────────────────────
+        $conn = conectarBD();
+        $bulk = insertarExistenciasBulk($conn, $filasValidas);
+
+        $resultado['exito']                = true;
+        $resultado['registros_insertados'] = $bulk['insertados'];
+        $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
+
+        registrarFechaExistencias($conn);
+
+        $total   = $bulk['insertados'];
+        $errores = count($resultado['registros_omitidos']);
+
+        $resultado['mensaje'] = $errores > 0
+            ? "Proceso completado. $total insertados, $errores con errores."
+            : "Proceso completado exitosamente. $total registros insertados.";
+
+    } catch (Exception $e) {
+        $resultado['mensaje'] = 'Error: ' . $e->getMessage();
+    }
+
+    return $resultado;
+}
+/**
+ * Valida una fila y retorna el motivo de rechazo o null si es válida.
+ */
+function validarFila(
+    string $almacen,
+    string $descripcion,
+    int    $existencia,
+    string $barcodeId,
+    ?float $publicoGeneral
+): ?string {
+    if (empty($almacen))       return 'Almacén vacío';
+    if (empty($descripcion))   return 'Descripción vacía';
+    if (empty($barcodeId))     return 'Falta código de barras (columna M)';
+    if ($existencia <= 0)      return 'Existencia inválida o cero';
+    if ($publicoGeneral === null || $publicoGeneral < 0) {
+        return 'Precio inválido o ausente (columna Q)';
+    }
+ 
+    // Descripción demasiado corta (probable basura)
+    if (strlen($descripcion) < 3) return 'Descripción demasiado corta';
+ 
+    return null; // fila válida
+}
+
+
+function registrarFechaExistencias(PDO $conn): bool
+{
+    try {
+        // Hora México via PHP (no depende de las timezone tables de MySQL)
+        $tz     = new DateTimeZone('America/Mexico_City');
+        $ahora  = (new DateTime('now', $tz))->format('Y-m-d H:i:s');
+
+        $stmt = $conn->query("SELECT id FROM fechaexistencias LIMIT 1");
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($fila) {
+            $upd = $conn->prepare(
+                "UPDATE fechaexistencias SET fecha = :fecha WHERE id = :id"
+            );
+            $upd->execute([':fecha' => $ahora, ':id' => $fila['id']]);
+        } else {
+            $ins = $conn->prepare(
+                "INSERT INTO fechaexistencias (fecha) VALUES (:fecha)"
+            );
+            $ins->execute([':fecha' => $ahora]);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log('registrarFechaExistencias error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function procesarArchivoExceltel(string $rutaArchivo): array
+{
+    $resultado = [
+        'exito'               => false,
+        'registros_insertados' => 0,
+        'registros_omitidos'  => [],
+        'mensaje'             => '',
+    ];
+
+    // ── Categorías permitidas (columna N) ────────────────────────
+    $categoriasPermitidas = [
+        'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS',
+        'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL',
+        'TECNOLOGIA MOVIL>EQUIPO BASICO',
+        'TECNOLOGIA MOVIL>SMARTWHATCH',
     ];
 
     try {
@@ -1717,8 +1990,10 @@ function procesarArchivoExcel(string $rutaArchivo): array
 
             // ── FILTROS SILENCIOSOS (sin reportar) ───────────────────
             if (stripos($almacenCompleto, 'Almacén general') !== false) continue;
-            if (stripos($nombreCategoria, 'SOLUCIONES TECNICAS') !== false) continue;
             if ($existencia == 0) continue;
+
+            // ── FILTRO POR CATEGORÍA (silencioso) ────────────────────
+            if (!in_array($nombreCategoria, $categoriasPermitidas, true)) continue;
 
             // ── VALIDACIONES CON REPORTE ─────────────────────────────
             $motivo = validarFila(
@@ -1779,8 +2054,7 @@ function procesarArchivoExcel(string $rutaArchivo): array
         $resultado['registros_insertados'] = $bulk['insertados'];
         $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
 
-        // ── Registrar fecha/hora de actualización (hora México) ──────
-        registrarFechaExistencias($conn); // ← pasa la conexión existente
+        registrarFechaExistencias($conn);
 
         $total   = $bulk['insertados'];
         $errores = count($resultado['registros_omitidos']);
@@ -2404,6 +2678,7 @@ function obtenerSmartphones(): array
                     'nombre'     => $nombreSuc,
                     'existencia' => array_sum($coloresExist),
                     'colores'    => $coloresSuc,
+                     'stock_por_color' => $coloresExist,
                 ];
             }
             usort($sucursales, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
@@ -2442,54 +2717,57 @@ function obtenerSmartphones(): array
     }
 }
 
-/** MODULO COLABORADORES */
+//crud empĺeados
 
-/** CRUD BASICO */
 
-/*
- Obtiene todos los colaboradores ordenados.
- Incluye indicador de si tienen garantias.
+// ============================================================
+// MÓDULO: COLABORADORES
+// Archivo: funciones.php (sección colaboradores)
+// Descripción: Funciones CRUD y lógica de negocio para
+//              la gestión de colaboradores.
+// ============================================================
 
- Retorna lista de colaboradores.
+// Requiere que conectarBD() esté definida previamente en funciones.php
+
+
+// ─────────────────────────────────────────────
+// SECCIÓN 1: CRUD BÁSICO
+// ─────────────────────────────────────────────
+
+/**
+ * Obtiene todos los colaboradores ordenados alfabéticamente.
+ * Incluye un flag `tiene_garantias` para resaltar el nombre en la vista.
+ *
+ * @return array Lista de colaboradores con sus datos y flag de garantías.
  */
 function obtenerColab(): array
 {
-    try {
-        $conn = conectarBD();
+    $conn = conectarBD();
 
-        $sql = "
-            SELECT
-                c.*,
-                (SELECT COUNT(*) FROM garantia WHERE apasionado = c.id) AS tiene_garantias
-            FROM colaboradores c
-            ORDER BY
-                CASE WHEN c.payjoy_int = 3 THEN 1 ELSE 0 END ASC,
-                CASE WHEN c.fecha_ingreso IS NULL THEN 1 ELSE 0 END ASC,
-                c.fecha_ingreso DESC,
-                c.nombre ASC
-        ";
+    $sql = "
+        SELECT
+            c.*,
+            (SELECT COUNT(*) FROM garantia WHERE apasionado = c.id) AS tiene_garantias
+        FROM colaboradores c
+        ORDER BY
+            CASE WHEN c.payjoy_int = 3 THEN 1 ELSE 0 END ASC,
+            CASE WHEN c.fecha_ingreso IS NULL THEN 1 ELSE 0 END ASC,
+            c.fecha_ingreso DESC,
+            c.nombre ASC
+    ";
 
-        $stmt = $conn->query($sql);
-        $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $conn->query($sql);
+    if (!$stmt) return [];
 
-        $conn = null;
-
-        return $resultado;
-
-    } catch (Exception $e) {
-        error_log("Error en obtenerColab: " . $e->getMessage());
-        return [];
-    }
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
-/*
- Inserta un nuevo colaborador.
-
- Parametros:
- nombre
- fecha_ingreso
-
- Retorna:
- ok, mensaje, id
+/**
+ * Inserta un nuevo colaborador en la base de datos.
+ *
+ * @param string $nombre        Nombre completo del colaborador.
+ * @param string $fecha_ingreso Fecha de ingreso en formato Y-m-d.
+ *
+ * @return array ['ok' => bool, 'mensaje' => string, 'id' => int|null]
  */
 function crearColaborador(string $nombre, string $fecha_ingreso): array
 {
@@ -2503,24 +2781,30 @@ function crearColaborador(string $nombre, string $fecha_ingreso): array
         return ['ok' => false, 'mensaje' => 'La fecha de ingreso no es válida.', 'id' => null];
     }
 
-    try {
-        $conn = conectarBD();
-        $stmt = $conn->prepare("INSERT INTO colaboradores (nombre, fecha_ingreso, fecha_capacitacion, payjoy_int) VALUES (?, ?, NULL, 0)");
+    $conn = conectarBD();
+    $stmt = $conn->prepare("INSERT INTO colaboradores (nombre, fecha_ingreso, fecha_capacitacion, payjoy_int) VALUES (?, ?, NULL, 0)");
 
-        $stmt->execute([$nombre, $fecha_ingreso]);
-        $id = $conn->lastInsertId();
-
-        $conn = null;
-
-        return ['ok' => true, 'mensaje' => 'Colaborador creado correctamente.', 'id' => $id];
-
-    } catch (Exception $e) {
-        error_log("Error en crearColaborador: " . $e->getMessage());
-        return ['ok' => false, 'mensaje' => 'Error al crear el colaborador.', 'id' => null];
+    if (!$stmt) {
+        return ['ok' => false, 'mensaje' => 'Error al preparar la consulta.', 'id' => null];
     }
-}
-/** Actualiza colaborador: id, nombre, fecha_ingreso, fecha_capacitacion, payjoy_int. Retorna ok y mensaje */
 
+    $stmt->execute([$nombre, $fecha_ingreso]);
+    $id = $conn->lastInsertId();
+
+    return ['ok' => true, 'mensaje' => 'Colaborador creado correctamente.', 'id' => $id];
+}
+
+/**
+ * Actualiza los datos de un colaborador existente.
+ *
+ * @param int         $id                ID del colaborador.
+ * @param string      $nombre            Nombre completo.
+ * @param string      $fecha_ingreso     Fecha de ingreso (Y-m-d).
+ * @param string|null $fecha_capacitacion Fecha de capacitación (Y-m-d) o null.
+ * @param int         $payjoy_int        Estado PayJoy (0 o 1).
+ *
+ * @return array ['ok' => bool, 'mensaje' => string]
+ */
 function actualizarColab(int $id, string $nombre, ?string $fecha_ingreso, ?string $fecha_capacitacion, int $payjoy_int): array
 {
     $nombre             = normalizarNombre2($nombre);
@@ -2543,58 +2827,66 @@ function actualizarColab(int $id, string $nombre, ?string $fecha_ingreso, ?strin
             : null;
     }
 
-    try {
-        $conn = conectarBD();
-        $stmt = $conn->prepare("
-            UPDATE colaboradores 
-            SET nombre = ?, fecha_ingreso = ?, fecha_capacitacion = ?, payjoy_int = ? 
-            WHERE id = ?
-        ");
+    $conn = conectarBD();
+    $stmt = $conn->prepare("
+        UPDATE colaboradores 
+        SET nombre = ?, fecha_ingreso = ?, fecha_capacitacion = ?, payjoy_int = ? 
+        WHERE id = ?
+    ");
 
-        $stmt->execute([$nombre, $fecha_ingreso, $fecha_capacitacion, $payjoy_int, $id]);
-
-        $conn = null;
-
-        return ['ok' => true, 'mensaje' => 'Colaborador actualizado correctamente.'];
-
-    } catch (Exception $e) {
-        error_log("Error en actualizarColab: " . $e->getMessage());
-        return ['ok' => false, 'mensaje' => 'Error al actualizar el colaborador.'];
+    if (!$stmt) {
+        return ['ok' => false, 'mensaje' => 'Error al preparar la consulta.'];
     }
+
+    $stmt->execute([$nombre, $fecha_ingreso, $fecha_capacitacion, $payjoy_int, $id]);
+
+    return ['ok' => true, 'mensaje' => 'Colaborador actualizado correctamente.'];
 }
 
-/** Elimina colaborador por id. Retorna ok y mensaje */
+/**
+ * Elimina un colaborador por su ID.
+ *
+ * @param int $id ID del colaborador a eliminar.
+ *
+ * @return array ['ok' => bool, 'mensaje' => string]
+ */
 function eliminarColaborador(int $id): array
 {
-    try {
-        $conn = conectarBD();
+    $conn = conectarBD();
 
-        // Verificar si tiene garantías vinculadas
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
-        $stmt->execute([$id]);
-        $total = (int) $stmt->fetchColumn();
+    // Verificar si tiene garantías vinculadas
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
+    $stmt->execute([$id]);
+    $total = (int) $stmt->fetchColumn();
 
-        if ($total > 0) {
-            return [
-                'ok'      => false,
-                'mensaje' => "No se puede eliminar: el colaborador tiene $total garantía(s) vinculada(s). Usa la fusión para reasignarlas primero."
-            ];
-        }
-
-        $stmt = $conn->prepare("DELETE FROM colaboradores WHERE id = ?");
-        $stmt->execute([$id]);
-
-        $conn = null;
-
-        return ['ok' => true, 'mensaje' => 'Colaborador eliminado correctamente.'];
-
-    } catch (Exception $e) {
-        error_log("Error en eliminarColaborador: " . $e->getMessage());
-        return ['ok' => false, 'mensaje' => 'Error al eliminar el colaborador.'];
+    if ($total > 0) {
+        return [
+            'ok'      => false,
+            'mensaje' => "No se puede eliminar: el colaborador tiene $total garantía(s) vinculada(s). Usa la fusión para reasignarlas primero."
+        ];
     }
+
+    $stmt = $conn->prepare("DELETE FROM colaboradores WHERE id = ?");
+    $stmt->execute([$id]);
+
+    return ['ok' => true, 'mensaje' => 'Colaborador eliminado correctamente.'];
 }
 
-/** Importa Excel y sincroniza colaboradores (filtra puestos validos). Retorna insertados, actualizados, sin_cambios y errores */
+// ─────────────────────────────────────────────
+// SECCIÓN 2: IMPORTACIÓN DESDE EXCEL
+// ─────────────────────────────────────────────
+
+/**
+ * Procesa un archivo .xlsx y sincroniza los colaboradores con la BD.
+ * Solo considera registros con puesto "Apasionado de la telefonía" o
+ * "Encargado de Sucursal". Encabezados en fila 4, datos desde fila 5.
+ *
+ * Requiere: PhpSpreadsheet instalado vía Composer.
+ *
+ * @param string $ruta_archivo Ruta temporal del archivo subido.
+ *
+ * @return array ['insertados' => int, 'actualizados' => int, 'sin_cambios' => int, 'errores' => array]
+ */
 function importarColaboradoresDesdeExcel(string $ruta_archivo): array
 {
     $puestos_validos = [
@@ -2604,201 +2896,191 @@ function importarColaboradoresDesdeExcel(string $ruta_archivo): array
 
     $resultado = ['insertados' => 0, 'actualizados' => 0, 'sin_cambios' => 0, 'errores' => []];
 
-    try {
-        $zip = new ZipArchive();
-        if ($zip->open($ruta_archivo) !== true) {
-            $resultado['errores'][] = 'No se pudo abrir el archivo xlsx.';
-            return $resultado;
-        }
+    $zip = new ZipArchive();
+    if ($zip->open($ruta_archivo) !== true) {
+        $resultado['errores'][] = 'No se pudo abrir el archivo xlsx.';
+        return $resultado;
+    }
 
-        $shared_strings = [];
-        $ss_xml = $zip->getFromName('xl/sharedStrings.xml');
-        if ($ss_xml) {
-            $ss = simplexml_load_string($ss_xml);
-            if ($ss === false) {
-                $resultado['errores'][] = 'Error al parsear sharedStrings.xml.';
-                $zip->close();
-                return $resultado;
-            }
-            foreach ($ss->si as $si) {
-                if (isset($si->t)) {
-                    $shared_strings[] = (string) $si->t;
-                } else {
-                    $texto = '';
-                    foreach ($si->r as $r) {
-                        $texto .= (string) $r->t;
-                    }
-                    $shared_strings[] = $texto;
-                }
-            }
-        }
-
-        $sheet_xml = $zip->getFromName('xl/worksheets/sheet1.xml');
-        $zip->close();
-
-        if (!$sheet_xml) {
-            $resultado['errores'][] = 'No se encontró la hoja de cálculo.';
-            return $resultado;
-        }
-
-        $sheet = simplexml_load_string($sheet_xml);
-        if ($sheet === false) {
-            $resultado['errores'][] = 'Error al parsear la hoja de cálculo.';
-            return $resultado;
-        }
-
-        $filas = [];
-        foreach ($sheet->sheetData->row as $row) {
-            $num_fila = (int) $row['r'];
-            foreach ($row->c as $cell) {
-                $ref   = (string) $cell['r'];
-                $col   = preg_replace('/[0-9]/', '', $ref);
-                $tipo  = (string) $cell['t'];
-                $valor = isset($cell->v) ? (string) $cell->v : '';
-
-                if ($tipo === 's') {
-                    $valor = $shared_strings[(int) $valor] ?? '';
-                }
-
-                $filas[$num_fila][$col] = $valor;
-            }
-        }
-
-        $colaboradores_bd = obtenerColab();
-
-        // Índice por nombre normalizado para búsqueda exacta O(1)
-        $indice_nombres = [];
-        foreach ($colaboradores_bd as $col) {
-            $clave = mb_strtolower(trim($col['nombre']));
-            $indice_nombres[$clave] = $col;
-        }
-
-        foreach ($filas as $num_fila => $cols) {
-            // Las primeras 4 filas son encabezados del formato del archivo
-            if ($num_fila < 5) continue;
-
-            $nombre_excel = trim($cols['B'] ?? '');
-            $puesto_excel = trim($cols['E'] ?? '');
-            $fecha_raw    = trim($cols['H'] ?? '');
-
-            if (empty($nombre_excel)) continue;
-            if (!in_array(mb_strtolower($puesto_excel), $puestos_validos, true)) continue;
-
-            $fecha_ingreso = null;
-            if (is_numeric($fecha_raw)) {
-                $ts = ($fecha_raw - 25569) * 86400;
-                $fecha_ingreso = gmdate('Y-m-d', $ts); // gmdate evita desfase por timezone del servidor
+    $shared_strings = [];
+    $ss_xml = $zip->getFromName('xl/sharedStrings.xml');
+    if ($ss_xml) {
+        $ss = simplexml_load_string($ss_xml);
+        foreach ($ss->si as $si) {
+            if (isset($si->t)) {
+                $shared_strings[] = (string) $si->t;
             } else {
-                $fecha_ingreso = normalizarFecha($fecha_raw);
-            }
-
-            if (!$fecha_ingreso) {
-                $resultado['errores'][] = "Fila $num_fila: fecha inválida para '$nombre_excel'.";
-                continue;
-            }
-
-            $clave_excel   = mb_strtolower(trim($nombre_excel));
-            $col_existente = $indice_nombres[$clave_excel] ?? null;
-
-            if ($col_existente === null) {
-                // No existe → crear
-                $res = crearColaborador($nombre_excel, $fecha_ingreso);
-                if ($res['ok']) {
-                    $resultado['insertados']++;
-                    $nuevo = [
-                        'id'                 => $res['id'],
-                        'nombre'             => $nombre_excel,
-                        'fecha_ingreso'      => $fecha_ingreso,
-                        'fecha_capacitacion' => null,
-                        'payjoy_int'         => 0,
-                        'tiene_garantias'    => 0,
-                    ];
-                    $colaboradores_bd[]           = $nuevo;
-                    $indice_nombres[$clave_excel] = $nuevo;
-                } else {
-                    $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
+                $texto = '';
+                foreach ($si->r as $r) {
+                    $texto .= (string) $r->t;
                 }
-            } elseif ($col_existente['fecha_ingreso'] === $fecha_ingreso) {
-                // Nombre y fecha idénticos → sin cambios
-                $resultado['sin_cambios']++;
-            } else {
-                // Nombre exacto pero fecha diferente → actualizar solo fecha
-                $res = actualizarColab(
-                    (int) $col_existente['id'],
-                    $col_existente['nombre'],
-                    $fecha_ingreso,
-                    $col_existente['fecha_capacitacion'],
-                    (int) $col_existente['payjoy_int']
-                );
-                if ($res['ok']) {
-                    $resultado['actualizados']++;
-                } else {
-                    $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
-                }
+                $shared_strings[] = $texto;
             }
         }
+    }
 
-    } catch (Exception $e) {
-        error_log("Error en importarColaboradoresDesdeExcel: " . $e->getMessage());
-        $resultado['errores'][] = 'Error inesperado durante la importación.';
+    $sheet_xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+    $zip->close();
+
+    if (!$sheet_xml) {
+        $resultado['errores'][] = 'No se encontró la hoja de cálculo.';
+        return $resultado;
+    }
+
+    $sheet = simplexml_load_string($sheet_xml);
+
+    $filas = [];
+    foreach ($sheet->sheetData->row as $row) {
+        $num_fila = (int) $row['r'];
+        foreach ($row->c as $cell) {
+            $ref   = (string) $cell['r'];
+            $col   = preg_replace('/[0-9]/', '', $ref);
+            $tipo  = (string) $cell['t'];
+            $valor = isset($cell->v) ? (string) $cell->v : '';
+
+            if ($tipo === 's') {
+                $valor = $shared_strings[(int) $valor] ?? '';
+            }
+
+            $filas[$num_fila][$col] = $valor;
+        }
+    }
+
+    $colaboradores_bd = obtenerColab();
+
+    // Índice por nombre normalizado para búsqueda exacta O(1)
+    $indice_nombres = [];
+    foreach ($colaboradores_bd as $col) {
+        $clave = mb_strtolower(trim($col['nombre']));
+        $indice_nombres[$clave] = $col;
+    }
+
+    foreach ($filas as $num_fila => $cols) {
+        if ($num_fila < 5) continue;
+
+        $nombre_excel = trim($cols['B'] ?? '');
+        $puesto_excel = trim($cols['E'] ?? '');
+        $fecha_raw    = trim($cols['H'] ?? '');
+
+        if (empty($nombre_excel)) continue;
+        if (!in_array(mb_strtolower($puesto_excel), $puestos_validos, true)) continue;
+
+        $fecha_ingreso = null;
+        if (is_numeric($fecha_raw)) {
+            $ts = ($fecha_raw - 25569) * 86400;
+            $fecha_ingreso = date('Y-m-d', $ts);
+        } else {
+            $fecha_ingreso = normalizarFecha($fecha_raw);
+        }
+
+        if (!$fecha_ingreso) {
+            $resultado['errores'][] = "Fila $num_fila: fecha inválida para '$nombre_excel'.";
+            continue;
+        }
+
+        $clave_excel = mb_strtolower(trim($nombre_excel));
+        $col_existente = $indice_nombres[$clave_excel] ?? null;
+
+        if ($col_existente === null) {
+            // No existe → crear
+            $res = crearColaborador($nombre_excel, $fecha_ingreso);
+            if ($res['ok']) {
+                $resultado['insertados']++;
+                $nuevo = [
+                    'id'                 => $res['id'],
+                    'nombre'             => $nombre_excel,
+                    'fecha_ingreso'      => $fecha_ingreso,
+                    'fecha_capacitacion' => null,
+                    'payjoy_int'         => 0,
+                    'tiene_garantias'    => 0,
+                ];
+                $colaboradores_bd[]        = $nuevo;
+                $indice_nombres[$clave_excel] = $nuevo;
+            } else {
+                $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
+            }
+        } elseif ($col_existente['fecha_ingreso'] === $fecha_ingreso) {
+            // Nombre y fecha idénticos → sin cambios
+            $resultado['sin_cambios']++;
+        } else {
+            // Nombre exacto pero fecha diferente → actualizar solo fecha
+            $res = actualizarColab(
+                (int) $col_existente['id'],
+                $col_existente['nombre'],       // nombre intacto, no se pisa
+                $fecha_ingreso,
+                $col_existente['fecha_capacitacion'],
+                (int) $col_existente['payjoy_int']
+            );
+            if ($res['ok']) {
+                $resultado['actualizados']++;
+            } else {
+                $resultado['errores'][] = "Fila $num_fila: " . $res['mensaje'];
+            }
+        }
     }
 
     return $resultado;
 }
 
+// ─────────────────────────────────────────────
+// SECCIÓN 3: FUSIÓN DE COLABORADORES
+// ─────────────────────────────────────────────
 
-/** Fusiona colaboradores: pasa garantias de origen a destino. Retorna ok, mensaje y garantias_reasignadas */
+/**
+ * Reasigna todas las garantías del colaborador origen al destino.
+ * El registro origen NO se elimina automáticamente; puede borrarse
+ * manualmente desde el CRUD.
+ *
+ * @param int $id_origen  ID del colaborador a fusionar (origen).
+ * @param int $id_destino ID del colaborador que recibirá las garantías (destino).
+ *
+ * @return array ['ok' => bool, 'mensaje' => string, 'garantias_reasignadas' => int]
+ */
 function fusionarColaboradores(int $id_origen, int $id_destino): array
 {
     if ($id_origen === $id_destino) {
         return ['ok' => false, 'mensaje' => 'El origen y el destino no pueden ser el mismo.', 'garantias_reasignadas' => 0];
     }
 
-    try {
-        $conn = conectarBD();
+    $conn = conectarBD();
 
-        // Verificar que el colaborador destino exista
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM colaboradores WHERE id = ?");
-        $stmt->execute([$id_destino]);
-        if ((int) $stmt->fetchColumn() === 0) {
-            return ['ok' => false, 'mensaje' => 'El colaborador destino no existe.', 'garantias_reasignadas' => 0];
-        }
+    // Contar garantías del origen
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
+    $stmt->execute([$id_origen]);
+    $total = (int) $stmt->fetchColumn();
 
-        $conn->beginTransaction();
+    // Reasignar: mover el id_origen al id_destino en el campo apasionado
+    $stmt = $conn->prepare("UPDATE garantia SET apasionado = ? WHERE apasionado = ?");
+    $stmt->execute([$id_destino, $id_origen]);
 
-        // Contar garantías del origen
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM garantia WHERE apasionado = ?");
-        $stmt->execute([$id_origen]);
-        $total = (int) $stmt->fetchColumn();
-
-        // Reasignar: mover el id_origen al id_destino en el campo apasionado
-        $stmt = $conn->prepare("UPDATE garantia SET apasionado = ? WHERE apasionado = ?");
-        $stmt->execute([$id_destino, $id_origen]);
-
-        $conn->commit();
-        $conn = null;
-
-        return [
-            'ok'                    => true,
-            'mensaje'               => "Fusión completada. $total garantías reasignadas.",
-            'garantias_reasignadas' => $total,
-        ];
-
-    } catch (Exception $e) {
-        if (isset($conn) && $conn->inTransaction()) {
-            $conn->rollBack();
-        }
-        error_log("Error en fusionarColaboradores: " . $e->getMessage());
-        return ['ok' => false, 'mensaje' => 'Error al fusionar los colaboradores.', 'garantias_reasignadas' => 0];
-    }
+    return [
+        'ok'                    => true,
+        'mensaje'               => "Fusión completada. $total garantías reasignadas.",
+        'garantias_reasignadas' => $total,
+    ];
 }
-/** Normaliza nombre (trim y formato). Retorna nombre limpio */
+// ─────────────────────────────────────────────
+// SECCIÓN 4: HELPERS / UTILIDADES
+// ─────────────────────────────────────────────
+
+/**
+ * Normaliza un nombre: trim y ucwords para consistencia.
+ *
+ * @param string $nombre
+ * @return string
+ */
 function normalizarNombre2(string $nombre): string
 {
     return trim($nombre);
 }
 
-/** Valida y formatea fecha a Y-m-d. Retorna fecha o false */
+/**
+ * Valida y normaliza una fecha al formato Y-m-d.
+ * Acepta formatos comunes: d/m/Y, Y-m-d, d-m-Y.
+ *
+ * @param  string $fecha
+ * @return string|false Fecha formateada o false si es inválida.
+ */
 function normalizarFecha(string $fecha): string|false
 {
     $fecha = trim($fecha);
@@ -2813,19 +3095,24 @@ function normalizarFecha(string $fecha): string|false
         }
     }
 
-    // Último intento con strtotime (gmdate evita desfase por timezone del servidor)
+    // Último intento con strtotime
     $ts = strtotime($fecha);
     if ($ts !== false) {
-        return gmdate('Y-m-d', $ts);
+        return date('Y-m-d', $ts);
     }
 
     return false;
 }
 
-/** Convierte fecha de Excel a Y-m-d. Retorna fecha o false */
+/**
+ * Convierte un valor de celda de Excel (número serial o string) a Y-m-d.
+ *
+ * @param  mixed $valor_celda
+ * @return string|false
+ */
 function parsearFechaExcel(mixed $valor_celda): string|false
 {
-    if ($valor_celda === null || $valor_celda === '') {
+    if (empty($valor_celda)) {
         return false;
     }
 
@@ -2842,7 +3129,14 @@ function parsearFechaExcel(mixed $valor_celda): string|false
     return normalizarFecha((string) $valor_celda);
 }
 
-/** Calcula estado PayJoy segun valor y fecha_ingreso. Retorna etiqueta y clase_css */
+/**
+ * Calcula el estado PayJoy de un colaborador para mostrarlo en la vista.
+ *
+ * @param int         $payjoy_int    Valor del campo payjoy_int (0 o 1).
+ * @param string|null $fecha_ingreso Fecha de ingreso en formato Y-m-d.
+ *
+ * @return array ['etiqueta' => string, 'clase_css' => string]
+ */
 function calcularEstadoPayjoy(int $payjoy_int, ?string $fecha_ingreso): array
 {
     switch ($payjoy_int) {
@@ -2850,36 +3144,460 @@ function calcularEstadoPayjoy(int $payjoy_int, ?string $fecha_ingreso): array
             return ['etiqueta' => 'ACTIVO', 'clase_css' => 'badge-activo'];
 
         case 2:
-            return ['etiqueta' => 'BLOQUEADA', 'clase_css' => 'badge-bloqueada'];
+            return ['etiqueta' => 'BLOCK', 'clase_css' => 'badge-bloqueada'];
 
         case 3:
-            return ['etiqueta' => 'YA NO LABORA', 'clase_css' => 'badge-inactivo'];
+            return ['etiqueta' => 'NO LABORA', 'clase_css' => 'badge-inactivo'];
 
         case 0:
-            if ($fecha_ingreso === null || $fecha_ingreso === '') {
+        default:
+            if (empty($fecha_ingreso)) {
                 return ['etiqueta' => 'SIN FECHA', 'clase_css' => 'badge-sin-fecha'];
             }
-
-            try {
-                $hoy     = new DateTime();
-                $ingreso = new DateTime($fecha_ingreso);
-                $diff    = (int) $hoy->diff($ingreso)->days;
-            } catch (\Exception $e) {
-                return ['etiqueta' => 'SIN FECHA', 'clase_css' => 'badge-sin-fecha'];
-            }
+            $hoy     = new DateTime();
+            $ingreso = new DateTime($fecha_ingreso);
+            $diff    = (int) $hoy->diff($ingreso)->days;
 
             if ($diff < 30) {
                 $faltan = 30 - $diff;
                 return [
-                    'etiqueta'  => "Faltan $faltan día" . ($faltan === 1 ? '' : 's'),
+                    'etiqueta'  => "Restan $faltan d" . ($faltan === 1 ? '' : ''),
                     'clase_css' => 'badge-pendiente',
                 ];
             }
 
-            return ['etiqueta' => 'NO TIENE CUENTA', 'clase_css' => 'badge-sin-cuenta'];
-
-        default:
-            return ['etiqueta' => 'DESCONOCIDO', 'clase_css' => 'badge-desconocido'];
+            return ['etiqueta' => 'S/CUENTA', 'clase_css' => 'badge-sin-cuenta'];
     }
+}
+function guardarGarantiaTelefono($datos)
+{
+    $conn = conectarBD();
+
+    date_default_timezone_set('America/Mexico_City');
+    $fecha_registro = date('Y-m-d H:i:s');
+
+    $plows = strtoupper(trim($datos['plows']));
+
+    if (!preg_match('/^PLOWS\d{6}$/', $plows)) {
+        throw new Exception("PLOWS inválido.");
+    }
+
+    $nombre_cliente = trim(
+        mb_convert_case(
+            $datos['nombre_cliente'],
+            MB_CASE_TITLE,
+            "UTF-8"
+        )
+    );
+
+    $numero_contacto = preg_replace('/\D/', '', $datos['numero_contacto']);
+
+    $numero_ticket = trim($datos['numero_ticket']);
+
+    $sucursal = intval($datos['sucursal']);
+    $tipo_venta = trim($datos['tipo_venta']);
+    $imei = trim($datos['imei']);
+
+    if (empty($imei)) {
+        throw new Exception("IMEI requerido.");
+    }
+
+    /* ── Helper: obtener ID o insertar colaborador nuevo ── */
+    $resolverColaborador = function(string $idRaw, string $nombreRaw) use ($conn): int {
+        $id     = intval($idRaw);
+        $nombre = trim($nombreRaw);
+
+        // Si ya viene con ID válido, usarlo directo
+        if ($id > 0) {
+            $stmt = $conn->prepare("SELECT id FROM colaboradores WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            if ($stmt->fetchColumn()) return $id;
+        }
+
+        // Buscar por nombre (por si el autocomplete no llenó el hidden)
+        if ($nombre !== '') {
+            $stmt = $conn->prepare("SELECT id FROM colaboradores WHERE nombre = :nombre LIMIT 1");
+            $stmt->execute([':nombre' => $nombre]);
+            $encontrado = $stmt->fetchColumn();
+            if ($encontrado) return (int) $encontrado;
+
+            // No existe — insertarlo
+            $stmt = $conn->prepare("INSERT INTO colaboradores (nombre) VALUES (:nombre)");
+            $stmt->execute([':nombre' => $nombre]);
+            return (int) $conn->lastInsertId();
+        }
+
+        throw new Exception("No se pudo identificar al colaborador: '$nombre'.");
+    };
+
+    $vendedor        = $resolverColaborador($datos['vendedor'],        $datos['vendedor_texto']        ?? '');
+    $vendedor_recibe = $resolverColaborador($datos['vendedor_recibe'], $datos['vendedor_recibe_texto'] ?? '');
+
+    $sql = "
+        INSERT INTO garantias_telefonos (
+            plows,
+            nombre_cliente,
+            numero_contacto,
+            numero_ticket,
+            sucursal,
+            vendedor,
+            vendedor_recibe,
+            tipo_venta,
+            imei,
+            fecha_registro
+        ) VALUES (
+            :plows,
+            :nombre_cliente,
+            :numero_contacto,
+            :numero_ticket,
+            :sucursal,
+            :vendedor,
+            :vendedor_recibe,
+            :tipo_venta,
+            :imei,
+            :fecha_registro
+        )
+    ";
+
+    $stmt = $conn->prepare($sql);
+
+    $stmt->execute([
+        ':plows'            => $plows,
+        ':nombre_cliente'   => $nombre_cliente,
+        ':numero_contacto'  => $numero_contacto,
+        ':numero_ticket'    => $numero_ticket,
+        ':sucursal'         => $sucursal,
+        ':vendedor'         => $vendedor,
+        ':vendedor_recibe'  => $vendedor_recibe,
+        ':tipo_venta'       => $tipo_venta,
+        ':imei'             => $imei,
+        ':fecha_registro'   => $fecha_registro
+    ]);
+
+    return (int) $conn->lastInsertId();
+}
+
+function generarPDFGarantiaTelefono($id_caso)
+{
+    require_once __DIR__ . '/tcpdf/tcpdf.php';
+ 
+    $conn = conectarBD();
+ 
+    $stmt = $conn->prepare("
+        SELECT
+            gt.*,
+            s.nombre  AS sucursal_nombre,
+            v.nombre  AS vendedor_nombre,
+            vr.nombre AS vendedor_recibe_nombre
+        FROM garantias_telefonos gt
+        LEFT JOIN sucursales    s  ON s.id  = gt.sucursal
+        LEFT JOIN colaboradores v  ON v.id  = gt.vendedor
+        LEFT JOIN colaboradores vr ON vr.id = gt.vendedor_recibe
+        WHERE gt.id_caso = :id
+        LIMIT 1
+    ");
+    $stmt->execute([':id' => $id_caso]);
+    $g = $stmt->fetch(PDO::FETCH_ASSOC);
+ 
+    if (!$g) throw new Exception("Garantía no encontrada.");
+ 
+    $modelo = 'No encontrado';
+    $color  = 'No encontrado';
+ 
+    $stmtE = $conn->prepare("SELECT descripcion FROM existencias WHERE BarcodeId = :plows LIMIT 1");
+    $stmtE->execute([':plows' => $g['plows']]);
+    $ex = $stmtE->fetch(PDO::FETCH_ASSOC);
+ 
+    if ($ex) {
+        if (preg_match('/-\s*(.*?)\s*-\s*NUEVO/i', $ex['descripcion'], $m))  $color  = trim($m[1]);
+        if (preg_match('/\(\s*(.*?)\s*\//',          $ex['descripcion'], $m2)) $modelo = trim($m2[1]);
+    }
+ 
+    date_default_timezone_set('America/Mexico_City');
+    $fechaObj         = new DateTime($g['fecha_registro']);
+    $fecha_formateada = $fechaObj->format('d/m/Y h:i A');
+    $folio            = str_pad($g['id_caso'], 5, '0', STR_PAD_LEFT);
+    $esCred           = strtolower(trim($g['tipo_venta'])) === 'credito';
+    $sucNombre        = mb_strtoupper($g['sucursal_nombre'], 'UTF-8');
+ 
+    $pdf = new TCPDF('P', 'mm', 'LETTER', true, 'UTF-8', false);
+    $pdf->SetCreator('Central Cell');
+    $pdf->SetAuthor('Central Cell');
+    $pdf->SetTitle('Garantía Telefonía');
+    $pdf->SetPrintHeader(false);
+    $pdf->SetPrintFooter(false);
+    $pdf->SetMargins(14, 8, 14);
+    $pdf->SetAutoPageBreak(false);
+    $pdf->setCellHeightRatio(1.1);
+ 
+    $pdf->AddPage();
+ 
+    $lm = 14;
+    $pw = 215.9 - ($lm * 2);
+    $y  = 8;
+ 
+    /* ─── ENCABEZADO AZUL ─────────────────────────────────── */
+    $pdf->SetFillColor(18, 52, 104);
+    $pdf->Rect($lm, $y, $pw, 18, 'F');
+ 
+    $logo = __DIR__ . '/recursos/img/central-cell-logo.png';
+    if (file_exists($logo)) {
+        $pdf->Image($logo, $lm + 3, $y + 2, 32, 14, '', '', '', false, 150, '', false, false, 0);
+    }
+ 
+    $pdf->SetFont('helvetica', 'B', 14);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetXY($lm + 38, $y + 1);
+    $pdf->Cell($pw - 38, 8, 'CENTRAL CELL ' . $sucNombre, 0, 1, 'L');
+ 
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetXY($lm + 38, $y + 9);
+    $pdf->Cell($pw - 38, 6, 'Formato de Recepción de Equipo para Revisión de Garantía', 0, 1, 'L');
+ 
+    $pdf->SetFont('helvetica', 'B', 10);
+    $pdf->SetXY($lm, $y + 3);
+    $pdf->Cell($pw - 2, 6, 'FOLIO: ' . $folio, 0, 0, 'R');
+ 
+    $y += 20;
+ 
+    /* ─── TICKET ──────────────────────────────────────────── */
+    $pdf->SetFillColor(232, 240, 254);
+    $pdf->SetDrawColor(18, 52, 104);
+    $pdf->SetTextColor(18, 52, 104);
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($pw, 6, 'NO. DE TICKET / CONTROL:  ' . $g['numero_ticket'], 1, 1, 'C', true);
+    $pdf->SetDrawColor(180, 180, 180);
+    $pdf->SetTextColor(0, 0, 0);
+    $y += 8;
+ 
+    /* ─── HELPERS ─────────────────────────────────────────── */
+    $seccion = function(string $titulo) use ($pdf, $lm, $pw, &$y) {
+        $pdf->SetFillColor(18, 52, 104);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFont('helvetica', 'B', 8.5);
+        $pdf->SetXY($lm, $y);
+        $pdf->Cell($pw, 5.5, '  ' . $titulo, 0, 1, 'L', true);
+        $pdf->SetTextColor(0, 0, 0);
+        $y += 6.5;
+    };
+ 
+    $dato2 = function(string $l1, string $v1, string $l2, string $v2) use ($pdf, $lm, $pw, &$y) {
+        $half = $pw / 2;
+        $lw   = $half * 0.44;
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetXY($lm + 2, $y);
+        $pdf->Cell($lw, 5, $l1 . ':', 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell($half - $lw - 2, 5, $v1, 0, 0, 'L');
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->Cell($lw, 5, $l2 . ':', 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell($half - $lw - 2, 5, $v2, 0, 1, 'L');
+        $y += 5;
+    };
+ 
+    /* ════ SECCIÓN 1 ════ */
+    $seccion('1. DATOS DE LA RECEPCIÓN Y VENTA');
+    $dato2('Fecha de Recepción', $fecha_formateada, 'Tipo de Venta', strtoupper($g['tipo_venta']));
+    $dato2('Vendedor (Venta)', $g['vendedor_nombre'], 'Recibió Equipo', $g['vendedor_recibe_nombre']);
+    $y += 2;
+ 
+    /* ════ SECCIÓN 2 ════ */
+    $seccion('2. INFORMACIÓN DEL CLIENTE');
+    $dato2('Nombre Completo', $g['nombre_cliente'], 'Número de Contacto', $g['numero_contacto']);
+    $y += 2;
+ 
+    /* ════ SECCIÓN 3 ════ */
+    $seccion('3. ESPECIFICACIONES DEL EQUIPO');
+    $dato2('Marca y Modelo', $modelo, 'Color', $color);
+    $dato2('PLOWS / Código de Barras', $g['plows'], 'Número de IMEI', $g['imei']);
+    $y += 3;
+ 
+    /* ════ SECCIÓN 4 ════ */
+    $seccion('4. POLÍTICAS Y REGLAS BÁSICAS PARA VALIDACIÓN DE GARANTÍA');
+ 
+    $pdf->SetFont('helvetica', 'I', 7);
+    $pdf->SetXY($lm + 2, $y);
+    $pdf->MultiCell($pw - 2, 3.5,
+        'Al firmar el presente documento, el cliente declara haber entregado voluntariamente el equipo antes descrito para su revisión y diagnóstico.',
+    0, 'L');
+    $y = $pdf->GetY() + 1.5;
+ 
+    $pdf->SetFont('helvetica', 'B', 7.5);
+    $pdf->SetXY($lm + 2, $y);
+    $pdf->Cell($pw - 2, 4, 'Condiciones Generales', 0, 1, 'L');
+    $y += 4;
+ 
+    $condiciones = [
+        'El tiempo estimado de revisión y respuesta es de 1 a 4 semanas, dependiendo de la evaluación y del fabricante.',
+        'La recepción del equipo no garantiza la aprobación de la garantía. El equipo será sometido a una revisión  para determinar si la falla está cubierta.',
+        'Para que la garantía pueda ser considerada, el equipo no debe exceder los 3 meses desde la fecha de compra.',
+        'En caso de determinarse que la falla corresponde a defectos de fabricación y cumple con las políticas de garantía, se procederá conforme a las disposiciones aplicables para hacer válida la garantía.',
+        'Si durante la revisión se determina que la falla fue ocasionada por mal uso, golpes, humedad, alteraciones de software, modificaciones no autorizadas o cualquier causa ajena a defectos de fabricación, la garantía será rechazada.',
+        "No aplicará garantía en equipos que presenten:\n   • Golpes, fracturas o daños físicos.\n   • Pantallas rotas o estrelladas.\n   • Señales de humedad o corrosión.\n   • Manipulación o reparación por terceros no autorizados.\n   • Alteración o eliminación de etiquetas, IMEI o sellos de garantía.",
+        'El establecimiento no se hace responsable por información personal almacenada en el equipo. Se recomienda al cliente realizar previamente respaldos de su información.',
+        'Durante el proceso de diagnóstico puede ser necesario restablecer el equipo a valores de fábrica.',
+        'En caso de aprobarse la garantía, el equipo podrá ser reparado, reemplazado o recibir la solución determinada por el fabricante o proveedor.',
+        'El cliente deberá presentar este comprobante para recoger su equipo o dar seguimiento al trámite.',
+    ];
+ 
+    $pdf->SetFont('helvetica', '', 7);
+    foreach ($condiciones as $i => $cond) {
+        $pdf->SetXY($lm + 2, $y);
+        $pdf->Cell(5, 3.5, ($i + 1) . '.', 0, 0, 'R');
+        $pdf->SetXY($lm + 7, $y);
+        $pdf->MultiCell($pw - 7, 3.5, $cond, 0, 'L');
+        $y = $pdf->GetY() + 0.6;
+    }
+ 
+    if ($esCred) {
+        $y += 1;
+        $pdf->SetFont('helvetica', 'B', 7.2);
+        $pdf->SetXY($lm + 2, $y);
+        $pdf->Cell($pw - 2, 4, 'Disposición Especial de Crédito (PayJoy):', 0, 1, 'L');
+        $y += 4;
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetXY($lm + 2, $y);
+        $pdf->MultiCell($pw - 2, 3.5,
+            'Al tratarse de un equipo adquirido bajo la modalidad de venta de crédito con la plataforma PayJoy, el cliente está obligado a continuar al corriente con sus pagos semanales/mensuales de manera regular. El ingreso del equipo a revisión no suspende, congela, ni condona la deuda ni los plazos de pago con PayJoy.',
+        0, 'L');
+        $y = $pdf->GetY() + 1;
+    }
+ 
+    $y += 2;
+ 
+    /* ─── CONTACTO ────────────────────────────────────────── */
+    $pdf->SetFillColor(232, 240, 254);
+    $pdf->SetDrawColor(18, 52, 104);
+    $pdf->Rect($lm, $y, $pw, 11, 'FD');
+    $pdf->SetFont('helvetica', 'B', 7.5);
+    $pdf->SetTextColor(18, 52, 104);
+    $pdf->SetXY($lm + 2, $y + 1);
+    $pdf->Cell($pw - 2, 4, 'CONTACTO PARA SEGUIMIENTO', 0, 1, 'L');
+    $pdf->SetFont('helvetica', '', 7);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetXY($lm + 2, $y + 5.5);
+    $pdf->Cell($pw - 2, 3.8,
+        'Para cualquier duda o aclaración puede comunicarse a nuestro Call Center:   Tel. 951 215 4060   |   Horario: 10:00 a.m. a 8:00 p.m.',
+    0, 1, 'L');
+    $pdf->SetDrawColor(180, 180, 180);
+    $y += 14;
+ 
+    /* ─── FIRMAS ──────────────────────────────────────────── */
+if ($y > 240) $y = 240;
+
+$half  = ($pw - 10) / 2;
+$col2x = $lm + $half + 10;
+
+$pdf->SetFont('helvetica', 'B', 8.5);
+$pdf->SetXY($lm, $y);
+$pdf->Cell($pw, 5, 'FIRMAS', 0, 1, 'C');
+$y += 7;
+
+// Encabezados de columna
+$pdf->SetFont('helvetica', 'B', 8);
+$pdf->SetXY($lm, $y);
+$pdf->Cell($half, 4, 'Cliente', 0, 0, 'C');
+$pdf->SetXY($col2x, $y);
+$pdf->Cell($half, 4, 'Recepción Central Cell ' . $g['sucursal_nombre'], 0, 1, 'C');
+$y += 8;
+
+$lw = 20;
+$pdf->SetFont('helvetica', '', 8);
+$pdf->SetDrawColor(0, 0, 0);
+
+// Cliente — Nombre
+$pdf->SetXY($lm, $y);
+$pdf->Cell($lw, 4, 'Nombre:', 0, 0, 'L');
+$pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
+
+// Central Cell — solo Nombre (línea vacía, sin imprimir el valor)
+$pdf->SetXY($col2x, $y);
+$pdf->Cell($lw, 4, 'Nombre:', 0, 0, 'L');
+$pdf->Line($col2x + $lw, $y + 3.5, $col2x + $half - 2, $y + 3.5);
+
+$y += 12;
+
+// Cliente — Firma (solo lado izquierdo)
+$pdf->SetXY($lm, $y);
+$pdf->Cell($lw, 4, 'Firma:', 0, 0, 'L');
+$pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
+
+// Lado derecho — vacío, sin línea ni etiqueta
+
+$pdf->SetDrawColor(180, 180, 180);
+ 
+    /* ─── PIE ─────────────────────────────────────────────── */
+    $pdf->SetFont('helvetica', 'I', 6.5);
+    $pdf->SetTextColor(130, 130, 130);
+    $pdf->SetXY($lm, 268);
+    $pdf->Cell($pw, 4, 'Original para el Establecimiento — Copia para el Cliente', 0, 1, 'C');
+ 
+    /* ══════════════════════════════════════════════════════
+       PÁGINA 2 — Etiqueta compacta
+    ══════════════════════════════════════════════════════ */
+    $pdf->AddPage();
+    $pdf->SetTextColor(0, 0, 0);
+ 
+    $ew  = 110;
+    $exL = (215.9 - $ew) / 2;
+    $ey  = 22;
+ 
+    $pdf->SetFillColor(18, 52, 104);
+    $pdf->Rect($exL, $ey, $ew, 8, 'F');
+    $pdf->SetFont('helvetica', 'B', 8.5);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetXY($exL, $ey + 1);
+    $pdf->Cell($ew, 6, 'CENTRAL CELL ' . $sucNombre, 0, 1, 'C');
+ 
+    $ey2 = $ey + 9;
+ 
+    $pdf->SetFillColor(232, 240, 254);
+    $pdf->Rect($exL, $ey2, $ew, 5, 'F');
+    $pdf->SetFont('helvetica', 'B', 6.5);
+    $pdf->SetTextColor(18, 52, 104);
+    $pdf->SetXY($exL, $ey2 + 0.8);
+    $pdf->Cell($ew, 3.5, 'COMPROBANTE DE RECEPCIÓN — FOLIO ' . $folio, 0, 1, 'C');
+    $ey2 += 6;
+ 
+    $pdf->SetTextColor(0, 0, 0);
+ 
+    $etFila = function(string $lbl, string $val) use ($pdf, $exL, $ew, &$ey2) {
+        $lw = $ew * 0.36;
+        $pdf->SetFont('helvetica', 'B', 7);
+        $pdf->SetXY($exL + 3, $ey2);
+        $pdf->Cell($lw, 4.2, $lbl . ':', 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->Cell($ew - $lw - 3, 4.2, $val, 0, 1, 'L');
+        $ey2 += 4.2;
+    };
+ 
+    $etFila('Ticket',        $g['numero_ticket']);
+    $etFila('Fecha',         $fecha_formateada);
+    $etFila('Cliente',       $g['nombre_cliente']);
+    $etFila('Contacto',      $g['numero_contacto']);
+    $etFila('Modelo',        $modelo);
+    $etFila('Color',         $color);
+    $etFila('PLOWS',         $g['plows']);
+    $etFila('IMEI',          $g['imei']);
+    $etFila('Vendedor',      $g['vendedor_nombre']);
+    $etFila('Recibió',       $g['vendedor_recibe_nombre']);
+    $etFila('Tipo de Venta', strtoupper($g['tipo_venta']));
+ 
+    $pdf->SetDrawColor(18, 52, 104);
+    $pdf->SetLineWidth(0.5);
+    $pdf->Rect($exL, $ey, $ew, $ey2 - $ey + 4, 'D');
+    $pdf->SetLineWidth(0.2);
+ 
+    $pdf->SetFont('helvetica', 'I', 7);
+    $pdf->SetTextColor(100, 100, 100);
+    $pdf->SetXY($exL, $ey2 + 7);
+    $pdf->Cell($ew, 4, "\xe2\x9c\x82  Recortar y pegar en el equipo", 0, 1, 'C');
+
+    while (ob_get_level()) { ob_end_clean(); }
+ 
+    $pdf->Output('Garantia-' . $folio . '.pdf', 'D');
+    exit;
 }
 ?>

@@ -93,474 +93,361 @@ try {
     <title>Registro de Capacitación</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
+    <link rel="stylesheet" href="../styles.css">
+
     <style>
-    /* ── PALETA ───────────────────────────────────────────── */
-    :root {
-      --bg:           #f5f7fa;
-      --surface:      #ffffff;
-      --muted:        #6b7280;
-      --text:         #0f1724;
-      --primary-600:  #0f5476;
-      --primary-400:  #16729a;
-      --accent:       #1f9a8a;
-      --glass:        rgba(253, 250, 250, 0.04);
-      --radius-lg:    14px;
-      --radius-md:    10px;
-      --shadow-sm:    0 6px 18px rgba(12, 18, 26, 0.06);
-      --shadow-md:    0 10px 30px rgba(12, 18, 26, 0.09);
-      --transition-fast: 220ms cubic-bezier(.2, .9, .2, 1);
-    }
+      /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+      .sidebar-brand-logo{display:flex;align-items:center;gap:10px;}
+      .sidebar-brand-logo img{border-radius:6px;}
 
-    /* ── RESET / BASE ────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      /* Mensaje flash */
+      .flash{
+        display:flex;align-items:center;gap:10px;
+        padding:12px 16px;border-radius:var(--radius-lg);
+        font-size:14px;font-weight:600;margin-bottom:var(--space-lg);
+      }
+      .flash .material-symbols-outlined{font-size:20px;}
+      .flash--success{background:rgba(46,160,67,0.12);color:#2E7D32;}
+      .flash--info{background:rgba(0,131,143,0.12);color:#00838F;}
+      .flash--error{background:rgba(211,47,47,0.12);color:#C62828;}
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+      /* Formulario de registro */
+      .reg-form{
+        display:flex;flex-wrap:wrap;gap:var(--space-md);align-items:flex-end;
+      }
+      .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:200px;}
+      .field label{font-size:13px;font-weight:600;color:var(--on-surface-variant);}
+      .field-optional{font-weight:400;color:var(--outline);}
+      .field input[type="text"],
+      .field input[type="date"]{
+        padding:10px 12px;
+        border:1px solid var(--outline-variant);
+        border-radius:var(--radius-lg);
+        background:var(--surface-container-low);
+        color:var(--on-surface);
+        font-size:14px;font-family:inherit;
+      }
+      .field input:focus{outline:none;border-color:var(--primary);}
 
-    /* ── NAVBAR ──────────────────────────────────────────── */
-    .topnav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0 1.5rem;
-      height: 56px;
-      background: var(--primary-600);          /* era negro */
-      box-shadow: var(--shadow-sm);
-    }
+      /* Panel head con badge de conteo */
+      .panel-head{
+        display:flex;align-items:center;justify-content:space-between;
+        margin-bottom:var(--space-sm);
+      }
+      .badge-count{
+        display:inline-flex;align-items:center;justify-content:center;
+        min-width:26px;height:26px;padding:0 8px;
+        border-radius:var(--radius-full,999px);
+        background:var(--primary);color:var(--on-primary,#fff);
+        font-size:13px;font-weight:700;
+      }
 
-    .topnav-back {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: rgba(255,255,255,.85);
-      text-decoration: none;
-      transition: color var(--transition-fast);
-    }
-    .topnav-back:hover { color: #ffffff; }
-    .topnav-back svg path { stroke: currentColor; }
+      /* Tabla de capacitados */
+      .tbl-scroll{overflow-x:auto;}
+      .cap-table{
+        width:100%;border-collapse:collapse;font-size:13px;
+        background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;
+      }
+      .cap-table thead th{
+        background:#00838F;color:#fff;font-weight:700;
+        padding:10px 12px;text-align:left;white-space:nowrap;
+      }
+      .cap-table tbody td{
+        padding:8px 12px;border-bottom:1px solid var(--outline-variant);
+        white-space:nowrap;
+      }
+      .cap-table tbody tr:nth-child(even){background:var(--surface-container-low);}
+      .td-empty{text-align:center;color:var(--on-surface-variant);padding:var(--space-lg) !important;}
 
-    .topnav-links {
-      display: flex;
-      gap: .25rem;
-      margin-left: auto;
-    }
-
-    .tnl {
-      padding: 6px 14px;
-      border-radius: var(--radius-md);
-      font-size: 13px;
-      font-weight: 500;
-      color: rgba(255,255,255,.75);
-      text-decoration: none;
-      transition: background var(--transition-fast), color var(--transition-fast);
-    }
-    .tnl:hover            { background: rgba(255, 255, 255, 0.12); color: #fff; }
-    .tnl--active          { background: rgba(255, 255, 255, 0.18); color: #fff; }
-
-    /* burger */
-    .topnav-burger {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      gap: 5px;
-      width: 36px;
-      height: 36px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 6px;
-      margin-left: auto;
-    }
-    .topnav-burger span {
-      display: block;
-      height: 2px;
-      border-radius: 2px;
-      background: rgba(255,255,255,.85);
-      transition: transform var(--transition-fast), opacity var(--transition-fast);
-    }
-    .topnav-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .topnav-burger.is-open span:nth-child(2) { opacity: 0; }
-    .topnav-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-    /* drawer mobile */
-    .topnav-drawer {
-      display: none;
-      position: absolute;
-      top: 56px;
-      left: 0;
-      right: 0;
-      background: var(--primary-600);
-      flex-direction: column;
-      padding: .75rem 1.5rem 1rem;
-      gap: .25rem;
-      box-shadow: var(--shadow-md);
-    }
-    .topnav-drawer.open { display: flex; }
-
-    .drawer-link {
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(255,255,255,.8);
-      text-decoration: none;
-      transition: background var(--transition-fast), color var(--transition-fast);
-    }
-    .drawer-link:hover  { background: rgba(255,255,255,.1); color: #fff; }
-    .drawer-active      { background: rgba(255, 248, 248, 0.15); color: #fff; }
-
-    @media (max-width: 640px) {
-      .topnav-links   { display: none; }
-      .topnav-burger  { display: flex; }
-    }
-
-    /* ── MAIN ────────────────────────────────────────────── */
-    .main-wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    /* ── PAGE HEADER ─────────────────────────────────────── */
-    .page-header { text-align: center; }
-
-    .page-title {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 600;
-      color: var(--text);                       /* era negro puro */
-      letter-spacing: -.02em;
-    }
-    .page-sub {
-      margin-top: .4rem;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    /* ── FLASH ───────────────────────────────────────────── */
-    .flash {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      padding: .85rem 1.2rem;
-      border-radius: var(--radius-md);
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .flash--success { background: #e6f9f5; color: var(--accent); border: 1px solid #a7e8df; }
-    .flash--info    { background: #e8f4fb; color: var(--primary-400); border: 1px solid #b3d9ef; }
-    .flash--error   { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c2; }
-
-    /* ── PANEL ───────────────────────────────────────────── */
-    .panel {
-      background: var(--surface);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      padding: 1.75rem 2rem;
-    }
-    .panel-head {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      margin-bottom: 1.25rem;
-    }
-    .panel-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);                       /* era negro */
-      margin-bottom: 1.25rem;
-    }
-    .panel-head .panel-title { margin-bottom: 0; }
-
-    .badge-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 26px;
-      height: 22px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: var(--primary-600);          /* era negro/oscuro */
-      color: #fff;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    /* ── FORM ────────────────────────────────────────────── */
-    .reg-form { display: flex; flex-direction: column; gap: 1.25rem; }
-
-    .field { display: flex; flex-direction: column; gap: .45rem; }
-
-    .field label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);                       /* era negro */
-    }
-    .field-optional { color: var(--muted); font-weight: 400; }
-
-    .field input[type="text"],
-    .field input[type="date"] {
-      height: 42px;
-      padding: 0 .9rem;
-      border: 1.5px solid #d1d9e0;
-      border-radius: var(--radius-md);
-      font-size: 14px;
-      color: var(--text);                       /* era negro */
-      background: var(--bg);
-      outline: none;
-      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-    }
-    .field input:focus {
-      border-color: var(--primary-400);
-      box-shadow: 0 0 0 3px rgba(22, 114, 154, .15);
-      background: #fff;
-    }
-
-    .btn-save {
-      align-self: flex-start;
-      padding: 0 1.5rem;
-      height: 42px;
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--primary-600);          /* era negro */
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background var(--transition-fast), transform var(--transition-fast);
-    }
-    .btn-save:hover  { background: var(--primary-400); transform: translateY(-1px); }
-    .btn-save:active { transform: translateY(0); }
-
-    /* ── TABLE ───────────────────────────────────────────── */
-    .tbl-scroll { overflow-x: auto; }
-
-    .cap-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13.5px;
-    }
-    .cap-table thead tr {
-      border-bottom: 2px solid var(--primary-600);  /* era negro */
-    }
-    .cap-table th {
-      padding: .7rem .9rem;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--primary-600);               /* era negro/oscuro */
-      white-space: nowrap;
-    }
-    .cap-table td {
-      padding: .65rem .9rem;
-      border-bottom: 1px solid var(--bg);
-      color: var(--text);                      /* era negro */
-    }
-    .cap-table tbody tr:last-child td { border-bottom: none; }
-    .cap-table tbody tr:hover td      { background: var(--glass); }
-
-    .td-num  { color: var(--muted); font-size: 12px; width: 40px; }
-    .td-name { font-weight: 500; color: var(--text); }
-    .td-date { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
-    .td-days { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
-    .td-empty{ text-align: center; padding: 2rem; color: var(--muted); }
-
-    /* status badges */
-    .st-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 600;
-    }
-    .st--ok   { background: #e6f9f5; color: var(--accent); }
-    .st--warn { background: #fff8e6; color: #b45309; }
-    .st--err  { background: #fdecea; color: #c0392b; }
-
-    /* días column coloring */
-    td.st--ok   { color: var(--accent); }
-    td.st--warn { color: #b45309; }
-    td.st--err  { color: #c0392b; }
-
-    /* jQuery UI autocomplete override */
-    .ui-autocomplete { z-index: 9999 !important; border-radius: var(--radius-md); border: 1.5px solid #d1d9e0; }
-    .ui-menu-item-wrapper { font-size: 13.5px; color: var(--text); }
+      .st-badge{
+        display:inline-flex;align-items:center;
+        padding:4px 10px;border-radius:var(--radius-full,999px);
+        font-size:12px;font-weight:700;
+      }
+      .st-badge.st--ok{background:rgba(46,160,67,0.12);color:#2E7D32;}
+      .st-badge.st--warn{background:rgba(245,166,35,0.15);color:#B26A00;}
+      .st-badge.st--err{background:rgba(211,47,47,0.12);color:#C62828;}
+      .td-days.st--ok{color:#2E7D32;font-weight:700;}
+      .td-days.st--warn{color:#B26A00;font-weight:700;}
+      .td-days.st--err{color:#C62828;font-weight:700;}
     </style>
-
-    <script>
-    $(function() {
-        let autocompleteData = [];
-        $("#nombre").autocomplete({
-            source: function(request, response) {
-                $.ajax({
-                    url: "buscar_colaborador.php",
-                    dataType: "json",
-                    data: { term: request.term },
-                    success: function(data) { autocompleteData = data; response(data); }
-                });
-            },
-            minLength: 1, delay: 300,
-            select: function(event, ui) { $("#nombre").val(ui.item.label); return false; }
-        });
-        $("#nombre").on('keydown', function(e) {
-            if (e.key === "Enter") { e.preventDefault(); if (autocompleteData.length > 0) $("#nombre").val(autocompleteData[0].label); }
-        });
-    });
-    </script>
 </head>
 <body>
 
-<!-- ── NAVBAR ────────────────────────────────────────────── -->
-<nav class="topnav">
-    <a href="../garantias/validador/validador.php" class="topnav-back">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Atrás
-    </a>
-
-    <div class="topnav-links">
-        <a href="../Evaluacion/index.html" class="tnl">Inicio</a>
-        <a href="../Evaluacion/material.html" class="tnl">Material</a>
-        <a href="../Evaluacion/examen.php" class="tnl">Cuestionario</a>
-        <a href="../Evaluacion/lista_colaboradores.php" class="tnl tnl--active">Lista</a>
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-brand-logo">
+      <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+      <div>
+        <p class="sidebar-brand text-headline-sm">Central Cell</p>
+        <p class="sidebar-sub text-label-sm">Capacitación</p>
+      </div>
     </div>
-
-    <button class="topnav-burger" id="burger">
-        <span></span><span></span><span></span>
+    <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">
+      <span class="material-symbols-outlined">close</span>
     </button>
+  </div>
 
-    <div class="topnav-drawer" id="drawer">
-        <a href="../Evaluacion/index.html" class="drawer-link">Inicio Capacitados</a>
-        <a href="../Evaluacion/material.html" class="drawer-link">Material</a>
-        <a href="../Evaluacion/examen.php" class="drawer-link">Cuestionario</a>
-        <a href="../Evaluacion/lista_colaboradores.php" class="drawer-link drawer-active">Lista</a>
+  <nav class="sidebar-nav">
+    <p class="sidebar-label">Navegación</p>
+    <a href="../garantias/validador/validador.php" class="sidebar-link">
+      <span class="material-symbols-outlined">home</span>
+      Inicio
+    </a>
+    <a href="../kpis/modulos.html" class="sidebar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+    <a href="../Evaluacion/material.html" class="sidebar-link">
+      <span class="material-symbols-outlined">menu_book</span>
+      Material
+    </a>
+    <a href="../Evaluacion/examen.php" class="sidebar-link">
+      <span class="material-symbols-outlined">quiz</span>
+      Cuestionario
+    </a>
+    <a href="../Evaluacion/lista_colaboradores.php" class="sidebar-link">
+      <span class="material-symbols-outlined">fact_check</span>
+      Calificaciones
+    </a>
+  </nav>
+
+  <div class="sidebar-foot">
+    <p class="text-label-sm" style="color:var(--outline)">Innovación Móvil</p>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===================== MAIN ===================== -->
+<div class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+      <h2 class="text-headline-sm" style="margin:0">Registro de Capacitación</h2>
     </div>
-</nav>
+  </header>
 
-<!-- ── CONTENIDO ──────────────────────────────────────────── -->
-<main class="main-wrap">
+  <div class="container">
+    <div class="lesson">
+      <div class="lesson-body">
 
-    <div class="page-header">
-        <h1 class="page-title">Registro de Capacitación</h1>
-        <p class="page-sub">Gestiona y consulta las capacitaciones del personal</p>
-    </div>
+        <span class="eyebrow">Capacitación</span>
+        <h1 class="text-headline-lg" style="margin:6px 0 0">Registro de Capacitación</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px">school</span> Gestiona y consulta las capacitaciones del personal</span>
+        </div>
 
-    <?php if ($mensaje): ?>
-    <div class="flash flash--<?= $tipo_mensaje ?>">
-        <?= $tipo_mensaje === 'success' ? '✓' : ($tipo_mensaje === 'info' ? 'i' : '✕') ?>
-        <?= htmlspecialchars($mensaje) ?>
-    </div>
-    <?php endif; ?>
+        <?php if ($mensaje): ?>
+        <div class="flash flash--<?= $tipo_mensaje ?>">
+            <span class="material-symbols-outlined">
+              <?= $tipo_mensaje === 'success' ? 'check_circle' : ($tipo_mensaje === 'info' ? 'info' : 'error') ?>
+            </span>
+            <?= htmlspecialchars($mensaje) ?>
+        </div>
+        <?php endif; ?>
 
-    <!-- Formulario -->
-    <section class="panel">
-        <h2 class="panel-title">Nuevo registro</h2>
-        <form method="POST" autocomplete="off" class="reg-form">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+        <!-- Formulario -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">1</div>
+            <h3 class="step-title text-headline-sm">Nuevo registro</h3>
+          </div>
 
-            <div class="field">
-                <label for="nombre">Nombre del colaborador</label>
-                <input type="text" name="nombre" id="nombre"
-                       placeholder="Escribe el nombre…" maxlength="120" required>
+          <form method="POST" autocomplete="off" class="reg-form">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+
+              <div class="field">
+                  <label for="nombre">Nombre del colaborador</label>
+                  <input type="text"
+                      name="nombre"
+                      id="nombre"
+                      value="<?php echo isset($colaboradorNombre) ? htmlspecialchars($colaboradorNombre) : ''; ?>"
+                      placeholder="Escribe el nombre…"
+                      maxlength="120"
+                      autocomplete="off"
+                      required>
+              </div>
+
+              <div class="field">
+                  <label for="fecha">
+                      Fecha de capacitación
+                      <span class="field-optional">· opcional</span>
+                  </label>
+                  <input type="date" name="fecha" id="fecha"
+                         value="<?= date('Y-m-d') ?>"
+                         max="<?= date('Y-m-d') ?>">
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                Guardar registro
+              </button>
+          </form>
+        </section>
+
+        <!-- Tabla -->
+        <section class="step-section">
+          <div class="panel-head">
+            <div class="step-head" style="margin:0">
+              <div class="step-num">2</div>
+              <h3 class="step-title text-headline-sm" style="margin:0">Todos los capacitados</h3>
             </div>
-
-            <div class="field">
-                <label for="fecha">
-                    Fecha de capacitación
-                    <span class="field-optional">· opcional</span>
-                </label>
-                <input type="date" name="fecha" id="fecha"
-                       value="<?= date('Y-m-d') ?>"
-                       max="<?= date('Y-m-d') ?>">
-            </div>
-
-            <button type="submit" class="btn-save">Guardar registro</button>
-        </form>
-    </section>
-
-    <!-- Tabla -->
-    <section class="panel">
-        <div class="panel-head">
-            <h2 class="panel-title">Todos los capacitados</h2>
             <span class="badge-count"><?= count($colaboradores) ?></span>
-        </div>
+          </div>
 
-        <div class="tbl-scroll">
-            <table class="cap-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nombre</th>
-                        <th>Capacitado</th>
-                        <th>Vence</th>
-                        <th>Estado</th>
-                        <th>Días</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php
-                $hoy = new DateTime();
-                $i   = 1;
-                foreach ($colaboradores as $col):
-                    $fechaCap = new DateTime($col['fecha_capacitacion']);
-                    $fechaFin = (clone $fechaCap)->modify('+1 month');
-                    $dias     = (int)$hoy->diff($fechaFin)->format('%r%a');
+          <div class="tbl-scroll">
+              <table class="cap-table">
+                  <thead>
+                      <tr>
+                          <th>#</th>
+                          <th>Nombre</th>
+                          <th>Capacitado</th>
+                          <th>Vence</th>
+                          <th>Estado</th>
+                          <th>Días</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                  <?php
+                  $hoy = new DateTime();
+                  $i   = 1;
+                  foreach ($colaboradores as $col):
+                      $fechaCap = new DateTime($col['fecha_capacitacion']);
+                      $fechaFin = (clone $fechaCap)->modify('+1 month');
+                      $dias     = (int)$hoy->diff($fechaFin)->format('%r%a');
 
-                    if ($dias >= 8)       { $estado = 'Vigente';    $cls = 'st--ok';  }
-                    elseif ($dias >= 0)   { $estado = 'Por vencer'; $cls = 'st--warn'; }
-                    else                  { $estado = 'Vencida';    $cls = 'st--err';  }
+                      if ($dias >= 8)       { $estado = 'Vigente';    $cls = 'st--ok';  }
+                      elseif ($dias >= 0)   { $estado = 'Por vencer'; $cls = 'st--warn'; }
+                      else                  { $estado = 'Vencida';    $cls = 'st--err';  }
 
-                    $diasLabel = $dias >= 0 ? "+$dias días" : "$dias días";
-                ?>
-                <tr>
-                    <td class="td-num"><?= $i++ ?></td>
-                    <td class="td-name"><?= htmlspecialchars(ucwords($col['nombre'])) ?></td>
-                    <td class="td-date"><?= $fechaCap->format('d/m/Y') ?></td>
-                    <td class="td-date"><?= $fechaFin->format('d/m/Y') ?></td>
-                    <td><span class="st-badge <?= $cls ?>"><?= $estado ?></span></td>
-                    <td class="td-days <?= $cls ?>"><?= $diasLabel ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (empty($colaboradores)): ?>
-                <tr><td colspan="6" class="td-empty">Sin registros aún</td></tr>
-                <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
+                      $diasLabel = $dias >= 0 ? "+$dias días" : "$dias días";
+                  ?>
+                  <tr>
+                      <td class="td-num"><?= $i++ ?></td>
+                      <td class="td-name"><?= htmlspecialchars(ucwords($col['nombre'])) ?></td>
+                      <td class="td-date"><?= $fechaCap->format('d/m/Y') ?></td>
+                      <td class="td-date"><?= $fechaFin->format('d/m/Y') ?></td>
+                      <td><span class="st-badge <?= $cls ?>"><?= $estado ?></span></td>
+                      <td class="td-days <?= $cls ?>"><?= $diasLabel ?></td>
+                  </tr>
+                  <?php endforeach; ?>
+                  <?php if (empty($colaboradores)): ?>
+                  <tr><td colspan="6" class="td-empty">Sin registros aún</td></tr>
+                  <?php endif; ?>
+                  </tbody>
+              </table>
+          </div>
+        </section>
 
-</main>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <script>
-const burger = document.getElementById('burger');
-const drawer = document.getElementById('drawer');
-burger.addEventListener('click', () => {
-    drawer.classList.toggle('open');
-    burger.classList.toggle('is-open');
+$(function() {
+    let autocompleteData = [];
+    $("#nombre").autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: "buscar_colaborador.php",
+                dataType: "json",
+                data: { term: request.term },
+                success: function(data) { autocompleteData = data; response(data); }
+            });
+        },
+        minLength: 1, delay: 300,
+        select: function(event, ui) { $("#nombre").val(ui.item.label); return false; }
+    });
+    $("#nombre").on('keydown', function(e) {
+        if (e.key === "Enter") { e.preventDefault(); if (autocompleteData.length > 0) $("#nombre").val(autocompleteData[0].label); }
+    });
 });
-document.addEventListener('click', e => {
-    if (!burger.contains(e.target) && !drawer.contains(e.target)) {
-        drawer.classList.remove('open');
-        burger.classList.remove('is-open');
-    }
+//buscar colaborador 
+
+$(function () {
+
+    let autocompleteData = [];
+
+    $("#nombre").autocomplete({
+        source: function (request, response) {
+
+            $.ajax({
+                url: "../garantias/vendedor/buscar_colaborador.php",
+                dataType: "json",
+                data: {
+                    term: request.term
+                },
+                success: function (data) {
+                    autocompleteData = data;
+                    response(data);
+                }
+            });
+
+        },
+
+        minLength: 1,
+        delay: 300,
+
+        select: function (event, ui) {
+            $("#nombre").val(ui.item.label);
+            return false;
+        },
+
+        open: function () {
+            let w = $(this).autocomplete("widget");
+            w.children("li").removeClass("ui-state-focus");
+            w.children("li:first").addClass("ui-state-focus");
+        }
+
+    });
+
+    $("#nombre").on("keydown", function (e) {
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            if (autocompleteData.length > 0) {
+                $("#nombre").val(autocompleteData[0].label);
+            }
+        }
+
+    });
+
 });
+</script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+  // Control del sidebar en móvil (mismo patrón que el resto del panel)
+  const sidebar        = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const menuToggle      = document.getElementById('menuToggle');
+  const sidebarClose    = document.getElementById('sidebarClose');
+
+  function abrirSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('show');
+  }
+  function cerrarSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+  }
+
+  menuToggle.addEventListener('click', abrirSidebar);
+  sidebarClose.addEventListener('click', cerrarSidebar);
+  sidebarOverlay.addEventListener('click', cerrarSidebar);
 </script>
 </body>
 </html>

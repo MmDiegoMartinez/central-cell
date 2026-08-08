@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobro en Protectores de Pantalla · Centralcell</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .case-num{
+    flex:0 0 44px;height:44px;border-radius:var(--radius-lg);
+    background:var(--primary);color:var(--on-primary);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:18px;
+  }
+  .reason-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:var(--space-md);}
+  .reason-list li{
+    display:flex;gap:10px;align-items:flex-start;
+    font-size:14px;color:var(--on-error-container);
+    background:var(--error-container);border-radius:var(--radius-lg);
+    padding:10px 14px;
+  }
+  .reason-list li .material-symbols-outlined{font-size:18px;flex:0 0 auto;margin-top:1px;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div>
+      <h1 class="text-headline-sm sidebar-brand">Centralcell</h1>
+      <p class="text-body-sm sidebar-sub">Innovación Móvil</p>
+    </div>
+    <button class="sidebar-close material-symbols-outlined" id="sidebarClose" aria-label="Cerrar menú">close</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-label">Capacitación</div>
+    <a class="sidebar-link" href="material.html">
+      <span class="material-symbols-outlined">home</span>Centro de Capacitación
+    </a>
+    <a class="sidebar-link" href="instalacion-protection-pro.html">
+      <span class="material-symbols-outlined">shield</span> Instalación de Protection Pro
+    </a>
+    <a class="sidebar-link" href="hidrogel.html">
+      <span class="material-symbols-outlined">water_drop</span> Hidrogel
+    </a>
+    <a class="sidebar-link" href="pantallas-curvas-mica-uv.html">
+      <span class="material-symbols-outlined">stay_current_portrait</span> Pantallas Curvas y Mica UV
+    </a>
+    <a class="sidebar-link" href="cables-adaptadores-corriente.html">
+      <span class="material-symbols-outlined">bolt</span> Cables y Adaptadores
+    </a>
+
+    <a class="sidebar-link active" href="#inicio">
+      <span class="material-symbols-outlined">policy</span> Cobro en Protectores
+    </a>
+    <div class="sidebar-steps">
+      <a class="sidebar-step" href="#para-que-sirven">¿Para qué sirven estos criterios?</a>
+      <a class="sidebar-step" href="#casos-clave">Casos clave</a>
+      <a class="sidebar-step" href="#cobro-directo">Cobro directo</a>
+      <a class="sidebar-step" href="#reporte-obligatorio">Reporte obligatorio</a>
+      <a class="sidebar-step" href="#envio-correcto">Envío correcto</a>
+      <a class="sidebar-step" href="#consejo-final">Consejo final</a>
+    </div>
+
+    <a class="sidebar-link" href="correas-apple-watch.html">
+      <span class="material-symbols-outlined">watch</span> Correas Apple Watch
+    </a>
+    <a class="sidebar-link" href="uso-maquina-hidrogel.html">
+      <span class="material-symbols-outlined">precision_manufacturing</span> Máquina de Hidrogel
+    </a>
+    <a class="sidebar-link" href="garantias.html">
+      <span class="material-symbols-outlined">verified</span> Garantías y Mermas
+    </a>
+    <a class="sidebar-link" href="envio-mermas-garantias.html">
+      <span class="material-symbols-outlined">local_shipping</span> Envío de Mermas y Garantías
+    </a>
+    <a class="sidebar-link" href="registro-productos-negados.html">
+      <span class="material-symbols-outlined">assignment_late</span> Productos Negados
+    </a>
+  </nav>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle material-symbols-outlined" id="menuToggle" aria-label="Abrir menú">menu</button>
+      <h2 class="text-headline-sm" style="margin:0;">Cobro en Protectores de Pantalla</h2>
+    </div>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="container" id="inicio">
+    <article class="lesson">
+      <div class="lesson-body">
+
+        <span class="eyebrow">Políticas Internas</span>
+        <h1 class="text-headline-lg" style="margin:8px 0 0;">Cobro en Protectores de Pantalla</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px;">policy</span> Lineamientos internos</span>
+          <span><span class="material-symbols-outlined" style="font-size:16px;">groups</span> Todo el equipo de piso</span>
+        </div>
+
+        <p class="text-body-lg" style="color:var(--on-surface-variant);margin-top:var(--space-lg);">
+          Lineamientos para reducir mermas, evitar cobros innecesarios y trabajar de manera más ordenada. Conocerlos te protege y protege tu trabajo.
+        </p>
+
+      </div>
+
+      <div class="lesson-body">
+
+      <!-- PARA QUÉ SIRVEN -->
+      <h2 class="text-headline-md" id="para-que-sirven" style="margin:0 0 4px;">¿Para qué sirven estos criterios?</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        No buscan castigar. Buscan ayudarte a trabajar mejor y proteger tus resultados.
+      </p>
+
+      <div class="method-grid">
+        <div class="method-card">
+          <h4><span class="material-symbols-outlined" style="font-size:18px;">recycling</span> Reducir mermas</h4>
+          <p class="text-body-sm" style="color:var(--on-surface-variant);margin-top:8px;">
+            Cada corte incorrecto es una pieza que no puede venderse. Conocer las reglas minimiza el desperdicio.
+          </p>
+        </div>
+        <div class="method-card">
+          <h4><span class="material-symbols-outlined" style="font-size:18px;">shield</span> Evitar cobros</h4>
+          <p class="text-body-sm" style="color:var(--on-surface-variant);margin-top:8px;">
+            Seguir el proceso correcto desde el inicio te protege de cargos que podrían afectar tu desempeño.
+          </p>
+        </div>
+        <div class="method-card">
+          <h4><span class="material-symbols-outlined" style="font-size:18px;">workspace_premium</span> Trabajar profesional</h4>
+          <p class="text-body-sm" style="color:var(--on-surface-variant);margin-top:8px;">
+            Revisión, comunicación y reporte oportuno son las tres claves de un colaborador de alto rendimiento.
+          </p>
+        </div>
+      </div>
+
+      <!-- CASOS CLAVE -->
+      <h2 class="text-headline-md" id="casos-clave" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Casos Clave — Criterios Importantes</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Estos son los casos más comunes que debes tener siempre presentes al momento de instalar un protector.
+      </p>
+
+      <section class="step-section" style="border-top:none;padding-top:0;">
+        <div style="display:flex;gap:var(--space-md);align-items:flex-start;">
+          <div class="case-num">01</div>
+          <div style="flex:1;">
+            <h3 class="text-headline-sm" style="margin:0 0 6px;">Verificar siempre el modelo del equipo</h3>
+            <p class="text-body-md" style="color:var(--on-surface-variant);">
+              Un mal corte por no revisar correctamente el modelo del teléfono puede pasar a cobro. Este es el error más común y también el más fácil de evitar.
+            </p>
+            <div class="sub-note">Recomendaciones</div>
+            <ul class="step-list check">
+              <li>Antes de realizar cualquier corte, revisa el modelo exacto en Ajustes → Acerca del teléfono</li>
+              <li>No asumas el modelo por la apariencia externa del equipo</li>
+              <li>Si tienes duda entre dos modelos similares, consulta antes de cortar</li>
+            </ul>
+            <div class="takeaway">
+              <div class="icon-badge"><span class="material-symbols-outlined">info</span></div>
+              <div><p style="margin:0;">Una revisión rápida puede evitar una merma y proteger tu record.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="step-section">
+        <div style="display:flex;gap:var(--space-md);align-items:flex-start;">
+          <div class="case-num">02</div>
+          <div style="flex:1;">
+            <h3 class="text-headline-sm" style="margin:0 0 6px;">Colaboradores de nuevo ingreso</h3>
+            <p class="text-body-md" style="color:var(--on-surface-variant);">
+              Durante el primer mes de práctica, el colaborador cuenta con un margen de aprendizaje sin cobro inmediato.
+            </p>
+            <div class="sub-note">Condiciones</div>
+            <ul class="step-list check">
+              <li>Tienes hasta 5 oportunidades de error sin cobro durante el primer mes</li>
+              <li>A partir de la sexta equivocación sí puede aplicarse el cobro</li>
+              <li>Si tienes dudas, solicita apoyo antes de realizar el corte — nunca después</li>
+            </ul>
+            <div class="takeaway">
+              <div class="icon-badge"><span class="material-symbols-outlined">school</span></div>
+              <div><p style="margin:0;">El objetivo es ayudarte a aprender correctamente el proceso desde el inicio.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="step-section">
+        <div style="display:flex;gap:var(--space-md);align-items:flex-start;">
+          <div class="case-num">03</div>
+          <div style="flex:1;">
+            <h3 class="text-headline-sm" style="margin:0 0 6px;">Defectos de fábrica en hidrogel</h3>
+            <p class="text-body-md" style="color:var(--on-surface-variant);">
+              Si detectas defectos en hidrogel antiblu, transparente o cualquier otro tipo, debes actuar de inmediato.
+            </p>
+            <div class="sub-note">Procedimiento</div>
+            <ul class="step-list check">
+              <li>Toma evidencia fotográfica del defecto antes de continuar</li>
+              <li>Reporta inmediatamente en el grupo correspondiente de comunicación</li>
+            </ul>
+            <div class="callout-warning">
+              <div class="icon-badge"><span class="material-symbols-outlined">warning</span></div>
+              <div>
+                <h4>⚠️ No instales un hidrogel con defecto visible</h4>
+                <p>El cliente lo rechazará. Y si no existe evidencia del defecto, el material puede pasar a cobro aunque sea falla de fábrica.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COBRO DIRECTO -->
+      <h2 class="text-headline-md" id="cobro-directo" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Cobro Directo — Casos que NO Aplican como Garantía</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Los siguientes casos pueden pasar directamente a cobro sin excepción. Conócelos para evitarlos.
+      </p>
+
+      <ul class="reason-list">
+        <li><span class="material-symbols-outlined">close</span> El cliente dijo que "no le gustó cómo se veía" el protector.</li>
+        <li><span class="material-symbols-outlined">close</span> No se explicó correctamente el acabado del hidrogel o polímero antes de instalarlo.</li>
+        <li><span class="material-symbols-outlined">close</span> La huella no funcionó y no se informó previamente al cliente sobre la compatibilidad.</li>
+        <li><span class="material-symbols-outlined">close</span> El protector no cubrió correctamente los bordes y no se mostró previamente el tipo de corte.</li>
+        <li><span class="material-symbols-outlined">close</span> La máquina realizó mal el corte y no se envió evidencia fotográfica del error.</li>
+        <li><span class="material-symbols-outlined">close</span> El corte se deformó y no fue reportado de manera oportuna.</li>
+        <li><span class="material-symbols-outlined">close</span> El hidrogel tenía manchas y no se reportó antes de intentar instalarlo.</li>
+        <li><span class="material-symbols-outlined">close</span> Se realizó un mal corte por no verificar el modelo del equipo correctamente.</li>
+        <li><span class="material-symbols-outlined">close</span> La funda levantó la mica por no revisar compatibilidades entre corte y funda del cliente.</li>
+        <li><span class="material-symbols-outlined">close</span> Instalación incorrecta o descuidada que resulta en burbujas, polvo o mala adhesión.</li>
+        <li><span class="material-symbols-outlined">close</span> Las mermas no fueron enviadas al día siguiente según el procedimiento establecido.</li>
+        <li><span class="material-symbols-outlined">close</span> No se siguió el procedimiento correcto de envío a almacén en tiempo y forma.</li>
+      </ul>
+
+      <!-- REPORTE OBLIGATORIO -->
+      <h2 class="text-headline-md" id="reporte-obligatorio" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Reporte Obligatorio — Hidrogeles Cortados no Utilizados</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Si un hidrogel fue cortado pero no utilizado, debe reportarse de inmediato para poder asignarle fecha de venta.
+      </p>
+
+      <div class="lists-row">
+        <div class="list-block good">
+          <div class="list-label">✅ ¿Cuándo reportar?</div>
+          <ul>
+            <li>Corte incorrecto de modelo</li>
+            <li>Error de talla o tipo de corte</li>
+            <li>Cliente canceló la instalación</li>
+            <li>Hidrogel dañado durante el proceso</li>
+            <li>Cualquier situación donde ya no pueda venderse como nuevo</li>
+          </ul>
+        </div>
+        <div class="list-block bad">
+          <div class="list-label">❌ ¿Qué pasa si no se reporta?</div>
+          <ul>
+            <li>Si solo se envía a almacén sin reportar, el costo puede asignarse al responsable directo</li>
+            <li>Si se detecta en auditoría posterior, el cargo puede aplicarse a la sucursal</li>
+            <li>Si no puede identificarse quién realizó el corte, la sucursal asume el costo</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="takeaway">
+        <div class="icon-badge"><span class="material-symbols-outlined">campaign</span></div>
+        <div>
+          <h4>Repórtalo aunque no seas quien lo cortó</h4>
+          <p>Si encuentras un hidrogel ya cortado sin dueño, repórtalo inmediatamente. El reporte oportuno permite asignar una fecha para intentar vender esa pieza y así evitar mermas innecesarias — puede convertir un error en una oportunidad de venta.</p>
+        </div>
+      </div>
+
+      <!-- ENVÍO CORRECTO -->
+      <h2 class="text-headline-md" id="envio-correcto" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Envío de Mermas y Garantías</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Las mermas y garantías deben enviarse correctamente selladas y registradas. Un envío incorrecto puede generar cobro.
+      </p>
+
+      <ul class="reason-list">
+        <li><span class="material-symbols-outlined">close</span> Las mermas no llegan a almacén o no hay registro de salida desde sucursal.</li>
+        <li><span class="material-symbols-outlined">close</span> Se detecta que nunca salieron de sucursal aunque se dijo haberlas enviado.</li>
+        <li><span class="material-symbols-outlined">close</span> El paquete no fue enviado sellado correctamente, lo que impide validar su contenido.</li>
+        <li><span class="material-symbols-outlined">close</span> No existe ficha de envío ni comprobante del despacho del paquete.</li>
+        <li><span class="material-symbols-outlined">close</span> No hay registro o evidencia del envío en el grupo de comunicación correspondiente.</li>
+      </ul>
+
+      <div class="takeaway">
+        <div class="icon-badge"><span class="material-symbols-outlined">inventory_2</span></div>
+        <div><p style="margin:0;">Todo envío debe ir correctamente sellado para evitar pérdidas o problemas durante la validación en almacén. El sellado es tu garantía de que el contenido llegó completo.</p></div>
+      </div>
+
+      <!-- CONSEJO FINAL -->
+      <div class="pinned" id="consejo-final" style="scroll-margin-top:80px;">
+        <span class="eyebrow">✅ Consejo final</span>
+        <ul class="step-list check" style="margin-top:var(--space-md);">
+          <li style="color:rgba(255,255,255,0.92);">Verifica correctamente el modelo antes de realizar cualquier corte</li>
+          <li style="color:rgba(255,255,255,0.92);">Explica bien al cliente el tipo de protector, el acabado y las limitaciones antes de instalar</li>
+          <li style="color:rgba(255,255,255,0.92);">Revisa compatibilidades entre el tipo de corte y la funda del cliente</li>
+          <li style="color:rgba(255,255,255,0.92);">Reporta cualquier anomalía inmediatamente con evidencia fotográfica</li>
+          <li style="color:rgba(255,255,255,0.92);">Envía correctamente las mermas y garantías selladas y registradas</li>
+        </ul>
+        <p style="margin-top:var(--space-md);">Trabajar con atención y comunicación ayuda a reducir mermas y mejora tus resultados.</p>
+      </div>
+
+      </div>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;width:100%;gap:var(--space-md);">
+      <span>© <span id="current-year"></span> Centralcell · Innovación Móvil</span>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+
+  // Abrir / cerrar el menú en móvil
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+
+  document.getElementById('menuToggle').addEventListener('click', openSidebar);
+  document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', closeSidebar));
+
+  // Barra de progreso de lectura
+  const fill = document.getElementById('progressFill');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    fill.style.width = scrolled + '%';
+  });
+
+  // Resaltar la sección activa en el sidebar mientras se hace scroll
+  const sections = document.querySelectorAll('#para-que-sirven, #casos-clave, #cobro-directo, #reporte-obligatorio, #envio-correcto, #consejo-final');
+  const links = document.querySelectorAll('.sidebar-step');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar-step[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>

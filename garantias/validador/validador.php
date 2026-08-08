@@ -11,12 +11,15 @@ if (!isset($_SESSION['validador_id'])) {
 include_once '../../funciones.php';
 $conn = conectarBD();
 
-$actualizadas = actualizarGarantiasDiario($conn);
+
 $garantias = verTablavalidador();
+
 
 $nombre     = $_SESSION['validador_nombre'] ?? '';
 $apellido   = $_SESSION['validador_apellido'] ?? '';
 $validador_id = $_SESSION['validador_id'];
+
+$actualizadas = actualizarGarantiasDiario($conn, $validador_id);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -151,18 +154,27 @@ $validador_id = $_SESSION['validador_id'];
           </span>Home
         </a>
       </li>
-      <li><a href="../vendedor/garantias.php">👨🏻‍💼 Apdo. Vendedor</a></li>
-      <li><a href="../../existencias/index.php">📦 Existencias</a></li>
-      <li><a href="../../kpis/index.php">📈 KPIs</a></li>
-      <li><a href="../../capacitados/capa.php">📘 Capacit.</a></li>
-      <li><a href="colaboradores.php">👨🏻‍💼 Empleados</a></li>
-      <li><a href="guardar_imagen.php">🖼️ Imagenes</a></li>
-      <li><a href="../../compatibilidades/consultar.php">🔗 Compatibilidades</a></li>
-      <li><a href="anotarmermassinregistrar.php">⚠️ Anot Mer.</a></li>
-      <li><a href="tabla.php">📌 Mermas sin reg.</a></li>
-      <li><a href="sucursales.php">🏬 Sucursales</a></li>
-      <li><a href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing">📑 Bitacora</a></li>
-      <li><a href="Validadores.php">🆕 Validador</a></li>
+      <li>
+        <a href="../vendedor/garantias.php">
+            <span class="material-symbols-outlined">badge</span>
+            Apdo. Vendedor
+        </a>
+    </li>
+
+    <li>
+        <a href="../../kpis/modulos.html">
+            <span class="material-symbols-outlined">build</span>
+            Herramientas
+        </a>
+    </li>
+
+    <li>
+        <a href="anotarmermassinregistrar.php">
+            <span class="material-symbols-outlined">warning</span>
+            Anot Mer.
+        </a>
+    </li>
+
       
     </ul>
   </div>
@@ -349,8 +361,15 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu()
       </div>
     </div>
     <div class="filter-buttons">
-      <button class="btn-clear" onclick="clearAllFilters()">🔄 Limpiar Filtros</button>
-      <button type="button" id="btn-descargar">📥 Descargar</button>
+      <button class="btn-clear" onclick="clearAllFilters()">
+          <span class="material-symbols-outlined">filter_alt_off</span>
+          Limpiar Filtros
+      </button>
+
+      <button type="button" id="btn-descargar">
+          <span class="material-symbols-outlined">download</span>
+          Descargar
+      </button>
     </div>
   </div>
 

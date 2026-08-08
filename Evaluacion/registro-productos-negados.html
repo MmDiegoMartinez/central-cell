@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Productos Negados · Centralcell</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-md);margin-top:var(--space-md);}
+  .status-card{
+    display:flex;align-items:center;gap:10px;
+    background:var(--surface-container-low);border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);padding:12px 16px;font-size:14px;font-weight:600;color:var(--on-surface);
+  }
+  .status-dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;}
+  .dot-blue{background:#1d4ed8;}
+  .dot-yellow{background:#eab308;}
+  .dot-green{background:#16a34a;}
+  .dot-red{background:#dc2626;}
+  .dot-gray{background:#9ca3af;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div>
+      <h1 class="text-headline-sm sidebar-brand">Centralcell</h1>
+      <p class="text-body-sm sidebar-sub">Innovación Móvil</p>
+    </div>
+    <button class="sidebar-close material-symbols-outlined" id="sidebarClose" aria-label="Cerrar menú">close</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-label">Capacitación</div>
+    <a class="sidebar-link" href="material.html">
+      <span class="material-symbols-outlined">home</span>Centro de Capacitación
+    </a>
+    <a class="sidebar-link" href="instalacion-protection-pro.html">
+      <span class="material-symbols-outlined">shield</span> Instalación de Protection Pro
+    </a>
+    <a class="sidebar-link" href="hidrogel.html">
+      <span class="material-symbols-outlined">water_drop</span> Hidrogel
+    </a>
+    <a class="sidebar-link" href="pantallas-curvas-mica-uv.html">
+      <span class="material-symbols-outlined">stay_current_portrait</span> Pantallas Curvas y Mica UV
+    </a>
+    <a class="sidebar-link" href="cables-adaptadores-corriente.html">
+      <span class="material-symbols-outlined">bolt</span> Cables y Adaptadores
+    </a>
+    <a class="sidebar-link" href="cobro-protectores-pantalla.html">
+      <span class="material-symbols-outlined">policy</span> Cobro en Protectores
+    </a>
+    <a class="sidebar-link" href="correas-apple-watch.html">
+      <span class="material-symbols-outlined">watch</span> Correas Apple Watch
+    </a>
+    <a class="sidebar-link" href="uso-maquina-hidrogel.html">
+      <span class="material-symbols-outlined">precision_manufacturing</span> Máquina de Hidrogel
+    </a>
+    <a class="sidebar-link" href="garantias.html">
+      <span class="material-symbols-outlined">verified</span> Garantías y Mermas
+    </a>
+    <a class="sidebar-link" href="envio-mermas-garantias.html">
+      <span class="material-symbols-outlined">local_shipping</span> Envío de Mermas y Garantías
+    </a>
+
+    <a class="sidebar-link active" href="#inicio">
+      <span class="material-symbols-outlined">assignment_late</span> Productos Negados
+    </a>
+    <div class="sidebar-steps">
+      <a class="sidebar-step" href="#objetivo">Objetivo</a>
+      <a class="sidebar-step" href="#importancia">Importancia</a>
+      <a class="sidebar-step" href="#alcance">Alcance y responsabilidades</a>
+      <a class="sidebar-step" href="#proceso">Proceso de registro</a>
+      <a class="sidebar-step" href="#estatus">Estatus de seguimiento</a>
+      <a class="sidebar-step" href="#video">Video de apoyo</a>
+    </div>
+    <a class="sidebar-link" href="registro-productos-negados.html">
+      <span class="material-symbols-outlined">assignment_late</span> Productos Negados
+    </a>
+  </nav>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle material-symbols-outlined" id="menuToggle" aria-label="Abrir menú">menu</button>
+      <h2 class="text-headline-sm" style="margin:0;">Registro de Productos Negados</h2>
+    </div>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="container" id="inicio">
+    <article class="lesson">
+      <div class="lesson-body">
+
+        <span class="eyebrow">Políticas Internas · Surtido y Ventas</span>
+        <h1 class="text-headline-lg" style="margin:8px 0 0;">Registro de Productos Negados</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px;">assignment_late</span> 5 pasos</span>
+          <span><span class="material-symbols-outlined" style="font-size:16px;">groups</span> Vendedores y encargados</span>
+        </div>
+
+      </div>
+
+      <div class="lesson-body">
+
+      <!-- OBJETIVO -->
+      <section class="step-section" id="objetivo" style="border-top:none;padding-top:0;">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">flag</span></div>
+          <h3 class="text-headline-sm step-title">Objetivo</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Registrar todos los productos que no se pudieron vender durante el día para detectar las necesidades de los clientes, solicitar mercancía faltante y evitar la pérdida de ventas en sucursal.
+        </p>
+      </section>
+
+      <!-- IMPORTANCIA -->
+      <section class="step-section" id="importancia">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">insights</span></div>
+          <h3 class="text-headline-sm step-title">Importancia</h3>
+        </div>
+        <div class="intro-panel" style="margin-top:0;">
+          <div class="icon-badge"><span class="material-symbols-outlined">lightbulb</span></div>
+          <div>
+            <p>Cada producto negado representa una oportunidad de venta. Registrar correctamente estos productos ayuda a mejorar el surtido de la sucursal, aumentar ventas y brindar una mejor atención al cliente.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALCANCE Y RESPONSABILIDADES -->
+      <section class="step-section" id="alcance">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">groups</span></div>
+          <h3 class="text-headline-sm step-title">Alcance, Responsabilidades y Autoridad</h3>
+        </div>
+        <div class="sub-note">Alcance</div>
+        <ul class="step-list">
+          <li>Apasionado de la Telefonía</li>
+          <li>Encargado de Sucursal</li>
+        </ul>
+
+        <div class="sub-note">Responsabilidades</div>
+        <ul class="step-list check">
+          <li>Registrar todos los productos negados cada vez que un cliente solicite un artículo que no esté disponible en sucursal</li>
+          <li>Verificar que la información capturada sea correcta</li>
+          <li>Dar seguimiento a los productos solicitados</li>
+        </ul>
+
+        <div class="takeaway">
+          <div class="icon-badge"><span class="material-symbols-outlined">verified_user</span></div>
+          <div>
+            <h4>Autoridad</h4>
+            <p>El Apasionado de la Telefonía puede solicitar los productos negados al departamento correspondiente para cubrir la necesidad del cliente.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROCESO DE REGISTRO -->
+      <h2 class="text-headline-md" id="proceso" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Proceso del Registro en la Lista de Productos Negados</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Sigue estos pasos en orden cada vez que un cliente solicite un producto que no esté disponible.
+      </p>
+
+      <section class="step-section" style="border-top:none;padding-top:0;">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="text-headline-sm step-title">Ingresar a la página de registro</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Entra al siguiente enlace y selecciona la sucursal correspondiente.
+        </p>
+        <p class="text-body-md" style="margin-top:var(--space-sm);">
+          <a href="https://innovacion-movil.infinityfreeapp.com/bitacora/Vendedores/index.php" target="_blank" rel="noopener" class="btn btn-primary">
+            <span class="material-symbols-outlined" style="font-size:18px;">open_in_new</span> Página de Registro de Productos Negados
+          </a>
+        </p>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="text-headline-sm step-title">Completar el formulario</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Llena correctamente los siguientes campos:
+        </p>
+        <ul class="step-list check">
+          <li>Marca y modelo del producto</li>
+          <li>Descripción del artículo negado</li>
+          <li>Nombre del Apasionado de la Telefonía que realiza el registro</li>
+          <li>Anotaciones adicionales (opcional)</li>
+        </ul>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">3</div>
+          <h3 class="text-headline-sm step-title">Guardar el registro</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Presiona el botón de guardar y verifica que aparezca el mensaje:
+        </p>
+        <div class="takeaway">
+          <div class="icon-badge"><span class="material-symbols-outlined">check_circle</span></div>
+          <div><p style="margin:0;">✅ "Producto registrado correctamente."</p></div>
+        </div>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">4</div>
+          <h3 class="text-headline-sm step-title">Consultar la bitácora de registros</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Ingresa a la sección <strong>"Ver Productos Negados"</strong>, ubicada en la parte superior derecha de la página. Puedes filtrar por:
+        </p>
+        <ul class="step-list check">
+          <li>Sucursal</li>
+          <li>Nombre del colaborador</li>
+          <li>Indicador</li>
+          <li>Fecha</li>
+        </ul>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">5</div>
+          <h3 class="text-headline-sm step-title">Revisar el estatus del producto</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Los registros aparecerán con diferentes colores dependiendo del seguimiento.
+        </p>
+      </section>
+
+      <!-- ESTATUS DE SEGUIMIENTO -->
+      <h2 class="text-headline-md" id="estatus" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Estatus de Seguimiento</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Estos estatus ayudan a dar seguimiento al producto solicitado y conocer si ya fue atendida la necesidad del cliente.
+      </p>
+
+      <div class="status-grid">
+        <div class="status-card"><span class="status-dot dot-blue"></span> Visto</div>
+        <div class="status-card"><span class="status-dot dot-yellow"></span> En pedido</div>
+        <div class="status-card"><span class="status-dot dot-green"></span> Surtido</div>
+        <div class="status-card"><span class="status-dot dot-red"></span> Tiene en tienda</div>
+        <div class="status-card"><span class="status-dot dot-gray"></span> Anotado (sin acción)</div>
+      </div>
+
+      <!-- VIDEO DE APOYO -->
+      <section class="step-section" id="video">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">play_circle</span></div>
+          <h3 class="text-headline-sm step-title">Video de Apoyo</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Si tienes dudas sobre cómo realizar el registro, puedes apoyarte con el siguiente video.
+        </p>
+        <div class="video-embed">
+          <iframe src="https://drive.google.com/file/d/1C4SG0uC9j--SR4tOwuX_ufabii_VMPfX/preview" title="Video de apoyo: Registro de Productos Negados" allow="autoplay" allowfullscreen></iframe>
+        </div>
+      </section>
+
+      </div>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;width:100%;gap:var(--space-md);">
+      <span>© <span id="current-year"></span> Centralcell · Innovación Móvil</span>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+
+  // Abrir / cerrar el menú en móvil
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+
+  document.getElementById('menuToggle').addEventListener('click', openSidebar);
+  document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', closeSidebar));
+
+  // Barra de progreso de lectura
+  const fill = document.getElementById('progressFill');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    fill.style.width = scrolled + '%';
+  });
+
+  // Resaltar la sección activa en el sidebar mientras se hace scroll
+  const sections = document.querySelectorAll('#objetivo, #importancia, #alcance, #proceso, #estatus, #video');
+  const links = document.querySelectorAll('.sidebar-step');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar-step[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>

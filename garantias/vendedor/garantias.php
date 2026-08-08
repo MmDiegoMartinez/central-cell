@@ -8,9 +8,9 @@ $mensaje = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {     
     try {         
         guardarGarantia($_POST);         
-        $mensaje = "✅ Garantía registrada correctamente.";     
+        $mensaje = " Garantía registrada correctamente.";     
     } catch (Exception $e) {         
-        $mensaje = "❌ Error al guardar: " . $e->getMessage();     
+        $mensaje = "Error al guardar: " . $e->getMessage();     
     } 
 } 
 ?>
@@ -266,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         async function subirFotoImgBB(archivo) {
             const estado = document.getElementById('fotoEstado');
-            estado.textContent = '⏳ Subiendo foto...';
+           estado.innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> Subiendo foto...';
             estado.className = 'foto-estado cargando';
             const reader = new FileReader();
             return new Promise((resolve) => {
@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if (data.success) {
                             fotosSubidas.push(data.data.url);
                             actualizarCamposOcultos();
-                            estado.textContent = '✅ Foto '+fotosSubidas.length+' subida correctamente';
+                           estado.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Foto ' + fotosSubidas.length + ' subida correctamente';
                             estado.className = 'foto-estado ok';
                         } else {
                             estado.textContent = '❌ Error: '+(data.error?.message||'Error desconocido');
@@ -331,39 +331,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </li>
         <li>
-            <a href="metas.php" style="display:flex;align-items:center;gap:12px;">
-                <img src="../../recursos/img/Metas.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
-                Metas
+            <li>
+            <a href="formato_garantia.php" style="display:flex;align-items:center;gap:12px;">
+                <img src="../../recursos/img/tel.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
+                Recep. Equip.
             </a>
         </li>
-         <li>
+        <li>
             <a href="../../existencias/catalogo.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/cata.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
                 Catalogo
             </a>
         </li>
+        
         <li>
-            <a href="../../bitacora/Vendedores/index.php" style="display:flex;align-items:center;gap:12px;">
+            <a href="metas.php" style="display:flex;align-items:center;gap:12px;">
+                <img src="../../recursos/img/Metas.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
+                Mtas
+            </a>
+        </li>
+        <li>
+            <a href="anotar-prod-neg.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/productosNegados.png" alt="Productos Negados" style="width:40px;height:40px;object-fit:contain;" />
-                Productos negados
+                Prod. Neg.
             </a>
         </li>
         <li>
             <a href="../../compatibilidades/consultar.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/compatibilidades.png" alt="Compatibilidades" style="width:40px;height:40px;object-fit:contain;" />
-                Compatibilidades
+                Compat.
             </a>
         </li>
         <li>
             <a href="../../Evaluacion/material.html" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/tuto.png" alt="Tutorial" style="width:40px;height:40px;object-fit:contain;" />
-                Capacitación
+                Capacit.
             </a>
         </li>
         <li>
             <a href="tabla.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/merma.png" alt="Mermas" style="width:40px;height:40px;object-fit:contain;" />
-                Gts / Mms
+               Merm. / Gar
             </a>
         </li>
     </ul>
@@ -384,13 +392,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <!-- ── Toggle discreto de departamento ── -->
                 <div class="dpto-toggle">
-                    <span id="lbl-im" class="dpto-label-im">📱 Accesorios</span>
+                   <span id="lbl-im" class="dpto-label-im">
+                        <span class="material-symbols-outlined">phone_iphone</span>
+                        Accesorios
+                    </span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="toggle-dpto" onchange="cambiarDpto()">
                         <div class="toggle-track"></div>
                         <div class="toggle-thumb"></div>
                     </label>
-                    <span id="lbl-tm">📲 Telefonía</span>
+                    <span id="lbl-tm">
+                        <span class="material-symbols-outlined">smartphone</span>
+                        Telefonía
+                    </span>
                 </div>
 
                 <!-- ── PLOWS ── -->
@@ -458,8 +472,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Fotos (opcional, máx. 2):</label><br>
                     <input type="file" id="inputFotoCamara" accept="image/*" capture="environment" style="display:none;">
                     <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
-                    <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoCamara').click()">📷 Tomar foto</button>
-                    <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoGaleria').click()">🖼️ Abrir galería</button>
+                    <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoCamara').click()">
+                    <span class="material-symbols-outlined">photo_camera</span>
+                        Tomar foto
+                    </button>
+
+                    <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoGaleria').click()">
+                        <span class="material-symbols-outlined">photo_library</span>
+                        Abrir galería
+                    </button>
                     <span class="foto-contador" id="fotoContador">0/2 fotos</span>
                     <div id="fotoEstado" class="foto-estado"></div>
                     <br><br>
@@ -565,9 +586,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   "
   onmouseover="this.style.color='var(--primary-400,#16729a)';this.style.borderColor='var(--primary-400,#16729a)'"
   onmouseout="this.style.color='var(--muted,#6b7280)';this.style.borderColor='#d1d5db'"
-  >
-    📦 Existencias
-  </a>
+>
+    <span class="material-symbols-outlined">inventory_2</span>
+    Existencias
+</a>
 </footer>
 </body>
 </html>

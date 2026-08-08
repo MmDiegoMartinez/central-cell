@@ -8,106 +8,186 @@ include_once '../funciones.php';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Productos Más Vendidos — IM & TM</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+
+<link rel="stylesheet" href="../styles.css">
+
+
 <style>
-body{font-family:Arial,sans-serif;margin:18px;background:#f7f7f7;color:#222}
-h1{margin-top:0}
-.controls{display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-button.btn{background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
-button.btn:disabled{background:#999;cursor:not-allowed}
-table{border-collapse:collapse;width:100%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:20px}
-th,td{padding:8px 6px;border:1px solid #e1e1e1;text-align:center;font-size:13px}
-th{background:#2f6fa6;color:#fff;position:sticky;top:0;z-index:1}
-tr.total-row{font-weight:700;background:#eee}
-.note{font-size:13px;color:#333;margin-top:6px}
+  /* ── Contenedor de controles ── */
+  .controls{
+    display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-md);
+    margin-top:var(--space-lg);
+  }
 
-.filter-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
-            padding:12px 16px;background:#fff;border:1px solid #ddd;
-            border-radius:10px;margin-bottom:16px}
-.filter-bar label{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
-.filter-bar select{padding:6px 10px;border-radius:6px;border:1px solid #ccc;font-size:13px}
+  /* ── Botón de subir archivo (reemplaza la animación de carpetas) ── */
+  .file-upload{display:flex;}
+  .boton{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 18px;border-radius:var(--radius-lg);
+    background:var(--surface-container-high);
+    border:1px solid var(--outline-variant);
+    color:var(--on-surface);font-size:14px;font-weight:600;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .boton:hover{background:var(--surface-container-highest);border-color:var(--primary);}
+  .boton .material-symbols-outlined{font-size:20px;color:var(--primary);}
 
-/* Badge departamento */
-select#fDepto option[value="IM"]  { background:#fff0f3 }
-select#fDepto option[value="TM"]  { background:#f0f8ff }
+  /* ── Mensaje / nota de estado ── */
+  .note{
+    margin-top:var(--space-md);
+    font-size:14px;color:var(--on-surface-variant);
+    min-height:20px;
+  }
+
+  /* ── Loader simple (reemplaza la animación de sol/nube) ── */
+  .loader-container{
+    display:flex;align-items:center;gap:var(--space-sm);
+    padding:var(--space-md) 0;
+    color:var(--primary);font-size:14px;font-weight:600;
+  }
+  .loader-container .material-symbols-outlined{
+    font-size:22px;animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+  /* ── Barra de filtros ── */
+  .filter-bar{
+    display:flex;flex-wrap:wrap;gap:var(--space-md);
+    margin-top:var(--space-lg);
+    padding:var(--space-md) var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+  }
+  .filter-bar label{
+    display:flex;flex-direction:column;gap:4px;
+    font-size:12px;font-weight:600;color:var(--on-surface-variant);
+    text-transform:uppercase;letter-spacing:0.03em;
+  }
+  .filter-bar select{
+    padding:8px 12px;border-radius:var(--radius);
+    border:1px solid var(--outline-variant);
+    background:var(--surface-container-lowest);
+    color:var(--on-surface);font-size:13px;font-weight:500;
+    text-transform:none;letter-spacing:normal;
+    cursor:pointer;min-width:160px;
+  }
+  .filter-bar select:focus-visible{outline:2px solid var(--primary);outline-offset:1px;}
+
+  /* ── Tabla de resultados ── */
+  #tablesContainer{margin-top:var(--space-lg);overflow-x:auto;}
+  #tablesContainer table{width:100%;border-collapse:collapse;font-size:13px;}
+  #tablesContainer thead th{
+    text-align:center;padding:10px 12px;white-space:nowrap;
+    background:var(--surface-container-high);
+    color:var(--on-surface-variant);
+    font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+    border-bottom:1px solid var(--outline-variant);
+  }
+  #tablesContainer thead th:first-child{text-align:left;}
+  #tablesContainer tbody td{
+    padding:9px 12px;text-align:center;
+    border-bottom:1px solid var(--outline-variant);
+    color:var(--on-surface);
+  }
+  #tablesContainer tbody tr:hover{background:var(--surface-container-low);}
+  #tablesContainer tbody tr.total-row{
+    background:var(--surface-container-high);
+    font-weight:700;color:var(--on-surface);
+  }
+  #tablesContainer tbody tr.total-row td{border-bottom:none;}
+
+  /* ── Badges de departamento (reemplazan los colores hex inline) ── */
+  .badge-depto{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:2px 10px;border-radius:var(--radius-full);
+    font-size:11px;font-weight:700;
+  }
+  .badge-depto.im{background:var(--primary-container);color:var(--on-primary-container);}
+  .badge-depto.tm{background:var(--surface-container-high);color:var(--tertiary);}
 </style>
-<link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li>
-        <a href="../garantias/validador/validador.php" class="menu-link">
-          <span class="logo-container">
-            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
-          </span>
-          Home
-        </a>
-      </li>
-      <li>
-        <a href="index.php" class="menu-link">
-          
-          Panel KPIs
-        </a>
-      </li>
-      </ul>
-    </div>
+
+<!-- TOP HEADER -->
+<header class="topheader">
+  <div class="topheader-left">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="26" height="26" style="border-radius:6px;">
+    <h2 class="text-headline-sm">Productos Más Vendidos — IM &amp; TM</h2>
+  </div>
+  <nav class="topnav">
+    <a href="../garantias/validador/validador.php">Home</a>
+    <a href="modulos.html">Panel de Herramientas</a>
   </nav>
 </header>
 
-<div class="container">
-  <h1>📊 Productos Más Vendidos — IM & TM</h1>
+<div class="main" style="margin-left:0;">
+  <div class="container">
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
+    <div class="lesson">
+      <div class="lesson-body">
+        <div class="eyebrow">Ranking de productos</div>
+        <h1 class="text-headline-lg" style="margin:8px 0 4px;display:flex;align-items:center;gap:10px;">
+          <span class="material-symbols-outlined" style="font-size:30px;color:var(--primary);">leaderboard</span>
+          Productos Más Vendidos — IM &amp; TM
+        </h1>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0;">
+          Sube tu archivo Excel para ver el ranking de productos por cantidad y monto vendido
+        </p>
+
+        <div class="controls">
+          <div class="file-upload">
+            <input id="inputFile" type="file" accept=".xlsx,.xls" style="display:none;"/>
+            <button class="boton" id="fileButton" type="button">
+              <span class="material-symbols-outlined">attach_file</span>
+              <span class="text">Seleccionar Archivo</span>
+            </button>
+          </div>
+          <button id="procesarBtn" class="btn btn-primary" disabled>
+            <span class="material-symbols-outlined">play_arrow</span>
+            Procesar archivo
+          </button>
+          <button id="descargarBtn" class="btn btn-secondary" disabled>
+            <span class="material-symbols-outlined">download</span>
+            Descargar Excel
+          </button>
         </div>
-        <div class="active_line"></div>
-        <span class="text">Seleccionar Archivo</span>
-      </button>
+
+        <div id="loader" class="loader-container" style="display:none;">
+          <span class="material-symbols-outlined">progress_activity</span>
+          <span>Procesando archivo...</span>
+        </div>
+
+        <div id="mensajes" class="note"></div>
+      </div>
     </div>
-    <button id="procesarBtn" class="btn" disabled>Procesar archivo</button>
-    <button id="descargarBtn" class="btn" disabled>⬇ Descargar Excel</button>
+
+    <!-- ── Filtros unificados ── -->
+    <div class="filter-bar" id="filterBar" style="display:none">
+      <label>Departamento
+        <select id="fDepto">
+          <option value="">Ambos</option>
+          <option value="IM">Innovación Móvil</option>
+          <option value="TM">Tecnología Móvil</option>
+        </select>
+      </label>
+      <label>Almacén
+        <select id="fAlmacen"><option value="">Todos</option></select>
+      </label>
+      <label>Categoría
+        <select id="fCategoria"><option value="">Todas</option></select>
+      </label>
+      <label>Tipo
+        <select id="fTipo"><option value="">Todos</option></select>
+      </label>
+    </div>
+
+    <div id="tablesContainer"></div>
+
   </div>
 
-  <div id="mensajes" class="note"></div>
-
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-    <span class="sun sunshine"></span><span class="sun"></span>
-    <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-  </div>
-
-  <!-- ── Filtros unificados ── -->
-  <div class="filter-bar" id="filterBar" style="display:none">
-    <label>Departamento:
-      <select id="fDepto">
-        <option value="">Ambos</option>
-        <option value="IM">📱 Innovación Móvil</option>
-        <option value="TM">📲 Tecnología Móvil</option>
-      </select>
-    </label>
-    <label>Almacén:
-      <select id="fAlmacen"><option value="">Todos</option></select>
-    </label>
-    <label>Categoría:
-      <select id="fCategoria"><option value="">Todas</option></select>
-    </label>
-    <label>Tipo:
-      <select id="fTipo"><option value="">Todos</option></select>
-    </label>
-  </div>
-
-  <div id="tablesContainer"></div>
+  
 </div>
 
 <script>
@@ -259,8 +339,8 @@ function buildTabla(arr){
 
   arr.forEach(r=>{
     const badge = r.depto==='IM'
-      ? `<span style="background:#f5576c;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px">IM</span>`
-      : `<span style="background:#4facfe;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px">TM</span>`;
+      ? `<span class="badge-depto im">IM</span>`
+      : `<span class="badge-depto tm">TM</span>`;
     h+=`<tr>`;
     if(mostrarDepto) h+=`<td>${badge}</td>`;
     h+=`<td style="text-align:left">${esc(r.producto)}</td>
@@ -308,14 +388,6 @@ function descargarExcel(){
 
 /* ── Helpers ── */
 function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-/* ── Menú hamburguesa ── */
-document.getElementById('menu-check').addEventListener('change',function(){
-  const m=document.getElementById('nav-menu');
-  m.style.opacity=this.checked?'1':'0';
-  m.style.visibility=this.checked?'visible':'hidden';
-  m.style.pointerEvents=this.checked?'auto':'none';
-});
 </script>
 </body>
 </html>

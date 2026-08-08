@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 $mensaje = "";
+$mensaje_tipo = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -38,10 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':direccion'   => $direccion,
         ]);
 
-        $mensaje = "✅ Imagen registrada correctamente con ID: <strong>" . htmlspecialchars($nuevoId) . "</strong>";
+        $mensaje_tipo = "success";
+        $mensaje = "Imagen registrada correctamente con ID: <strong>" . htmlspecialchars($nuevoId) . "</strong>";
 
     } catch (Exception $e) {
-        $mensaje = "❌ Error: " . $e->getMessage();
+        $mensaje_tipo = "error";
+        $mensaje = "Error: " . $e->getMessage();
     }
 }
 ?>
@@ -49,99 +52,240 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Registrar Imagen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="../../css.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../../styles.css">
 
     <style>
-        /* ── Fotos (mismo estilo que registrar garantía) ── */
-        .foto-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #4a90d9;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
-            cursor: pointer;
-            font-size: .95em;
-            margin-bottom: 6px;
-        }
-        .foto-btn:hover { background: #357abd; }
-        .foto-contador   { font-size: .85em; color: #555; margin-left: 8px; }
-        .foto-estado     { font-size: .85em; margin-top: 4px; }
-        .foto-estado.ok       { color: #27ae60; }
-        .foto-estado.error    { color: #e74c3c; }
-        .foto-estado.cargando { color: #e67e22; }
+      /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
 
-        /* Vista previa de la imagen subida */
-        #preview-img {
-            display: none;
-            margin-top: 12px;
-            border-radius: 10px;
-            max-width: 260px;
-            max-height: 200px;
-            border: 2px solid #4a90d9;
-            object-fit: cover;
+      /* Navbar horizontal (mismo patrón que validador.php) */
+      .navbar{
+        position:sticky;top:0;z-index:50;
+        display:flex;align-items:center;justify-content:space-between;
+        gap:var(--space-md);
+        padding:12px var(--space-lg);
+        background:var(--surface);
+        border-bottom:1px solid var(--outline-variant);
+      }
+      .navbar-brand{
+        display:flex;align-items:center;gap:10px;
+        text-decoration:none;color:var(--on-surface);
+      }
+      .navbar-brand img{border-radius:6px;}
+      .navbar-brand-text p{margin:0;line-height:1.2;}
+      .navbar-links{
+        display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+      }
+      .navbar-link{
+        display:flex;align-items:center;gap:6px;
+        padding:8px 14px;border-radius:var(--radius-lg);
+        color:var(--on-surface-variant);text-decoration:none;
+        font-size:14px;font-weight:600;
+        transition:all .15s ease;
+      }
+      .navbar-link .material-symbols-outlined{font-size:20px;}
+      .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+      .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+      .navbar-toggle{display:none;}
+
+      @media (max-width:720px){
+        .navbar-links{
+          display:none;flex-direction:column;align-items:stretch;
+          position:absolute;top:100%;left:0;right:0;
+          background:var(--surface);border-bottom:1px solid var(--outline-variant);
+          padding:var(--space-sm);gap:4px;
         }
+        .navbar-links.open{display:flex;}
+        .navbar-toggle{
+          display:flex;align-items:center;justify-content:center;
+          background:none;border:none;cursor:pointer;color:var(--on-surface);
+        }
+      }
+
+      h1 span{color:var(--primary);}
+
+      /* Mensaje flash */
+      .flash{
+        display:flex;align-items:center;gap:10px;
+        padding:12px 16px;border-radius:var(--radius-lg);
+        font-size:14px;font-weight:600;margin-bottom:var(--space-lg);
+      }
+      .flash .material-symbols-outlined{font-size:20px;}
+      .flash.success{background:rgba(46,160,67,0.12);color:#2E7D32;}
+      .flash.error{background:rgba(211,47,47,0.12);color:#C62828;}
+
+      .panel{
+        border:1px solid var(--outline-variant);
+        border-radius:var(--radius-lg);
+        background:var(--surface-container-low);
+        overflow:hidden;
+        max-width:560px;
+      }
+      .panel-header{
+        padding:14px var(--space-md);
+        border-bottom:1px solid var(--outline-variant);
+        background:var(--surface);
+      }
+      .panel-title{
+        font-weight:700;font-size:15px;color:var(--on-surface);
+        display:flex;align-items:center;gap:8px;
+      }
+      .panel-body{padding:var(--space-md);}
+
+      /* Formulario */
+      .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:var(--space-md);}
+      .form-group label{font-size:13px;font-weight:600;color:var(--on-surface-variant);}
+      .form-group input[type="text"]{
+        padding:10px 12px;
+        border:1px solid var(--outline-variant);
+        border-radius:var(--radius-lg);
+        background:var(--surface);
+        color:var(--on-surface);
+        font-size:14px;font-family:inherit;
+        width:100%;
+      }
+      .form-group input:focus{outline:none;border-color:var(--primary);}
+
+      .btn-full{width:100%;justify-content:center;}
+      .btn-accent{background:#5C6BC0;color:#fff;border-color:#5C6BC0;}
+      .btn-accent:hover{filter:brightness(1.05);}
+      .btn-ghost{background:transparent;color:var(--on-surface-variant);border:1px solid var(--outline-variant);}
+      .btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+
+      /* Botones de foto */
+      .foto-btns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:var(--space-sm);}
+      .foto-btn{
+        display:inline-flex;align-items:center;gap:8px;
+        padding:10px 16px;border-radius:var(--radius-lg);
+        border:1px solid var(--outline-variant);
+        background:var(--surface);color:var(--on-surface);
+        font-size:14px;font-weight:600;cursor:pointer;
+        transition:all .15s ease;
+      }
+      .foto-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--surface-container-low);}
+      .foto-btn .material-symbols-outlined{font-size:20px;}
+
+      .foto-estado{
+        display:flex;align-items:center;gap:8px;
+        padding:10px 14px;border-radius:var(--radius-lg);
+        font-size:13px;font-weight:600;
+        margin-bottom:var(--space-sm);
+      }
+      .foto-estado:empty{display:none;padding:0;margin:0;}
+      .foto-estado .material-symbols-outlined{font-size:18px;}
+      .foto-estado.cargando{background:rgba(245,166,35,0.15);color:#B26A00;}
+      .foto-estado.cargando .material-symbols-outlined{animation:spin 1s linear infinite;}
+      .foto-estado.ok{background:rgba(46,160,67,0.12);color:#2E7D32;}
+      .foto-estado.error{background:rgba(211,47,47,0.12);color:#C62828;}
+
+      @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+      #preview-img{
+        display:none;
+        max-width:100%;
+        border-radius:var(--radius-lg);
+        border:1px solid var(--outline-variant);
+        margin-bottom:var(--space-md);
+      }
     </style>
 </head>
 <body>
 
-<nav>
-    <h1 id="nombre">Innovación Móvil</h1>
-    <input type="checkbox" id="check">
-    <label class="bar" for="check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-    </label>
-    <ul id="menu">
-        <li>
-            <a href="validador.php" style="display:flex;align-items:center;gap:12px;">
-                <span style="display:inline-flex;width:40px;height:40px;background:white;border-radius:50%;justify-content:center;align-items:center;">
-                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" style="width:30px;height:30px;object-fit:contain;" />
-                </span>
-                Home
-            </a>
-        </li>
-    </ul>
-</nav>
-
-<div class="contenedor">
-    <div class="formulario">
-        <h1>Registrar Imagen</h1>
-
-        <?php if ($mensaje): ?>
-            <p><?= $mensaje ?></p>
-        <?php endif; ?>
-
-        <form method="POST" id="formImagen">
-
-            <!-- URL oculta que llena el JS -->
-            <input type="hidden" name="foto_url" id="foto_url_hidden">
-
-            <!-- Descripción -->
-            <label for="descripcion">Descripción (opcional):</label>
-            <input type="text" name="descripcion" id="descripcion"
-                   maxlength="200" placeholder="Ej: Foto de evidencia garantía #123"><br><br>
-
-            <!-- Botones de foto -->
-            <label>Imagen:</label><br>
-            <input type="file" id="inputFotoCamara" accept="image/*" capture="environment" style="display:none;">
-            <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
-            <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoCamara').click()">
-                📷 Tomar foto
-            </button>
-            <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoGaleria').click()">
-                🖼️ Abrir galería
-            </button>
-            <div id="fotoEstado" class="foto-estado"></div>
-            <img id="preview-img" src="" alt="Vista previa"><br><br>
-
-            <input type="submit" value="Guardar imagen">
-        </form>
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="validador.php" class="navbar-brand">
+    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Innovación Móvil</p>
     </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="../../kpis/modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<!-- ===================== MAIN ===================== -->
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Imágenes</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 var(--space-lg)">Registrar <span>Imagen</span></h1>
+
+      <?php if ($mensaje): ?>
+          <div class="flash <?= htmlspecialchars($mensaje_tipo) ?>">
+              <span class="material-symbols-outlined"><?= $mensaje_tipo === 'success' ? 'check_circle' : 'error' ?></span>
+              <span><?= $mensaje ?></span>
+          </div>
+      <?php endif; ?>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="material-symbols-outlined" style="font-size:18px">add_photo_alternate</span>
+            Nueva imagen
+          </span>
+        </div>
+        <div class="panel-body">
+          <form method="POST" id="formImagen">
+
+              <!-- URL oculta que llena el JS -->
+              <input type="hidden" name="foto_url" id="foto_url_hidden">
+
+              <!-- Descripción -->
+              <div class="form-group">
+                  <label for="descripcion">Descripción (opcional)</label>
+                  <input type="text" name="descripcion" id="descripcion"
+                         maxlength="200" placeholder="Ej: Foto de evidencia garantía #123">
+              </div>
+
+              <!-- Botones de foto -->
+              <div class="form-group">
+                  <label>Imagen</label>
+                  <input type="file" id="inputFotoCamara" accept="image/*" capture="environment" style="display:none;">
+                  <input type="file" id="inputFotoGaleria" accept="image/*" style="display:none;">
+                  <div class="foto-btns">
+                      <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoCamara').click()">
+                          <span class="material-symbols-outlined">photo_camera</span>
+                          Tomar foto
+                      </button>
+                      <button type="button" class="foto-btn" onclick="document.getElementById('inputFotoGaleria').click()">
+                          <span class="material-symbols-outlined">image</span>
+                          Abrir galería
+                      </button>
+                  </div>
+                  <div id="fotoEstado" class="foto-estado"></div>
+                  <img id="preview-img" src="" alt="Vista previa">
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-full">
+                <span class="material-symbols-outlined">save</span>
+                Guardar imagen
+              </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <script>
@@ -149,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     async function subirFoto(archivo) {
         const estado = document.getElementById('fotoEstado');
-        estado.textContent = '⏳ Subiendo imagen...';
+        estado.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Subiendo imagen...';
         estado.className = 'foto-estado cargando';
 
         const reader = new FileReader();
@@ -176,14 +320,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         prev.src = url;
                         prev.style.display = 'block';
 
-                        estado.textContent = '✅ Imagen lista para guardar';
+                        estado.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Imagen lista para guardar';
                         estado.className = 'foto-estado ok';
                     } else {
-                        estado.textContent = '❌ Error: ' + (data.error?.message || 'Error desconocido');
+                        estado.innerHTML = '<span class="material-symbols-outlined">error</span> Error: ' + (data.error?.message || 'Error desconocido');
                         estado.className = 'foto-estado error';
                     }
                 } catch (err) {
-                    estado.textContent = '❌ No se pudo conectar con el servidor de imágenes.';
+                    estado.innerHTML = '<span class="material-symbols-outlined">error</span> No se pudo conectar con el servidor de imágenes.';
                     estado.className = 'foto-estado error';
                 }
                 resolve();
@@ -218,6 +362,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             e.preventDefault(); return false;
         }
     });
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
 </script>
 
 </body>

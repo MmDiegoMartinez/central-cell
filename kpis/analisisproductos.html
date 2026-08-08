@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Análisis de Inventario - INNOVACION MOVIL & TECNOLOGIA MOVIL</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block');
 
         :root {
             --bg: #f5f7fa;
@@ -38,6 +44,24 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 1.15em;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            vertical-align: -3px;
+            font-feature-settings: 'liga';
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
 
         body {
             font-family: var(--font);
@@ -394,15 +418,15 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>📊 Sistema de Análisis de Inventario</h1>
+        <h1><span class="material-symbols-outlined">analytics</span> Sistema de Análisis de Inventario</h1>
         <p>INNOVACION MOVIL &amp; TECNOLOGIA MOVIL — Análisis completo de existencias, ventas y compras</p>
     </div>
 
     <div class="content">
         <div class="upload-section">
             <div class="file-card" id="card1">
-                <span class="check-icon">✅</span>
-                <h3>📦 Archivo 1: EXISTENCIAS</h3>
+                <span class="check-icon material-symbols-outlined">check_circle</span>
+                <h3><span class="material-symbols-outlined">inventory_2</span> Archivo 1: EXISTENCIAS</h3>
                 <p>Stock actual por almacén</p>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileExistencias" accept=".xlsx,.xls,.csv">
@@ -412,8 +436,8 @@
             </div>
 
             <div class="file-card" id="card2">
-                <span class="check-icon">✅</span>
-                <h3>💰 Archivo 2: VENTAS</h3>
+                <span class="check-icon material-symbols-outlined">check_circle</span>
+                <h3><span class="material-symbols-outlined">payments</span> Archivo 2: VENTAS</h3>
                 <p>Registro de ventas realizadas</p>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileVentas" accept=".xlsx,.xls,.csv">
@@ -423,8 +447,8 @@
             </div>
 
             <div class="file-card" id="card3">
-                <span class="check-icon">✅</span>
-                <h3>🛒 Archivo 3: COMPRAS</h3>
+                <span class="check-icon material-symbols-outlined">check_circle</span>
+                <h3><span class="material-symbols-outlined">shopping_cart</span> Archivo 3: COMPRAS</h3>
                 <p>Historial de compras (Hoja 2)</p>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileCompras" accept=".xlsx,.xls,.csv">
@@ -435,7 +459,7 @@
         </div>
 
         <div class="process-section">
-            <button class="process-btn" id="processBtn" disabled>🚀 PROCESAR ANÁLISIS</button>
+            <button class="process-btn" id="processBtn" disabled><span class="material-symbols-outlined">rocket_launch</span> PROCESAR ANÁLISIS</button>
         </div>
 
         <div class="loader-container" id="loader">
@@ -457,11 +481,11 @@
             <div class="stats-grid" id="statsGrid"></div>
 
             <div class="download-section">
-                <h3 style="margin-bottom:14px;color:var(--text);">📥 Descargar Reporte Completo</h3>
-                <a id="downloadBtn" class="download-btn" download="Analisis_Inventario.xlsx">⬇️ Descargar Excel</a>
+                <h3 style="margin-bottom:14px;color:var(--text);"><span class="material-symbols-outlined">download</span> Descargar Reporte Completo</h3>
+                <a id="downloadBtn" class="download-btn" download="Analisis_Inventario.xlsx"><span class="material-symbols-outlined">download</span> Descargar Excel</a>
             </div>
 
-            <h3 style="margin:28px 0 14px;color:var(--text);">📋 Vista Previa del Análisis</h3>
+            <h3 style="margin:28px 0 14px;color:var(--text);"><span class="material-symbols-outlined">preview</span> Vista Previa del Análisis</h3>
             <div class="table-wrapper" id="tableWrapper"></div>
         </div>
     </div>
@@ -500,7 +524,7 @@ function normalizarProducto(nombre) {
 function actualizarProgreso(pct, texto, detalles = '') {
     progressBar.style.width = pct + '%';
     progressPercent.textContent = Math.round(pct) + '%';
-    progressText.textContent = texto;
+    progressText.innerHTML = texto;
     progressDetails.textContent = detalles;
 }
 
@@ -536,12 +560,12 @@ function handleFileUpload(event, cardNumber, tipo) {
             if (tipo === 'ventas')      workbookVentas      = wb;
             if (tipo === 'compras')     workbookCompras     = wb;
             document.getElementById(`card${cardNumber}`).classList.add('loaded');
-            document.getElementById(`name${cardNumber}`).textContent = `✓ ${file.name}`;
+            document.getElementById(`name${cardNumber}`).innerHTML = `<span class="material-symbols-outlined" style="font-size:1em;">check_circle</span> ${file.name}`;
             // FIX 1: si cambian un archivo después de procesar, volver a habilitar
             if (yaFueProcesado) {
                 yaFueProcesado = false;
                 processBtn.disabled = false;
-                processBtn.textContent = '🚀 PROCESAR ANÁLISIS';
+                processBtn.innerHTML = '<span class="material-symbols-outlined">rocket_launch</span> PROCESAR ANÁLISIS';
             }
             checkAllFilesLoaded();
         } catch (err) {
@@ -554,12 +578,12 @@ function handleFileUpload(event, cardNumber, tipo) {
 function checkAllFilesLoaded() {
     if (workbookExistencias && workbookVentas && workbookCompras && !yaFueProcesado) {
         processBtn.disabled = false;
-        showMessage('✓ Todos los archivos cargados. ¡Listo para procesar!', 'success');
+        showMessage('<span class="material-symbols-outlined">check_circle</span> Todos los archivos cargados. ¡Listo para procesar!', 'success');
     }
 }
 
 function showMessage(text, type) {
-    statusMessage.textContent = text;
+    statusMessage.innerHTML = text;
     statusMessage.className = `status-message ${type} show`;
     setTimeout(() => statusMessage.classList.remove('show'), 5000);
 }
@@ -570,11 +594,11 @@ function showMessage(text, type) {
 async function procesarArchivos() {
     // FIX 1: deshabilitar inmediatamente al hacer clic
     processBtn.disabled = true;
-    processBtn.textContent = '⏳ Procesando...';
+    processBtn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Procesando...';
 
     loader.style.display = 'flex';
     resultsSection.classList.remove('show');
-    showMessage('⏳ Procesando archivos...', 'info');
+    showMessage('<span class="material-symbols-outlined">hourglass_top</span> Procesando archivos...', 'info');
     actualizarProgreso(0, 'Iniciando procesamiento...', '');
 
     try {
@@ -612,23 +636,23 @@ async function procesarArchivos() {
         await sleep(30);
         generarDescargaSegura(resultadoFinal);
 
-        actualizarProgreso(100, '✅ Completado', `${resultadoFinal.length} productos analizados`);
+        actualizarProgreso(100, '<span class="material-symbols-outlined">check_circle</span> Completado', `${resultadoFinal.length} productos analizados`);
         await sleep(600);
 
         loader.style.display = 'none';
         resultsSection.classList.add('show');
-        showMessage(`✅ Análisis completado: ${resultadoFinal.length} productos procesados`, 'success');
+        showMessage(`<span class="material-symbols-outlined">check_circle</span> Análisis completado: ${resultadoFinal.length} productos procesados`, 'success');
 
         // FIX 1: marcar como procesado y dejar botón deshabilitado
         yaFueProcesado = true;
-        processBtn.textContent = '✅ Análisis Completado';
+        processBtn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Análisis Completado';
 
     } catch (error) {
         loader.style.display = 'none';
         // FIX 1: si hubo error, rehabilitar para que pueda reintentar
         processBtn.disabled = false;
-        processBtn.textContent = '🚀 PROCESAR ANÁLISIS';
-        showMessage('❌ Error al procesar: ' + error.message, 'error');
+        processBtn.innerHTML = '<span class="material-symbols-outlined">rocket_launch</span> PROCESAR ANÁLISIS';
+        showMessage('<span class="material-symbols-outlined">error</span> Error al procesar: ' + error.message, 'error');
         console.error('Error completo:', error);
     }
 }
@@ -906,11 +930,15 @@ async function generarAnalisis(existencias, ventas, compras) {
 
         if (uc) {
             if (uc.fecha) item.ultimaCompra = formatearFecha(uc.fecha);
-            item.proveedor              = uc.proveedor  || '';
-            item.cantidadComprada       = uc.cantidad   || '';
-            costoUC                     = uc.costo      || 0;
-            item.costoUltimaCompra      = costoUC       || '';
-            item.costoTotalUltimaCompra = uc.costoTotal || '';
+            item.proveedor        = uc.proveedor  || '';
+            item.cantidadComprada = uc.cantidad   || '';
+
+            // FIX IVA: el costo registrado no incluye IVA, se agrega 16% UNA SOLA VEZ.
+            // costoUC queda como el costo unitario CON IVA, y se usa así en utilidad
+            // y en el costo total (evita duplicar el IVA en costoTotalUltimaCompra).
+            costoUC = (uc.costo || 0) * 1.16;
+            item.costoUltimaCompra      = costoUC || '';
+            item.costoTotalUltimaCompra = costoUC * (uc.cantidad || 0) || '';
         }
 
         // ── Marca / Modelo
@@ -1024,9 +1052,9 @@ function generarDescargaSegura(datos) {
         const blob  = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const hoy   = new Date();
         const nombre = `Analisis_Inventario_${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}.xlsx`;
-        downloadBtn.href        = URL.createObjectURL(blob);
-        downloadBtn.download    = nombre;
-        downloadBtn.textContent = '⬇️ Descargar Excel';
+        downloadBtn.href      = URL.createObjectURL(blob);
+        downloadBtn.download  = nombre;
+        downloadBtn.innerHTML = '<span class="material-symbols-outlined">download</span> Descargar Excel';
     } catch (err) {
         showMessage('Error al preparar el archivo: ' + err.message, 'error');
     }
@@ -1058,7 +1086,11 @@ function mostrarResultados(datos) {
             if (col === 'prioridad') {
                 parts.push(`<td><span class="badge badge-${val.toLowerCase()}">${val}</span></td>`);
             } else if (col === 'observaciones') {
-                parts.push(`<td class="observacion-cell">${val || '-'}</td>`);
+                const valConIconos = (val || '-')
+                    .replaceAll('⚠️', '<span class="material-symbols-outlined" style="color:var(--warn);">warning</span>')
+                    .replaceAll('📊', '<span class="material-symbols-outlined" style="color:var(--primary-600);">analytics</span>')
+                    .replaceAll('🔄', '<span class="material-symbols-outlined" style="color:var(--accent);">sync</span>');
+                parts.push(`<td class="observacion-cell">${valConIconos}</td>`);
             } else if (typeof val === 'number' && val !== 0) {
                 parts.push(`<td>${Number.isInteger(val) ? val : val.toFixed(2)}</td>`);
             } else {

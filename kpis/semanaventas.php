@@ -8,42 +8,202 @@ include_once '../funciones.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Análisis Completo de Ventas — INNOVACION MOVIL</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="../styles.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 18px; background:#f7f7f7; color:#222; }
-    h1 { margin-top:0; }
-    .controls { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
-    input[type=file] { padding:6px; }
-    button.btn { background:#007bff; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
-    button.btn:disabled { background:#999; cursor:not-allowed; }
-    .tables { display:flex; flex-direction:column; gap:20px; margin-top:14px; }
-    table { border-collapse:collapse; width:100%; background:white; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
-    th, td { padding:8px 6px; border:1px solid #e1e1e1; text-align:center; font-size:13px; }
-    th { background:#2f6fa6; color:white; position:sticky; top:0; z-index:1; }
-    .rojo { background:#ffdad6; }
-    .amarillo { background:#fff3cc; }
-    .verde { background:#dff7df; }
-    caption { text-align:left; font-weight:600; padding:8px; }
-    .small { font-size:12px; color:#444; }
-    .note { font-size:13px; color:#333; margin-top:6px; }
-    .nowrap { white-space:nowrap; }
-    #debugBox { margin-top:8px; font-size:13px; color:#111; background:#fff; border:1px solid #eee; padding:8px; }
-    .seccion-titulo {
-      font-size:1.2em; font-weight:700; padding:10px 14px;
-      border-radius:8px; color:white; margin: 20px 0 8px;
+    
+    body{background:var(--background);}
+
+    /* ── Barra de navegación (botón + clase .open, igual que el comparador) ── */
+    nav{
+      position:sticky;top:0;z-index:40;
+      background:rgba(249,249,255,0.85);
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--outline-variant);
     }
-    .titulo-im { background: linear-gradient(135deg,#f093fb,#f5576c); }
-    .titulo-tm { background: linear-gradient(135deg,#4facfe,#00b4d8); }
+    .nav-inner{
+      max-width:var(--container-max);margin:0 auto;
+      display:flex;align-items:center;gap:var(--space-lg);
+      padding:0 var(--space-xl);height:64px;position:relative;
+    }
+    .bar-menu{
+      display:none;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--primary);
+    }
+
+    #nav-menu{
+      display:flex;align-items:center;gap:var(--space-xl);
+      list-style:none;margin:0;padding:0;height:100%;
+    }
+    #nav-menu li{display:flex;align-items:center;height:100%;}
+    .menu-link{
+      display:flex;align-items:center;gap:8px;
+      font-size:14px;font-weight:600;color:var(--on-surface-variant);
+      padding:8px 4px;border-bottom:2px solid transparent;
+      transition:color .15s ease, border-color .15s ease;
+    }
+    .menu-link:hover{color:var(--primary);}
+    .logo-container{
+      display:inline-flex;width:26px;height:26px;background:#fff;border-radius:50%;
+      justify-content:center;align-items:center;overflow:hidden;flex-shrink:0;
+    }
+    .logo-container .logo{width:20px;height:20px;object-fit:contain;}
+
+    @media (max-width:720px){
+      .nav-inner{padding:0 var(--space-md);}
+      .bar-menu{display:flex;}
+      #nav-menu{
+        display:none;position:absolute;top:64px;left:0;right:0;
+        flex-direction:column;align-items:flex-start;gap:0;
+        background:var(--surface-container-lowest);
+        border-bottom:1px solid var(--outline-variant);
+        box-shadow:0 8px 16px rgba(17,28,45,0.08);
+        padding:var(--space-sm) var(--space-md) var(--space-md);
+      }
+      #nav-menu.open{display:flex;height:auto;}
+      #nav-menu li{width:100%;height:auto;border-bottom:1px solid var(--outline-variant);}
+      #nav-menu li:last-child{border-bottom:none;}
+      .menu-link{width:100%;padding:12px 4px;}
+    }
+
+    /* ── Contenedor principal ── */
+    .container{max-width:var(--container-max);margin:0 auto;padding:var(--space-xl) var(--space-xl) var(--space-3xl);}
+    .container > h1{margin:0 0 var(--space-lg);font-size:24px;line-height:32px;font-weight:700;color:var(--on-surface);}
+
+    /* ── Controles (subir / procesar / descargar) ── */
+    .controls{
+      display:flex;flex-wrap:wrap;gap:var(--space-md);align-items:center;
+      background:var(--surface-container-lowest);
+      border:1px solid rgba(196,197,215,0.4);
+      border-radius:var(--radius-xl);
+      padding:var(--space-lg);
+      margin-bottom:var(--space-xl);
+      box-shadow:0 1px 2px rgba(17,28,45,0.04);
+    }
+    .file-upload{display:flex;}
+    #inputFile{display:none;}
+    .boton{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 18px;border-radius:var(--radius-lg);
+      font-size:14px;font-weight:600;letter-spacing:0.02em;
+      background:var(--surface-container-high);color:var(--on-surface);
+      border:1px solid var(--outline-variant);
+      transition:border-color .15s ease, transform .15s ease;
+    }
+    .boton:hover{border-color:var(--primary);transform:translateY(-1px);}
+    
+    /* Ocultamos las piezas de la animación de carpetas del CSS anterior
+       (no existen tokens para ellas en styles.css); el botón queda
+       limpio y consistente con el resto del sistema. */
+    .contenedorCarpeta, .active_line{display:none;}
+
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      padding:10px 18px;border-radius:var(--radius-lg);
+      font-size:14px;font-weight:600;letter-spacing:0.02em;
+      background:var(--primary);color:var(--on-primary);
+      transition:opacity .15s ease, transform .15s ease;
+    }
+    .btn:hover{opacity:0.9;transform:translateY(-1px);}
+    .btn:disabled{
+      background:var(--surface-container-high);color:var(--outline);
+      cursor:not-allowed;transform:none;opacity:1;
+    }
+
+    /* ── Loader ── */
+    .center-container{display:flex;justify-content:center;padding:var(--space-lg) 0;}
+    .loader-container{
+      display:flex;align-items:center;justify-content:center;
+      width:56px;height:56px;
+      border:4px solid var(--surface-container-high);
+      border-top-color:var(--primary);
+      border-radius:50%;
+      animation:girar 0.9s linear infinite;
+    }
+    .loader-container .cloud, .loader-container .sun{display:none;}
+    @keyframes girar{to{transform:rotate(360deg);}}
+
+    /* ── Mensajes / debug ── */
+    .note{
+      background:rgba(29,78,216,0.08);
+      border-left:4px solid var(--primary);
+      border-radius:0 var(--radius-lg) var(--radius-lg) 0;
+      padding:var(--space-md) var(--space-lg);
+      margin-bottom:var(--space-lg);
+      font-size:14px;color:var(--on-surface);
+      min-height:20px;
+    }
+    .note:empty{display:none;}
+    #debugBox{
+      background:var(--surface-container-low);
+      border:1px solid var(--outline-variant);
+      border-radius:var(--radius-lg);
+      padding:var(--space-md);
+      font-size:12px;font-family:monospace;
+      margin-bottom:var(--space-lg);
+      white-space:pre-wrap;
+    }
+
+    /* ── Secciones de tablas ── */
+    .seccion-titulo{
+      display:flex;align-items:center;gap:10px;
+      margin:var(--space-2xl) 0 var(--space-md);
+      font-size:16px;font-weight:700;color:var(--on-surface);
+      padding-bottom:8px;border-bottom:1px solid var(--outline-variant);
+    }
+    .titulo-im{color:var(--primary);}
+    .titulo-tm{color:var(--tertiary);}
+
+    .tables > div[id^="tabla"]{
+      background:var(--surface-container-lowest);
+      border:1px solid rgba(196,197,215,0.4);
+      border-radius:var(--radius-xl);
+      overflow-x:auto;
+      margin-bottom:var(--space-xl);
+      box-shadow:0 1px 2px rgba(17,28,45,0.04);
+    }
+
+    /* Tablas generadas dinámicamente por JS */
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    caption{
+      text-align:left;padding:var(--space-md) var(--space-lg);
+      font-weight:700;font-size:14px;color:var(--on-surface);
+      background:var(--surface-container-low);
+      border-bottom:1px solid var(--outline-variant);
+      caption-side:top;
+    }
+    thead th{
+      text-align:left;padding:10px 14px;
+      background:var(--surface-container-high);
+      color:var(--on-surface-variant);
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;
+      border-bottom:1px solid var(--outline-variant);
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:10px 14px;
+      border-bottom:1px solid var(--outline-variant);
+      color:var(--on-surface);white-space:nowrap;
+    }
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover td{background:var(--surface-container-low);}
+
+    /* Semáforo de cumplimiento (clases asignadas por el JS) */
+    tr.verde td{background:rgba(109,245,225,0.18);}
+    tr.amarillo td{background:#fff3cd;}
+    tr.rojo td{background:var(--error-container);}
+    tr.verde:hover td{background:rgba(109,245,225,0.28);}
+    tr.amarillo:hover td{background:#ffe9a8;}
+    tr.rojo:hover td{background:#ffc9c2;}
   </style>
-  <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
 
 <nav>
   <div class="nav-inner">
-    <label class="bar-menu">
-      <input type="checkbox" id="menu-check">
-      <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-    </label>
+    <button class="bar-menu" id="navToggle" type="button" aria-label="Abrir menú">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
     <ul id="nav-menu">
       <li>
         <a href="../garantias/validador/validador.php" class="menu-link">
@@ -54,9 +214,8 @@ include_once '../funciones.php';
         </a>
       </li>
       <li>
-        <a href="index.php" class="menu-link">
-          
-          Panel KPIs
+        <a href="modulos.html" class="menu-link">
+          Panel de Herramientas
         </a>
       </li>
     </ul>
@@ -65,22 +224,20 @@ include_once '../funciones.php';
 
 <br>
 <div class="container">
-  <h1>📈 Análisis completo — INNOVACION MOVIL & TECNOLOGIA MOVIL</h1>
+    <h1>
+        <span class="material-symbols-outlined">analytics</span>
+        Análisis completo — Innovación Móvil &amp; Tecnología Móvil
+    </h1>
 
   <div class="controls">
     <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" />
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div>
-          <div class="folder folder_two"></div>
-          <div class="folder folder_three"></div>
-          <div class="folder folder_four"></div>
-        </div>
+    <input id="inputFile" type="file" accept=".xlsx,.xls" />
+    <button class="boton" id="fileButton" type="button">
         <div class="active_line"></div>
+        <span class="material-symbols-outlined">upload_file</span>
         <span class="text">Seleccionar Archivo</span>
-      </button>
-    </div>
+    </button>
+</div>
     <button id="procesarBtn" class="btn" disabled>Procesar archivo</button>
     <button id="descargarBtn" class="btn" disabled>Descargar .xlsx con resultados</button>
   </div>
@@ -97,11 +254,17 @@ include_once '../funciones.php';
   <div id="debugBox" style="display:none;"></div>
 
   <div class="tables">
-    <div class="seccion-titulo titulo-im">📱 Innovación Móvil — Accesorios</div>
+    <div class="seccion-titulo titulo-im">
+        <span class="material-symbols-outlined">phone_iphone</span>
+        Innovación Móvil — Accesorios
+    </div>
     <div id="tablaVendedoresIM"></div>
     <div id="tablaTiendasIM"></div>
 
-    <div class="seccion-titulo titulo-tm">📲 Tecnología Móvil — Telefonía</div>
+    <div class="seccion-titulo titulo-tm">
+        <span class="material-symbols-outlined">smartphone</span>
+        Tecnología Móvil — Telefonía
+    </div>
     <div id="tablaVendedoresTM"></div>
     <div id="tablaTiendasTM"></div>
   </div>
@@ -237,16 +400,7 @@ function procesarDepartamento(registros, METAS, diasIMRef) {
   const vendedoresArray = [];
 
   if (diasIMRef) {
-    /* ════════════════════════════════════════════════════════════════
-       MODO TM: la fuente de verdad para almacén asignado y días
-       efectivos es SIEMPRE el mapa de IM (diasIMRef).
-
-       Pasos:
-       1. Iterar sobre TODOS los vendedores de IM.
-       2. Sumar sus ventas de TM (pueden ser 0 si no vendió nada en TM).
-       3. Almacén asignado = el que IM le determinó.
-       4. Días efectivos   = días en IM.
-    ════════════════════════════════════════════════════════════════ */
+   
     Object.entries(diasIMRef).forEach(([vendedor, infoIM]) => {
       /* Ventas TM de este vendedor (0 si no tiene registros en TM) */
       const totalTM     = vendedoresMap[vendedor] ? vendedoresMap[vendedor].total : 0;
@@ -506,12 +660,11 @@ function descargaResultados() {
   XLSX.writeFile(wb, 'Resultados_Analisis_Ventas.xlsx');
 }
 
-/* ─── Menú hamburguesa ────────────────────────────────────────────── */
-document.getElementById('menu-check').addEventListener('change', function() {
-  const menu=document.getElementById('nav-menu');
-  menu.style.opacity      =this.checked?'1':'0';
-  menu.style.visibility   =this.checked?'visible':'hidden';
-  menu.style.pointerEvents=this.checked?'auto':'none';
+/* ─── Menú hamburguesa (botón + clase .open) ─────────────────────── */
+const navToggle = document.getElementById('navToggle');
+const navMenu   = document.getElementById('nav-menu');
+navToggle.addEventListener('click', () => {
+  navMenu.classList.toggle('open');
 });
 
 window.addEventListener("dragover",e=>e.preventDefault());

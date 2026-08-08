@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador de Proveedores</title>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntica al resto de módulos) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Overlay de carga */
+  .loading-overlay{
+    display:none;position:fixed;inset:0;z-index:999;
+    align-items:center;justify-content:center;flex-direction:column;gap:12px;
+    background:rgba(255,255,255,0.85);backdrop-filter:blur(2px);
+  }
+  .loading-overlay.active{display:flex;}
+  .loading-spinner{
+    width:38px;height:38px;border-radius:50%;
+    border:4px solid var(--outline-variant);border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:14px;font-weight:600;color:var(--on-surface);}
+  .progress-bar{width:200px;height:6px;border-radius:99px;background:var(--outline-variant);overflow:hidden;}
+  .progress-fill{width:60%;height:100%;background:var(--primary);border-radius:99px;animation:loadbar 1.2s ease-in-out infinite;}
+  @keyframes loadbar{0%{transform:translateX(-100%);}100%{transform:translateX(220%);}}
+
+  /* Tarjetas de carga de archivos */
+  .upload-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:760px){ .upload-grid{grid-template-columns:1fr;} }
+  .upload-card{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;text-align:center;cursor:pointer;
+    padding:var(--space-lg) var(--space-md);
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    transition:all .15s ease;position:relative;
+  }
+  .upload-card:hover{border-color:var(--primary);background:rgba(0,131,143,0.06);}
+  .upload-card.loaded{border-style:solid;border-color:var(--primary);}
+  .upload-card.error{border-style:solid;border-color:#B3261E;}
+  .upload-card input[type="file"]{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .upload-icon{
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(0,131,143,0.12);color:var(--primary);
+    margin-bottom:4px;
+  }
+  .upload-icon .material-symbols-outlined{font-size:24px;}
+  .upload-label{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--outline);}
+  .upload-title{font-size:15px;font-weight:800;color:var(--on-surface);}
+  .upload-hint{font-size:12px;color:var(--on-surface-variant);}
+  .upload-status{
+    margin-top:4px;font-size:12px;font-weight:600;color:var(--outline);
+    display:flex;align-items:center;gap:4px;
+  }
+  .upload-status .material-symbols-outlined{font-size:16px;}
+  .upload-status.status-ok{color:#146C2E;}
+  .upload-status.status-error{color:#B3261E;}
+  .upload-status.status-loading{color:var(--primary);}
+
+  /* Panel de controles */
+  .controls-panel{
+    display:flex;align-items:flex-end;flex-wrap:wrap;gap:var(--space-md);
+    margin-bottom:var(--space-md);
+  }
+  .control-group{display:flex;flex-direction:column;gap:6px;min-width:240px;flex:1;}
+  .control-group label{font-size:12px;font-weight:700;color:var(--on-surface-variant);text-transform:uppercase;letter-spacing:.03em;}
+  .control-group select{
+    padding:10px 12px;border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);background:var(--surface);
+    color:var(--on-surface);font-size:14px;font-family:inherit;
+  }
+  .control-group select:disabled{background:var(--surface-container-low);color:var(--outline);}
+  .control-group select:focus{outline:none;border-color:var(--primary);}
+
+  .btn .spinner{
+    display:none;width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,0.5);border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  .btn.is-loading .spinner{display:inline-block;}
+
+  /* Alertas */
+  .alert{
+    display:flex;align-items:center;gap:8px;
+    padding:12px 16px;margin-bottom:var(--space-md);
+    border-radius:var(--radius-lg);font-size:13px;font-weight:600;
+  }
+  .alert .material-symbols-outlined{font-size:18px;}
+  .alert-info{background:rgba(0,131,143,0.08);color:#00838F;}
+  .alert-warning{background:#FFF4E5;color:#8A5300;}
+  .alert-error{background:#FDECEA;color:#B3261E;}
+
+  /* KPIs */
+  .stats-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:960px){ .stats-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:520px){ .stats-grid{grid-template-columns:1fr;} }
+  .stat-card{
+    display:flex;flex-direction:column;gap:2px;
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+  }
+  .stat-card .stat-icon{
+    display:flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:50%;
+    background:rgba(0,131,143,0.12);color:var(--primary);
+    margin-bottom:6px;
+  }
+  .stat-card .stat-icon .material-symbols-outlined{font-size:17px;}
+  .stat-label{font-size:11px;font-weight:700;color:var(--on-surface-variant);text-transform:uppercase;letter-spacing:.03em;}
+  .stat-value{font-size:22px;font-weight:800;color:var(--primary);margin:2px 0;}
+  .stat-desc{font-size:11px;color:var(--outline);}
+
+  /* Tabs */
+  .tabs-nav{
+    display:flex;flex-wrap:wrap;gap:6px;
+    border-bottom:1px solid var(--outline-variant);
+    margin-bottom:var(--space-md);padding-bottom:8px;
+  }
+  .tab-btn{
+    display:flex;align-items:center;gap:6px;cursor:pointer;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    font-size:13px;font-weight:700;color:var(--on-surface-variant);
+    transition:all .15s ease;
+  }
+  .tab-btn .material-symbols-outlined{font-size:18px;}
+  .tab-btn:hover{background:var(--surface-container-low);color:var(--primary);}
+  .tab-btn.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  .table-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:var(--space-sm);flex-wrap:wrap;gap:8px;
+  }
+  .table-title{font-weight:700;font-size:15px;color:var(--on-surface);display:flex;align-items:center;gap:6px;}
+  .table-title .material-symbols-outlined{font-size:19px;color:var(--primary);}
+
+  .search-wrap{position:relative;margin-bottom:var(--space-md);max-width:320px;}
+  .search-wrap .material-symbols-outlined{
+    position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    font-size:18px;color:var(--on-surface-variant);
+  }
+  .search-wrap input{
+    width:100%;padding:10px 12px 10px 36px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    color:var(--on-surface);font-size:14px;font-family:inherit;
+  }
+  .search-wrap input:focus{outline:none;border-color:var(--primary);}
+
+  .table-wrap{overflow-x:auto;}
+  table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.data-table .td-num{text-align:right;}
+  table.data-table .value-positive{color:var(--primary);font-weight:700;}
+  table.data-table .value-zero{color:var(--outline);}
+  table.data-table tfoot td{font-weight:800;background:var(--surface-container-low);border-top:2px solid var(--outline-variant);}
+  table.data-table th[onclick]{cursor:pointer;user-select:none;}
+  table.data-table th.sort-asc,
+  table.data-table th.sort-desc{color:var(--primary);}
+  .td-badge{
+    display:inline-flex;padding:2px 8px;border-radius:var(--radius-full,999px);
+    background:rgba(0,131,143,0.12);color:#00838F;font-size:12px;font-weight:700;
+  }
+
+  /* Acordeón por sucursal */
+  .product-group{
+    border:1px solid var(--outline-variant);border-radius:var(--radius-lg);
+    margin-bottom:10px;overflow:hidden;background:var(--surface);
+  }
+  .product-group-header{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    gap:10px;padding:12px 16px;cursor:pointer;background:var(--surface-container-low);
+  }
+  .product-name{font-weight:700;font-size:14px;color:var(--on-surface);}
+  .product-meta{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--on-surface-variant);align-items:center;}
+  .product-meta strong{color:var(--on-surface);}
+  .meta-chip{
+    padding:3px 10px;border-radius:var(--radius-full,999px);
+    background:rgba(0,131,143,0.12);color:#00838F;font-weight:700;font-size:11px;
+  }
+  .chevron{transition:transform .15s ease;color:var(--on-surface-variant);}
+  .product-group.open .chevron{transform:rotate(180deg);}
+  .product-group-body{display:none;padding:0 16px 14px;}
+  .product-group.open .product-group-body{display:block;}
+</style>
+
+</head>
+<body>
+
+<!-- ===================== OVERLAY DE CARGA ===================== -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Procesando archivos...</div>
+  <div class="progress-bar"><div class="progress-fill"></div></div>
+</div>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Analizador de Proveedores</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Compras</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Analizador de <span>Proveedores</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">inventory_2</span> Compras, existencias y ventas cruzadas por proveedor</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+        <div>
+          <h3 style="margin:0">Carga tus archivos y genera el reporte</h3>
+          <p>Sube los archivos Excel de Compras, Existencias y Ventas para generar reportes detallados por proveedor.</p>
+        </div>
+      </div>
+
+      <!-- ================= PASO 1: CARGA DE ARCHIVOS ================= -->
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga tus archivos</h3>
+        </div>
+
+        <div class="upload-grid">
+          <label class="upload-card" for="file-compras" id="card-compras">
+            <input type="file" id="file-compras" accept=".xlsx,.xls">
+            <div class="upload-icon"><span class="material-symbols-outlined">shopping_cart</span></div>
+            <div class="upload-label">Archivo 1</div>
+            <div class="upload-title">Compras</div>
+            <div class="upload-hint">Hojas: Movimientos + Detalle</div>
+            <div class="upload-status" id="status-compras">Sin cargar</div>
+          </label>
+
+          <label class="upload-card" for="file-existencias" id="card-existencias">
+            <input type="file" id="file-existencias" accept=".xlsx,.xls">
+            <div class="upload-icon"><span class="material-symbols-outlined">inventory_2</span></div>
+            <div class="upload-label">Archivo 2</div>
+            <div class="upload-title">Existencias</div>
+            <div class="upload-hint">Almacén, Producto, Marca, Modelo</div>
+            <div class="upload-status" id="status-existencias">Sin cargar</div>
+          </label>
+
+          <label class="upload-card" for="file-ventas" id="card-ventas">
+            <input type="file" id="file-ventas" accept=".xlsx,.xls">
+            <div class="upload-icon"><span class="material-symbols-outlined">payments</span></div>
+            <div class="upload-label">Archivo 3</div>
+            <div class="upload-title">Ventas</div>
+            <div class="upload-hint">Almacén, Producto, Cantidad, Total</div>
+            <div class="upload-status" id="status-ventas">Sin cargar</div>
+          </label>
+        </div>
+      </section>
+
+      <!-- ================= PASO 2: SELECCIÓN DE PROVEEDOR ================= -->
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Selecciona el proveedor</h3>
+        </div>
+
+        <div class="controls-panel">
+          <div class="control-group">
+            <label>Proveedor</label>
+            <select id="proveedor-select" disabled>
+              <option value="">— Carga el archivo de Compras primero —</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-analizar" disabled onclick="analizar()">
+            <span class="spinner" id="btn-spinner"></span>
+            <span class="material-symbols-outlined" style="font-size:18px">search</span>
+            Analizar
+          </button>
+          <button class="btn btn-outline" id="btn-exportar" style="display:none" onclick="exportarExcel()">
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Exportar Excel
+          </button>
+        </div>
+
+        <div id="alerts-container"></div>
+      </section>
+
+      <!-- ================= RESULTADOS ================= -->
+      <div id="report-section" style="display:none">
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">3</div>
+            <h3 class="step-title text-headline-sm">Resultados</h3>
+          </div>
+
+          <div class="stats-grid" id="kpi-grid"></div>
+
+          <div class="tabs-nav">
+            <div class="tab-btn active" onclick="switchTab('tab-resumen', this)">
+              <span class="material-symbols-outlined">bar_chart</span> Resumen por Producto
+            </div>
+            <div class="tab-btn" onclick="switchTab('tab-marcas', this)">
+              <span class="material-symbols-outlined">sell</span> Resumen por Marca
+            </div>
+            <div class="tab-btn" onclick="switchTab('tab-sucursales', this)">
+              <span class="material-symbols-outlined">storefront</span> Detalle por Sucursal
+            </div>
+            <div class="tab-btn" onclick="switchTab('tab-raw', this)">
+              <span class="material-symbols-outlined">list_alt</span> Datos Raw
+            </div>
+          </div>
+
+          <!-- Tab: Resumen por Producto -->
+          <div class="tab-content active" id="tab-resumen">
+            <div class="table-header">
+              <span class="table-title"><span class="material-symbols-outlined">inventory_2</span> Productos del Proveedor</span>
+            </div>
+            <div class="search-wrap">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" placeholder="Filtrar productos..." id="filter-productos" oninput="filtrarTabla('tbl-productos', this.value)">
+            </div>
+            <div class="table-wrap">
+              <table id="tbl-productos" class="data-table">
+                <thead>
+                  <tr>
+                    <th onclick="sortTable('tbl-productos',0)">Producto</th>
+                    <th onclick="sortTable('tbl-productos',1)">Marca</th>
+                    <th onclick="sortTable('tbl-productos',2)">Modelo</th>
+                    <th onclick="sortTable('tbl-productos',3)" class="td-num">Cant. Comprada</th>
+                    <th onclick="sortTable('tbl-productos',4)" class="td-num">Existencia Total</th>
+                    <th onclick="sortTable('tbl-productos',5)" class="td-num">Total Vendido</th>
+                    <th onclick="sortTable('tbl-productos',6)" class="td-num">Ingreso Total</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-productos-body"></tbody>
+                <tfoot id="tbl-productos-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab: Resumen por Marca -->
+          <div class="tab-content" id="tab-marcas">
+            <div class="table-header">
+              <span class="table-title"><span class="material-symbols-outlined">sell</span> Agrupado por Marca</span>
+            </div>
+            <div class="search-wrap">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" placeholder="Filtrar marca..." oninput="filtrarTabla('tbl-marcas', this.value)">
+            </div>
+            <div class="table-wrap">
+              <table id="tbl-marcas" class="data-table">
+                <thead>
+                  <tr>
+                    <th onclick="sortTable('tbl-marcas',0)">Marca</th>
+                    <th onclick="sortTable('tbl-marcas',1)" class="td-num">Productos (SKUs)</th>
+                    <th onclick="sortTable('tbl-marcas',2)" class="td-num">Cant. Comprada</th>
+                    <th onclick="sortTable('tbl-marcas',3)" class="td-num">Existencia Total</th>
+                    <th onclick="sortTable('tbl-marcas',4)" class="td-num">Total Vendido</th>
+                    <th onclick="sortTable('tbl-marcas',5)" class="td-num">Ingreso Total</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-marcas-body"></tbody>
+                <tfoot id="tbl-marcas-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab: Detalle por Sucursal -->
+          <div class="tab-content" id="tab-sucursales">
+            <div class="table-header">
+              <span class="table-title"><span class="material-symbols-outlined">storefront</span> Existencias y Ventas por Sucursal</span>
+            </div>
+            <div class="search-wrap">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" placeholder="Filtrar..." id="filter-sucursales" oninput="filtrarAccordion(this.value)">
+            </div>
+            <div id="accordion-sucursales"></div>
+          </div>
+
+          <!-- Tab: Raw Data -->
+          <div class="tab-content" id="tab-raw">
+            <div class="table-header">
+              <span class="table-title"><span class="material-symbols-outlined">list_alt</span> Movimientos de Compra</span>
+            </div>
+            <div class="search-wrap">
+              <span class="material-symbols-outlined">search</span>
+              <input type="text" placeholder="Filtrar..." oninput="filtrarTabla('tbl-raw', this.value)">
+            </div>
+            <div class="table-wrap">
+              <table id="tbl-raw" class="data-table">
+                <thead>
+                  <tr>
+                    <th>No. Mov</th>
+                    <th>Producto</th>
+                    <th>Cantidad Comprada</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-raw-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// PURE JS XLSX PARSER (no external libraries)
+// XLSX = ZIP + XML. We parse using native browser DecompressionStream
+// =====================================================================
+
+const ALMACEN_FILTRO = "Central Cell Almacén general";
+
+// State
+let dataCompras = null;
+let dataExistencias = null;
+let dataVentas = null;
+let reportData = null;
+let sortStates = {};
+
+// ---- ZIP / XLSX parsing ----
+
+async function readXLSX(file) {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const entries = await unzip(bytes);
+
+  // Get workbook relationships
+  const wbRelsXml = entries['xl/_rels/workbook.xml.rels'] || entries['xl/_rels/workbook.xml.rels'];
+  const wbXml = entries['xl/workbook.xml'];
+  const sharedXml = entries['xl/sharedStrings.xml'];
+
+  if (!wbXml) throw new Error('No se encontró workbook.xml');
+
+  const sharedStrings = sharedXml ? parseSharedStrings(sharedXml) : [];
+  const sheets = parseWorkbookSheets(wbXml, wbRelsXml, entries, sharedStrings);
+
+  return sheets;
+}
+
+// Minimal ZIP reader
+async function unzip(bytes) {
+  const entries = {};
+  let offset = 0;
+
+  // Find end of central directory
+  let eocdOffset = -1;
+  for (let i = bytes.length - 22; i >= 0; i--) {
+    if (bytes[i] === 0x50 && bytes[i+1] === 0x4B && bytes[i+2] === 0x05 && bytes[i+3] === 0x06) {
+      eocdOffset = i;
+      break;
+    }
+  }
+  if (eocdOffset < 0) throw new Error('No es un archivo ZIP válido');
+
+  const cdOffset = readUint32LE(bytes, eocdOffset + 16);
+  const cdSize = readUint32LE(bytes, eocdOffset + 12);
+  const numEntries = readUint16LE(bytes, eocdOffset + 10);
+
+  let cdPos = cdOffset;
+  for (let i = 0; i < numEntries; i++) {
+    if (readUint32LE(bytes, cdPos) !== 0x02014B50) break;
+    const compression = readUint16LE(bytes, cdPos + 10);
+    const compressedSize = readUint32LE(bytes, cdPos + 20);
+    const uncompressedSize = readUint32LE(bytes, cdPos + 24);
+    const fileNameLen = readUint16LE(bytes, cdPos + 28);
+    const extraLen = readUint16LE(bytes, cdPos + 30);
+    const commentLen = readUint16LE(bytes, cdPos + 32);
+    const localHeaderOffset = readUint32LE(bytes, cdPos + 42);
+    const fileName = decodeUTF8(bytes, cdPos + 46, fileNameLen);
+
+    // Read local file header
+    const lhPos = localHeaderOffset;
+    const lhFileNameLen = readUint16LE(bytes, lhPos + 26);
+    const lhExtraLen = readUint16LE(bytes, lhPos + 28);
+    const dataStart = lhPos + 30 + lhFileNameLen + lhExtraLen;
+
+    const compressedData = bytes.slice(dataStart, dataStart + compressedSize);
+
+    let data;
+    if (compression === 0) {
+      data = compressedData;
+    } else if (compression === 8) {
+      data = await inflate(compressedData);
+    } else {
+      data = compressedData; // skip unknown
+    }
+
+    if (fileName.endsWith('.xml') || fileName.endsWith('.rels')) {
+      entries[fileName] = decodeUTF8(data, 0, data.length);
+    }
+
+    cdPos += 46 + fileNameLen + extraLen + commentLen;
+  }
+
+  return entries;
+}
+
+async function inflate(data) {
+  try {
+    const stream = new DecompressionStream('deflate-raw');
+    const writer = stream.writable.getWriter();
+    writer.write(data);
+    writer.close();
+    const reader = stream.readable.getReader();
+    const chunks = [];
+    let totalLen = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      totalLen += value.length;
+    }
+    const result = new Uint8Array(totalLen);
+    let pos = 0;
+    for (const chunk of chunks) { result.set(chunk, pos); pos += chunk.length; }
+    return result;
+  } catch(e) {
+    // Fallback: return empty
+    return new Uint8Array(0);
+  }
+}
+
+function readUint32LE(b, o) { return (b[o] | b[o+1]<<8 | b[o+2]<<16 | b[o+3]<<24) >>> 0; }
+function readUint16LE(b, o) { return b[o] | b[o+1]<<8; }
+
+function decodeUTF8(bytes, offset, length) {
+  const slice = bytes.slice(offset, offset + length);
+  return new TextDecoder('utf-8').decode(slice);
+}
+
+// Parse shared strings
+function parseSharedStrings(xml) {
+  const strings = [];
+  const siRegex = /<si>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = siRegex.exec(xml)) !== null) {
+    // Extract text from <t> tags, concatenating multiple <r><t> runs
+    const tRegex = /<t(?:\s[^>]*)?>([^<]*)<\/t>/g;
+    let text = '';
+    let tm;
+    while ((tm = tRegex.exec(m[1])) !== null) {
+      text += decodeXMLEntities(tm[1]);
+    }
+    strings.push(text);
+  }
+  return strings;
+}
+
+function decodeXMLEntities(s) {
+  return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n));
+}
+
+// Parse workbook to get sheet names and IDs
+function parseWorkbookSheets(wbXml, relsXml, entries, sharedStrings) {
+  const sheets = {};
+
+  // Get sheet names and relationship IDs
+  const sheetRegex = /<sheet\s[^>]*name="([^"]*)"[^>]*r:id="([^"]*)"[^>]*\/?>/g;
+  const sheetMap = {}; // rId -> name
+  let m;
+  while ((m = sheetRegex.exec(wbXml)) !== null) {
+    sheetMap[m[2]] = m[1];
+  }
+
+  // Get relationship targets
+  if (relsXml) {
+    const relRegex = /<Relationship\s[^>]*Id="([^"]*)"[^>]*Target="([^"]*)"[^>]*\/?>/g;
+    while ((m = relRegex.exec(relsXml)) !== null) {
+      const rId = m[1];
+      const target = m[2];
+      const name = sheetMap[rId];
+      if (name) {
+        const path = target.startsWith('/') ? target.slice(1) : 'xl/' + target;
+        const xml = entries[path];
+        if (xml) {
+          sheets[name] = parseSheet(xml, sharedStrings);
+        }
+      }
+    }
+  }
+
+  return sheets;
+}
+
+// Parse a single sheet XML into array of rows (arrays of cell values)
+function parseSheet(xml, sharedStrings) {
+  const rows = [];
+
+  // Extract sheetData
+  const sdMatch = xml.match(/<sheetData>([\s\S]*?)<\/sheetData>/);
+  if (!sdMatch) return rows;
+
+  const rowRegex = /<row\s[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g;
+  let rm;
+  while ((rm = rowRegex.exec(sdMatch[1])) !== null) {
+    const rowIdx = parseInt(rm[1]) - 1;
+    const rowXml = rm[2];
+    const cells = parseCells(rowXml, sharedStrings);
+    // Ensure array is big enough
+    while (rows.length <= rowIdx) rows.push([]);
+    rows[rowIdx] = cells;
+  }
+
+  return rows;
+}
+
+function parseCells(rowXml, sharedStrings) {
+  const cells = [];
+  const cellRegex = /<c\s([^>]*)>([\s\S]*?)<\/c>/g;
+  let cm;
+  while ((cm = cellRegex.exec(rowXml)) !== null) {
+    const attrs = cm[1];
+    const inner = cm[2];
+
+    // Get cell reference (e.g., A1, BC23)
+    const rMatch = attrs.match(/r="([A-Z]+)(\d+)"/);
+    if (!rMatch) continue;
+    const colLetters = rMatch[1];
+    const colIdx = colLettersToIndex(colLetters);
+
+    // Get type
+    const tMatch = attrs.match(/t="([^"]*)"/);
+    const cellType = tMatch ? tMatch[1] : '';
+
+    // Get value
+    const vMatch = inner.match(/<v>([^<]*)<\/v>/);
+    let value = '';
+    if (vMatch) {
+      if (cellType === 's') {
+        // Shared string
+        const idx = parseInt(vMatch[1]);
+        value = sharedStrings[idx] || '';
+      } else if (cellType === 'inlineStr') {
+        const tMatch2 = inner.match(/<t>([^<]*)<\/t>/);
+        value = tMatch2 ? decodeXMLEntities(tMatch2[1]) : '';
+      } else {
+        value = decodeXMLEntities(vMatch[1]);
+        const num = parseFloat(value);
+        if (!isNaN(num)) value = num;
+      }
+    } else {
+      // Check for inline string
+      const isMatch = inner.match(/<is><t[^>]*>([^<]*)<\/t><\/is>/);
+      if (isMatch) value = decodeXMLEntities(isMatch[1]);
+    }
+
+    while (cells.length <= colIdx) cells.push('');
+    cells[colIdx] = value;
+  }
+  return cells;
+}
+
+function colLettersToIndex(letters) {
+  let idx = 0;
+  for (let i = 0; i < letters.length; i++) {
+    idx = idx * 26 + (letters.charCodeAt(i) - 64);
+  }
+  return idx - 1;
+}
+
+// =====================================================================
+// FILE LOADING
+// =====================================================================
+
+function showAlert(msg, type = 'info') {
+  const c = document.getElementById('alerts-container');
+  const icons = { info: 'info', warning: 'warning', error: 'error' };
+  c.innerHTML = `<div class="alert alert-${type}"><span class="material-symbols-outlined">${icons[type]}</span>${msg}</div>`;
+  setTimeout(() => { if(c.innerHTML) c.innerHTML = ''; }, 6000);
+}
+
+function setFileStatus(id, status, type) {
+  const el = document.getElementById('status-' + id);
+  const card = document.getElementById('card-' + id);
+  const iconMap = { ok: 'check_circle', error: 'error', loading: 'sync' };
+  el.className = 'upload-status';
+  card.classList.remove('loaded','error');
+  if (type === 'ok') {
+    el.innerHTML = `<span class="material-symbols-outlined">${iconMap.ok}</span>${status}`;
+    el.classList.add('status-ok'); card.classList.add('loaded');
+  } else if (type === 'error') {
+    el.innerHTML = `<span class="material-symbols-outlined">${iconMap.error}</span>${status}`;
+    el.classList.add('status-error'); card.classList.add('error');
+  } else if (type === 'loading') {
+    el.innerHTML = `<span class="material-symbols-outlined">${iconMap.loading}</span>${status}`;
+    el.classList.add('status-loading');
+  } else {
+    el.textContent = status;
+  }
+}
+
+document.getElementById('file-compras').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setFileStatus('compras', 'Procesando...', 'loading');
+  try {
+    showLoading('Leyendo archivo de Compras...');
+    const sheets = await readXLSX(file);
+    dataCompras = sheets;
+    setFileStatus('compras', file.name, 'ok');
+    procesarProveedores();
+  } catch(err) {
+    setFileStatus('compras', 'Error: ' + err.message, 'error');
+    showAlert('Error al leer Compras: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    hideLoading();
+  }
+});
+
+document.getElementById('file-existencias').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setFileStatus('existencias', 'Procesando...', 'loading');
+  try {
+    showLoading('Leyendo archivo de Existencias...');
+    const sheets = await readXLSX(file);
+    dataExistencias = sheets;
+    setFileStatus('existencias', file.name, 'ok');
+  } catch(err) {
+    setFileStatus('existencias', 'Error: ' + err.message, 'error');
+    showAlert('Error al leer Existencias: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    hideLoading();
+  }
+});
+
+document.getElementById('file-ventas').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setFileStatus('ventas', 'Procesando...', 'loading');
+  try {
+    showLoading('Leyendo archivo de Ventas...');
+    const sheets = await readXLSX(file);
+    dataVentas = sheets;
+    setFileStatus('ventas', file.name, 'ok');
+  } catch(err) {
+    setFileStatus('ventas', 'Error: ' + err.message, 'error');
+    showAlert('Error al leer Ventas: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    hideLoading();
+  }
+});
+
+function showLoading(msg) {
+  document.getElementById('loading-text').textContent = msg || 'Procesando...';
+  document.getElementById('loading-overlay').classList.add('active');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('active');
+}
+
+// =====================================================================
+// DATA PROCESSING
+// =====================================================================
+
+function getCell(row, colIdx) {
+  if (!row || colIdx >= row.length) return '';
+  const v = row[colIdx];
+  return v === null || v === undefined ? '' : String(v).trim();
+}
+
+function procesarProveedores() {
+  if (!dataCompras) return;
+
+  // Find "Movimientos" sheet (case-insensitive search)
+  const movSheet = findSheet(dataCompras, 'movimientos');
+  if (!movSheet) {
+    showAlert('No se encontró la hoja "Movimientos" en el archivo de Compras. Hojas disponibles: ' + Object.keys(dataCompras).join(', '), 'warning');
+    return;
+  }
+
+  // Skip header row (row 0)
+  // Col B (idx 1) = No. Mov, Col F (idx 5) = Proveedor, Col G (idx 6) = Almacen
+  const proveedores = new Set();
+
+  for (let i = 1; i < movSheet.length; i++) {
+    const row = movSheet[i];
+    if (!row) continue;
+    const almacen = getCell(row, 6); // G
+    if (normalizar(almacen) === normalizar(ALMACEN_FILTRO)) {
+      const proveedor = getCell(row, 5); // F
+      if (proveedor) proveedores.add(proveedor);
+    }
+  }
+
+  const select = document.getElementById('proveedor-select');
+  select.disabled = false;
+  select.innerHTML = '<option value="">— Selecciona un proveedor —</option>';
+  [...proveedores].sort().forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    select.appendChild(opt);
+  });
+
+  document.getElementById('btn-analizar').disabled = false;
+
+  if (proveedores.size === 0) {
+    showAlert(`No se encontraron proveedores con almacén "${ALMACEN_FILTRO}". Verifica el nombre del almacén en tu archivo.`, 'warning');
+  }
+}
+
+function findSheet(sheets, nameFragment) {
+  const keys = Object.keys(sheets);
+  // Exact match first (case-insensitive)
+  let found = keys.find(k => normalizar(k) === normalizar(nameFragment));
+  if (found) return sheets[found];
+  // Partial match
+  found = keys.find(k => normalizar(k).includes(normalizar(nameFragment)));
+  return found ? sheets[found] : null;
+}
+
+function normalizar(s) {
+  return String(s || '').toLowerCase().trim();
+}
+
+async function analizar() {
+  const proveedor = document.getElementById('proveedor-select').value;
+  if (!proveedor) { showAlert('Selecciona un proveedor', 'warning'); return; }
+  if (!dataCompras) { showAlert('Carga el archivo de Compras', 'warning'); return; }
+  if (!dataExistencias) { showAlert('Carga el archivo de Existencias', 'warning'); return; }
+  if (!dataVentas) { showAlert('Carga el archivo de Ventas', 'warning'); return; }
+
+  showLoading('Analizando datos...');
+  const btnAnalizar = document.getElementById('btn-analizar');
+  btnAnalizar.classList.add('is-loading');
+  btnAnalizar.disabled = true;
+
+  await new Promise(r => setTimeout(r, 50)); // allow UI to update
+
+  try {
+    reportData = procesarReporte(proveedor);
+    renderReporte(proveedor, reportData);
+    document.getElementById('report-section').style.display = 'block';
+    document.getElementById('btn-exportar').style.display = 'inline-flex';
+    document.getElementById('alerts-container').innerHTML = '';
+  } catch(err) {
+    showAlert('Error al analizar: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    hideLoading();
+    btnAnalizar.classList.remove('is-loading');
+    btnAnalizar.disabled = false;
+  }
+}
+
+function procesarReporte(proveedor) {
+  // --- PASO 1: Obtener No. Mov del proveedor en "Movimientos" ---
+  const movSheet = findSheet(dataCompras, 'movimientos');
+  if (!movSheet) throw new Error('No se encontró la hoja "Movimientos"');
+
+  const noMovsProveedor = new Set();
+  for (let i = 1; i < movSheet.length; i++) {
+    const row = movSheet[i];
+    if (!row) continue;
+    const almacen = getCell(row, 6); // G
+    const prov = getCell(row, 5);    // F
+    const noMov = getCell(row, 1);   // B
+    if (normalizar(almacen) === normalizar(ALMACEN_FILTRO) && normalizar(prov) === normalizar(proveedor) && noMov) {
+      noMovsProveedor.add(noMov);
+    }
+  }
+
+  // --- PASO 2: Obtener productos del "Detalle de movimientos" ---
+  const detalleSheet = findSheet(dataCompras, 'detalle');
+  if (!detalleSheet) throw new Error('No se encontró la hoja "Detalle de movimientos"');
+
+  // Col A (0) = Almacen, Col B (1) = NoMov, Col F (5) = Producto, Col I (8) = Cantidad
+  const comprasPorProducto = {}; // producto_key -> cantidad total
+  const rawRows = [];
+
+  for (let i = 1; i < detalleSheet.length; i++) {
+    const row = detalleSheet[i];
+    if (!row) continue;
+    const almacen = getCell(row, 0); // A
+    const noMov = getCell(row, 1);   // B
+    const producto = getCell(row, 5); // F
+    const cantStr = getCell(row, 8);  // I
+    const cantidad = parseFloat(cantStr) || 0;
+
+    if (normalizar(almacen) === normalizar(ALMACEN_FILTRO) && noMovsProveedor.has(noMov) && producto) {
+      const pk = normalizar(producto);
+      comprasPorProducto[pk] = (comprasPorProducto[pk] || { producto, cantidad: 0 });
+      comprasPorProducto[pk].cantidad += cantidad;
+      rawRows.push({ noMov, producto, cantidad });
+    }
+  }
+
+  // --- PASO 3: Cruzar con Existencias ---
+  // Col A (0) = Almacen, Col C (2) = ProdConcat, Col F (5) = Marca, Col G (6) = Modelo, Col H (7) = Existencia
+  const existSheet = Object.values(dataExistencias)[0]; // first sheet
+  const existPorProducto = {}; // pk -> [{almacen, marca, modelo, existencia}]
+
+  if (existSheet) {
+    for (let i = 1; i < existSheet.length; i++) {
+      const row = existSheet[i];
+      if (!row) continue;
+      const almacen = getCell(row, 0);  // A
+      const prodConcat = getCell(row, 2); // C
+      const marca = getCell(row, 5);    // F
+      const modelo = getCell(row, 6);   // G
+      const exStr = getCell(row, 7);    // H
+      const existencia = parseFloat(exStr) || 0;
+
+      const pk = normalizar(prodConcat);
+      if (!pk) continue;
+      if (!existPorProducto[pk]) existPorProducto[pk] = [];
+      existPorProducto[pk].push({ almacen, marca, modelo, existencia });
+    }
+  }
+
+  // --- PASO 4: Cruzar con Ventas ---
+  // Col A (0) = Almacen, Col L (11) = ProdConcat, Col O (14) = Cantidad, Col S (18) = TotalVenta
+  const ventaSheet = Object.values(dataVentas)[0];
+  const ventasPorProductoPorSucursal = {}; // pk -> { sucursal -> {cantidad, total} }
+
+  if (ventaSheet) {
+    for (let i = 1; i < ventaSheet.length; i++) {
+      const row = ventaSheet[i];
+      if (!row) continue;
+      const almacen = getCell(row, 0);    // A
+      const prodConcat = getCell(row, 11); // L
+      const cantStr = getCell(row, 14);   // O
+      const totalStr = getCell(row, 18);  // S
+      const cantidad = parseFloat(cantStr) || 0;
+      const total = parseFloat(totalStr) || 0;
+
+      const pk = normalizar(prodConcat);
+      if (!pk) continue;
+      if (!ventasPorProductoPorSucursal[pk]) ventasPorProductoPorSucursal[pk] = {};
+      if (!ventasPorProductoPorSucursal[pk][almacen]) ventasPorProductoPorSucursal[pk][almacen] = { cantidad: 0, total: 0 };
+      ventasPorProductoPorSucursal[pk][almacen].cantidad += cantidad;
+      ventasPorProductoPorSucursal[pk][almacen].total += total;
+    }
+  }
+
+  // --- PASO 5: Consolidar reporte ---
+  const productos = [];
+  for (const [pk, comp] of Object.entries(comprasPorProducto)) {
+    const existe = existPorProducto[pk] || [];
+    const ventas = ventasPorProductoPorSucursal[pk] || {};
+
+    const marca = existe.length > 0 ? (existe.find(e => e.marca)?.marca || '') : '';
+    const modelo = existe.length > 0 ? (existe.find(e => e.modelo)?.modelo || '') : '';
+    const existenciaTotal = existe.reduce((s, e) => s + e.existencia, 0);
+    const ventaTotal = Object.values(ventas).reduce((s, v) => s + v.cantidad, 0);
+    const ingresoTotal = Object.values(ventas).reduce((s, v) => s + v.total, 0);
+
+    // Sucursales: merge existencias + ventas
+    const allSucursales = new Set([
+      ...existe.map(e => e.almacen),
+      ...Object.keys(ventas)
+    ]);
+
+    const sucursales = [...allSucursales].map(suc => {
+      const ex = existe.find(e => e.almacen === suc);
+      const v = ventas[suc] || { cantidad: 0, total: 0 };
+      return {
+        sucursal: suc,
+        existencia: ex ? ex.existencia : 0,
+        cantidadVendida: v.cantidad,
+        importeVendido: v.total
+      };
+    }).sort((a,b) => a.sucursal.localeCompare(b.sucursal));
+
+    productos.push({
+      producto: comp.producto,
+      pk,
+      marca,
+      modelo,
+      cantidadComprada: comp.cantidad,
+      existenciaTotal,
+      ventaTotal,
+      ingresoTotal,
+      sucursales
+    });
+  }
+
+  productos.sort((a,b) => a.producto.localeCompare(b.producto));
+
+  return { proveedor, productos, rawRows };
+}
+
+// =====================================================================
+// RENDERING
+// =====================================================================
+
+function fmt(n) {
+  const num = parseFloat(n) || 0;
+  if (num % 1 === 0) return num.toLocaleString('es-MX');
+  return num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtMoney(n) {
+  return '$' + (parseFloat(n)||0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderReporte(proveedor, data) {
+  const { productos } = data;
+
+  // KPIs
+  const totalComprado = productos.reduce((s,p) => s + p.cantidadComprada, 0);
+  const totalExistencia = productos.reduce((s,p) => s + p.existenciaTotal, 0);
+  const totalVendido = productos.reduce((s,p) => s + p.ventaTotal, 0);
+  const totalIngreso = productos.reduce((s,p) => s + p.ingresoTotal, 0);
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-symbols-outlined">inventory_2</span></div>
+      <div class="stat-label">Productos únicos</div>
+      <div class="stat-value">${productos.length}</div>
+      <div class="stat-desc">SKUs del proveedor</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-symbols-outlined">shopping_cart</span></div>
+      <div class="stat-label">Total Comprado</div>
+      <div class="stat-value">${fmt(totalComprado)}</div>
+      <div class="stat-desc">Piezas compradas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-symbols-outlined">bar_chart</span></div>
+      <div class="stat-label">Existencia Total</div>
+      <div class="stat-value">${fmt(totalExistencia)}</div>
+      <div class="stat-desc">Piezas en inventario</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-symbols-outlined">sell</span></div>
+      <div class="stat-label">Total Vendido</div>
+      <div class="stat-value">${fmt(totalVendido)}</div>
+      <div class="stat-desc">Piezas vendidas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><span class="material-symbols-outlined">payments</span></div>
+      <div class="stat-label">Ingreso Total</div>
+      <div class="stat-value">${fmtMoney(totalIngreso)}</div>
+      <div class="stat-desc">Monto generado</div>
+    </div>
+  `;
+
+  // Table: Resumen por Producto
+  const tbody = document.getElementById('tbl-productos-body');
+  const tfoot = document.getElementById('tbl-productos-foot');
+
+  tbody.innerHTML = productos.map(p => `
+    <tr data-filter="${normalizar(p.producto + ' ' + p.marca + ' ' + p.modelo)}">
+      <td>${p.producto}</td>
+      <td>${p.marca || '<span style="color:var(--outline)">—</span>'}</td>
+      <td>${p.modelo || '<span style="color:var(--outline)">—</span>'}</td>
+      <td class="td-num ${p.cantidadComprada > 0 ? 'value-positive' : 'value-zero'}">${fmt(p.cantidadComprada)}</td>
+      <td class="td-num ${p.existenciaTotal > 0 ? '' : 'value-zero'}">${fmt(p.existenciaTotal)}</td>
+      <td class="td-num ${p.ventaTotal > 0 ? 'value-positive' : 'value-zero'}">${fmt(p.ventaTotal)}</td>
+      <td class="td-num ${p.ingresoTotal > 0 ? 'value-positive' : 'value-zero'}">${fmtMoney(p.ingresoTotal)}</td>
+    </tr>
+  `).join('');
+
+  tfoot.innerHTML = `
+    <tr>
+      <td colspan="3">TOTALES (${productos.length} productos)</td>
+      <td class="td-num">${fmt(totalComprado)}</td>
+      <td class="td-num">${fmt(totalExistencia)}</td>
+      <td class="td-num">${fmt(totalVendido)}</td>
+      <td class="td-num">${fmtMoney(totalIngreso)}</td>
+    </tr>
+  `;
+
+  // Accordion: Detalle por Sucursal
+  const accordion = document.getElementById('accordion-sucursales');
+  accordion.innerHTML = productos.map(p => {
+    const totalExSuc = p.sucursales.reduce((s,x) => s + x.existencia, 0);
+    const totalVSuc = p.sucursales.reduce((s,x) => s + x.cantidadVendida, 0);
+    const totalISuc = p.sucursales.reduce((s,x) => s + x.importeVendido, 0);
+
+    return `
+    <div class="product-group" data-filter-suc="${normalizar(p.producto + ' ' + p.marca + ' ' + p.modelo)}">
+      <div class="product-group-header" onclick="toggleAccordion(this.parentElement)">
+        <div class="product-name">${p.producto}</div>
+        <div class="product-meta">
+          ${p.marca ? `<span class="meta-chip">${p.marca}</span>` : ''}
+          <span>Exist: <strong>${fmt(totalExSuc)}</strong></span>
+          <span>Vendido: <strong>${fmt(totalVSuc)}</strong></span>
+          <span>Ingreso: <strong>${fmtMoney(totalISuc)}</strong></span>
+        </div>
+        <span class="material-symbols-outlined chevron">expand_more</span>
+      </div>
+      <div class="product-group-body">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sucursal</th>
+                <th class="td-num">Existencia Actual</th>
+                <th class="td-num">Cantidad Vendida</th>
+                <th class="td-num">Importe Vendido</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${p.sucursales.map(s => `
+                <tr>
+                  <td>${s.sucursal}</td>
+                  <td class="td-num ${s.existencia > 0 ? '' : 'value-zero'}">${fmt(s.existencia)}</td>
+                  <td class="td-num ${s.cantidadVendida > 0 ? 'value-positive' : 'value-zero'}">${fmt(s.cantidadVendida)}</td>
+                  <td class="td-num ${s.importeVendido > 0 ? 'value-positive' : 'value-zero'}">${fmtMoney(s.importeVendido)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>TOTAL</td>
+                <td class="td-num">${fmt(totalExSuc)}</td>
+                <td class="td-num">${fmt(totalVSuc)}</td>
+                <td class="td-num">${fmtMoney(totalISuc)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    `;
+  }).join('');
+
+  // Raw data
+  const rawBody = document.getElementById('tbl-raw-body');
+  rawBody.innerHTML = data.rawRows.map(r => {
+    const pk = normalizar(r.producto);
+    const existe = reportData.productos.find(p => p.pk === pk);
+    return `
+      <tr data-filter="${normalizar(r.noMov + ' ' + r.producto)}">
+        <td><span class="td-badge">${r.noMov}</span></td>
+        <td>${r.producto}</td>
+        <td class="td-num">${fmt(r.cantidad)}</td>
+        <td>${existe?.marca || '—'}</td>
+        <td>${existe?.modelo || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// =====================================================================
+// UI HELPERS
+// =====================================================================
+
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function toggleAccordion(el) {
+  el.classList.toggle('open');
+}
+
+function filtrarTabla(tableId, query) {
+  const q = normalizar(query);
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
+    const filter = row.getAttribute('data-filter') || normalizar(row.textContent);
+    row.style.display = filter.includes(q) ? '' : 'none';
+  });
+}
+
+function filtrarAccordion(query) {
+  const q = normalizar(query);
+  document.querySelectorAll('[data-filter-suc]').forEach(el => {
+    const filter = el.getAttribute('data-filter-suc') || '';
+    el.style.display = filter.includes(q) ? '' : 'none';
+  });
+}
+
+let sortDir = {};
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  const key = tableId + '_' + colIdx;
+  sortDir[key] = sortDir[key] === 'asc' ? 'desc' : 'asc';
+  const asc = sortDir[key] === 'asc';
+
+  rows.sort((a, b) => {
+    const av = a.cells[colIdx]?.textContent.trim() || '';
+    const bv = b.cells[colIdx]?.textContent.trim() || '';
+    const an = parseFloat(av.replace(/[$,]/g,''));
+    const bn = parseFloat(bv.replace(/[$,]/g,''));
+    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+
+  // Update header indicators
+  table.querySelectorAll('th').forEach((th, i) => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (i === colIdx) th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+  });
+}
+
+// =====================================================================
+// EXCEL EXPORT (pure JS - generates XLSX)
+// =====================================================================
+
+function exportarExcel() {
+  if (!reportData) return;
+
+  showLoading('Generando Excel...');
+  setTimeout(() => {
+    try {
+      const wb = buildXLSXWorkbook(reportData);
+      downloadXLSX(wb, `Reporte_${reportData.proveedor.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    } catch(e) {
+      showAlert('Error al exportar: ' + e.message, 'error');
+      console.error(e);
+    } finally {
+      hideLoading();
+    }
+  }, 50);
+}
+
+function buildXLSXWorkbook(data) {
+  const { proveedor, productos } = data;
+
+  const sheets = [];
+
+  // Sheet 1: Resumen
+  const resumenRows = [
+    ['REPORTE DE PROVEEDOR: ' + proveedor],
+    ['Generado:', new Date().toLocaleString('es-MX')],
+    [],
+    ['Producto', 'Marca', 'Modelo', 'Cant. Comprada', 'Existencia Total', 'Total Vendido', 'Ingreso Total'],
+    ...productos.map(p => [p.producto, p.marca, p.modelo, p.cantidadComprada, p.existenciaTotal, p.ventaTotal, p.ingresoTotal]),
+    ['TOTALES', '', '',
+      productos.reduce((s,p) => s+p.cantidadComprada, 0),
+      productos.reduce((s,p) => s+p.existenciaTotal, 0),
+      productos.reduce((s,p) => s+p.ventaTotal, 0),
+      productos.reduce((s,p) => s+p.ingresoTotal, 0)
+    ]
+  ];
+  sheets.push({ name: 'Resumen General', rows: resumenRows });
+
+  // Sheet 2: Por Sucursal
+  const sucRows = [
+    ['DETALLE POR SUCURSAL'],
+    [],
+    ['Producto', 'Marca', 'Modelo', 'Sucursal', 'Existencia', 'Cant. Vendida', 'Importe Vendido'],
+  ];
+  for (const p of productos) {
+    for (const s of p.sucursales) {
+      sucRows.push([p.producto, p.marca, p.modelo, s.sucursal, s.existencia, s.cantidadVendida, s.importeVendido]);
+    }
+  }
+  sheets.push({ name: 'Por Sucursal', rows: sucRows });
+
+  // Sheet 3: Raw
+  const rawRows2 = [
+    ['MOVIMIENTOS DE COMPRA'],
+    [],
+    ['No. Mov', 'Producto', 'Cantidad', 'Marca', 'Modelo'],
+    ...data.rawRows.map(r => {
+      const existe = productos.find(p => p.pk === normalizar(r.producto));
+      return [r.noMov, r.producto, r.cantidad, existe?.marca || '', existe?.modelo || ''];
+    })
+  ];
+  sheets.push({ name: 'Movimientos', rows: rawRows2 });
+
+  return sheets;
+}
+
+function downloadXLSX(sheets, filename) {
+  // Build a simple XLSX (which is a valid XML-based format)
+  // We use SpreadsheetML format (xlsx compatible)
+  const zip = buildXLSXZip(sheets);
+  const blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Build a real XLSX (ZIP with XML) using SpreadsheetML
+function buildXLSXZip(sheetsData) {
+  const sharedStrings = [];
+  const sharedMap = {};
+
+  function getSSIdx(val) {
+    const s = String(val);
+    if (sharedMap[s] === undefined) {
+      sharedMap[s] = sharedStrings.length;
+      sharedStrings.push(s);
+    }
+    return sharedMap[s];
+  }
+
+  // Build sheet XMLs
+  const sheetXMLs = sheetsData.map(sheet => {
+    let xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    xml += '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+    xml += '<sheetData>';
+
+    sheet.rows.forEach((row, ri) => {
+      if (!row || row.length === 0) return;
+      xml += `<row r="${ri+1}">`;
+      row.forEach((cell, ci) => {
+        const colLetter = indexToColLetters(ci);
+        const ref = colLetter + (ri + 1);
+        if (cell === null || cell === undefined || cell === '') {
+          // empty
+        } else if (typeof cell === 'number') {
+          xml += `<c r="${ref}"><v>${cell}</v></c>`;
+        } else {
+          const idx = getSSIdx(cell);
+          xml += `<c r="${ref}" t="s"><v>${idx}</v></c>`;
+        }
+      });
+      xml += '</row>';
+    });
+
+    xml += '</sheetData></worksheet>';
+    return xml;
+  });
+
+  // Build shared strings XML
+  let ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  ssXml += `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${sharedStrings.length}" uniqueCount="${sharedStrings.length}">`;
+  sharedStrings.forEach(s => {
+    ssXml += `<si><t xml:space="preserve">${escapeXML(s)}</t></si>`;
+  });
+  ssXml += '</sst>';
+
+  // Workbook XML
+  let wbXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  wbXml += '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  wbXml += '<sheets>';
+  sheetsData.forEach((s, i) => {
+    wbXml += `<sheet name="${escapeXML(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`;
+  });
+  wbXml += '</sheets></workbook>';
+
+  // Workbook rels
+  let wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  wbRels += '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+  sheetsData.forEach((s, i) => {
+    wbRels += `<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`;
+  });
+  wbRels += `<Relationship Id="rId${sheetsData.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>`;
+  wbRels += '</Relationships>';
+
+  // Root rels
+  const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+
+  // Content types
+  let ctXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  ctXml += '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
+  ctXml += '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>';
+  ctXml += '<Default Extension="xml" ContentType="application/xml"/>';
+  ctXml += '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+  sheetsData.forEach((s,i) => {
+    ctXml += `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`;
+  });
+  ctXml += '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>';
+  ctXml += '</Types>';
+
+  // Build ZIP
+  const files = {
+    '[Content_Types].xml': ctXml,
+    '_rels/.rels': rootRels,
+    'xl/workbook.xml': wbXml,
+    'xl/_rels/workbook.xml.rels': wbRels,
+    'xl/sharedStrings.xml': ssXml,
+  };
+  sheetXMLs.forEach((xml, i) => {
+    files[`xl/worksheets/sheet${i+1}.xml`] = xml;
+  });
+
+  return buildZIP(files);
+}
+
+function escapeXML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function indexToColLetters(idx) {
+  let s = '';
+  idx++;
+  while (idx > 0) {
+    const r = (idx - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    idx = Math.floor((idx - 1) / 26);
+  }
+  return s;
+}
+
+// Build a ZIP file from a map of filename -> string content
+function buildZIP(files) {
+  const encoder = new TextEncoder();
+  const entries = [];
+
+  for (const [name, content] of Object.entries(files)) {
+    const data = encoder.encode(content);
+    entries.push({ name, data });
+  }
+
+  // Calculate sizes
+  const localHeaders = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const nameBytes = new TextEncoder().encode(entry.name);
+    const localHeader = buildLocalFileHeader(nameBytes, entry.data);
+    localHeaders.push({ name: entry.name, nameBytes, localHeader, data: entry.data, offset });
+    offset += localHeader.length + entry.data.length;
+  }
+
+  // Central directory
+  const cdEntries = localHeaders.map(e => buildCDEntry(e.nameBytes, e.data, e.offset));
+  const cdSize = cdEntries.reduce((s, e) => s + e.length, 0);
+  const eocd = buildEOCD(localHeaders.length, cdSize, offset);
+
+  // Combine all
+  const totalSize = offset + cdSize + eocd.length;
+  const result = new Uint8Array(totalSize);
+  let pos = 0;
+
+  for (const e of localHeaders) {
+    result.set(e.localHeader, pos); pos += e.localHeader.length;
+    result.set(e.data, pos); pos += e.data.length;
+  }
+  for (const cd of cdEntries) { result.set(cd, pos); pos += cd.length; }
+  result.set(eocd, pos);
+
+  return result;
+}
+
+function crc32(data) {
+  const table = crc32Table();
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xFF];
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+let _crcTable = null;
+function crc32Table() {
+  if (_crcTable) return _crcTable;
+  _crcTable = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    _crcTable[i] = c;
+  }
+  return _crcTable;
+}
+
+function writeUint32LE(buf, offset, val) {
+  buf[offset] = val & 0xFF;
+  buf[offset+1] = (val >> 8) & 0xFF;
+  buf[offset+2] = (val >> 16) & 0xFF;
+  buf[offset+3] = (val >> 24) & 0xFF;
+}
+
+function writeUint16LE(buf, offset, val) {
+  buf[offset] = val & 0xFF;
+  buf[offset+1] = (val >> 8) & 0xFF;
+}
+
+function buildLocalFileHeader(nameBytes, data) {
+  const crc = crc32(data);
+  const buf = new Uint8Array(30 + nameBytes.length);
+  writeUint32LE(buf, 0, 0x04034B50); // signature
+  writeUint16LE(buf, 4, 20);          // version needed
+  writeUint16LE(buf, 6, 0);           // flags
+  writeUint16LE(buf, 8, 0);           // compression: stored
+  writeUint16LE(buf, 10, 0);          // mod time
+  writeUint16LE(buf, 12, 0);          // mod date
+  writeUint32LE(buf, 14, crc);        // crc32
+  writeUint32LE(buf, 18, data.length); // compressed size
+  writeUint32LE(buf, 22, data.length); // uncompressed size
+  writeUint16LE(buf, 26, nameBytes.length);
+  writeUint16LE(buf, 28, 0);          // extra length
+  buf.set(nameBytes, 30);
+  return buf;
+}
+
+function buildCDEntry(nameBytes, data, localOffset) {
+  const crc = crc32(data);
+  const buf = new Uint8Array(46 + nameBytes.length);
+  writeUint32LE(buf, 0, 0x02014B50); // signature
+  writeUint16LE(buf, 4, 20);          // version made by
+  writeUint16LE(buf, 6, 20);          // version needed
+  writeUint16LE(buf, 8, 0);           // flags
+  writeUint16LE(buf, 10, 0);          // compression
+  writeUint16LE(buf, 12, 0);          // mod time
+  writeUint16LE(buf, 14, 0);          // mod date
+  writeUint32LE(buf, 16, crc);
+  writeUint32LE(buf, 20, data.length);
+  writeUint32LE(buf, 24, data.length);
+  writeUint16LE(buf, 28, nameBytes.length);
+  writeUint16LE(buf, 30, 0);          // extra
+  writeUint16LE(buf, 32, 0);          // comment
+  writeUint16LE(buf, 34, 0);          // disk start
+  writeUint16LE(buf, 36, 0);          // internal attrs
+  writeUint32LE(buf, 38, 0);          // external attrs
+  writeUint32LE(buf, 42, localOffset);
+  buf.set(nameBytes, 46);
+  return buf;
+}
+
+function buildEOCD(numEntries, cdSize, cdOffset) {
+  const buf = new Uint8Array(22);
+  writeUint32LE(buf, 0, 0x06054B50);
+  writeUint16LE(buf, 4, 0);
+  writeUint16LE(buf, 6, 0);
+  writeUint16LE(buf, 8, numEntries);
+  writeUint16LE(buf, 10, numEntries);
+  writeUint32LE(buf, 12, cdSize);
+  writeUint32LE(buf, 16, cdOffset);
+  writeUint16LE(buf, 20, 0);
+  return buf;
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

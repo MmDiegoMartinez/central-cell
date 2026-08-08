@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador PayJoy — Ventas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+  #fileInput{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+
+  /* Navbar horizontal */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Zona de carga (drag & drop) */
+  .drop-zone{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:8px;text-align:center;
+    padding:var(--space-xl,40px) var(--space-lg);
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    cursor:pointer;transition:all .15s ease;
+    margin-bottom:var(--space-lg);
+  }
+  .drop-zone:hover, .drop-zone.drag-over{
+    border-color:var(--primary);background:rgba(0,131,143,0.06);
+  }
+  .drop-icon svg{width:36px;height:36px;stroke:var(--primary);fill:none;}
+  .drop-title{font-size:15px;font-weight:700;color:var(--on-surface);}
+  .drop-hint{font-size:13px;color:var(--on-surface-variant);}
+
+  #status{
+    display:none;
+    align-items:center;
+    padding:12px 16px;margin-bottom:var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    font-size:13px;color:var(--on-surface-variant);
+  }
+
+  #results{display:none;}
+
+  /* Stats */
+  .stats-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md);
+    margin-bottom:var(--space-lg);
+  }
+  @media (max-width:700px){ .stats-grid{grid-template-columns:1fr;} }
+  .stat-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+  }
+  .stat-label{font-size:12px;font-weight:600;color:var(--on-surface-variant);text-transform:uppercase;letter-spacing:.03em;}
+  .stat-value{font-size:28px;font-weight:800;color:var(--primary);margin:4px 0;}
+  .stat-desc{font-size:12px;color:var(--outline);}
+
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-bottom:var(--space-lg);}
+
+  .table-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:var(--space-sm);flex-wrap:wrap;gap:8px;
+  }
+  .table-title{font-weight:700;font-size:15px;color:var(--on-surface);}
+  .badge{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+    background:rgba(0,131,143,0.12);color:#00838F;
+  }
+
+  .search-wrap{
+    position:relative;margin-bottom:var(--space-md);max-width:340px;
+  }
+  .search-wrap svg{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;stroke:var(--on-surface-variant);fill:none;
+  }
+  .search-wrap input{
+    width:100%;padding:10px 12px 10px 36px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    color:var(--on-surface);font-size:14px;font-family:inherit;
+  }
+  .search-wrap input:focus{outline:none;border-color:var(--primary);}
+
+  .table-wrap{overflow-x:auto;}
+  table{
+    width:100%;border-collapse:collapse;font-size:13px;
+    background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;
+  }
+  thead th{
+    background:#00838F;color:#fff;font-weight:700;
+    padding:10px 12px;text-align:left;white-space:nowrap;cursor:default;
+  }
+  thead th[data-col]{cursor:pointer;user-select:none;}
+  thead th.sorted{background:#006064;}
+  tbody td{
+    padding:8px 12px;border-bottom:1px solid var(--outline-variant);
+  }
+  tbody tr:nth-child(even){background:var(--surface-container-low);}
+  td.name{font-weight:600;color:var(--on-surface);}
+  td.count-cell{font-weight:700;color:var(--primary);}
+
+  .rank{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:50%;
+    background:var(--surface-container-low);color:var(--on-surface-variant);
+    font-size:12px;font-weight:700;
+  }
+  .medal{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:50%;
+    font-size:12px;font-weight:800;color:#1A1A1A;
+  }
+  .medal.gold{background:#FFD700;}
+  .medal.silver{background:#C0C0C0;}
+  .medal.bronze{background:#CD7F32;}
+
+  .bar-wrap{display:flex;align-items:center;gap:8px;min-width:140px;}
+  .bar-bg{
+    flex:1;height:8px;border-radius:99px;background:var(--outline-variant);overflow:hidden;
+  }
+  .bar-fill{height:100%;background:var(--primary);border-radius:99px;}
+  .pct{font-size:12px;font-weight:600;color:var(--on-surface-variant);min-width:40px;text-align:right;}
+
+  .empty{
+    display:none;padding:var(--space-lg);text-align:center;
+    color:var(--on-surface-variant);
+  }
+  .empty.no-data{display:block;}
+</style>
+
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Analizador PayJoy</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Ventas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Analizador <span>PayJoy</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">smartphone</span> Analiza ventas con PayJoy + Smartphone por vendedor</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+        <div>
+          <h3 style="margin:0">Sube tu archivo y obtén el ranking</h3>
+          <p>Carga el Excel de ventas para detectar automáticamente las ventas con PayJoy + Smartphone por vendedor, con ranking y exportación a Excel.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga tu archivo</h3>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 16.5v-13M7.5 8 12 3.5 16.5 8M20.5 16.5v2a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-2"/></svg>
+          </div>
+          <div class="drop-title">Sube tu archivo de ventas</div>
+          <div class="drop-hint">Excel (.xlsx, .xls) — arrastra aquí o haz clic</div>
+        </div>
+
+        <div id="status"></div>
+      </section>
+
+      <div id="results">
+
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">2</div>
+            <h3 class="step-title text-headline-sm">Resultados</h3>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Vendedores únicos</div>
+              <div class="stat-value" id="statVendedores">0</div>
+              <div class="stat-desc">Total en el archivo</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Registros PayJoy</div>
+              <div class="stat-value" id="statPayjoy">0</div>
+              <div class="stat-desc">Col. I = "PAY JOY"</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">PayJoy + Smartphone</div>
+              <div class="stat-value" id="statTotal">0</div>
+              <div class="stat-desc">Coincidencias dobles</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="btnExport">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar Excel
+            </button>
+            <button class="btn btn-outline" id="btnReset">
+              <span class="material-symbols-outlined">restart_alt</span>
+              Nueva búsqueda
+            </button>
+          </div>
+
+          <div class="table-header">
+            <span class="table-title">Ranking de vendedores — PayJoy + Smartphone</span>
+            <span class="badge" id="totalBadge">0 vendedores</span>
+          </div>
+
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar vendedor...">
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th class="sorted" data-col="name" onclick="sortTable('name')">Vendedor ▾</th>
+                  <th data-col="count" onclick="sortTable('count')">PayJoy + Smartphone</th>
+                  <th>Participación</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+            <div class="empty no-data" id="noData">No se encontraron resultados</div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData = [];
+let sortDir = { name: 'asc', count: 'desc' };
+let currentSort = 'count';
+let totalMatches = 0;
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const status = document.getElementById('status');
+const results = document.getElementById('results');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) processFile(f);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+
+document.getElementById('searchInput').addEventListener('input', e => renderTable(e.target.value));
+document.getElementById('btnReset').addEventListener('click', () => {
+  allData = [];
+  results.style.display = 'none';
+  status.style.display = 'none';
+  fileInput.value = '';
+  dropZone.style.display = 'flex';
+});
+document.getElementById('btnExport').addEventListener('click', exportExcel);
+
+function log(msg) {
+  status.style.display = 'flex';
+  const iconMap = { '📂': 'folder_open', '✅': 'check_circle', '❌': 'error', '📌': 'push_pin' };
+  const first = msg.trim().charAt(0);
+  const icon = iconMap[first];
+  if (icon) {
+    const rest = msg.trim().slice(first.length).trim();
+    status.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;vertical-align:-4px;margin-right:8px;color:var(--primary)">${icon}</span>${rest}`;
+  } else {
+    status.textContent = msg;
+  }
+}
+
+function processFile(file) {
+  log(`📂 Leyendo: ${file.name} ...`);
+  dropZone.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (raw.length < 2) { log('❌ El archivo está vacío o no tiene datos.'); dropZone.style.display='flex'; return; }
+
+      const headers = raw[0].map(h => String(h || '').trim().toUpperCase());
+      log(`✅ ${raw.length - 1} filas encontradas. Detectando columnas...`);
+
+      // Detectar columnas por encabezado O por letra (I=col8, J=col9, N=col13 en 0-index)
+      let colVendedor = headers.indexOf('VENDEDOR');
+      let colCliente  = headers.indexOf('CLIENTE');
+      let colSmartphone = headers.findIndex(h => h.includes('SMARTPHONE'));
+
+      // Fallback a posición por letra si no hay encabezado exacto
+      if (colVendedor === -1) colVendedor = 9;   // Columna J (0-index)
+      if (colCliente === -1)  colCliente  = 8;   // Columna I (0-index)
+      if (colSmartphone === -1) colSmartphone = 13; // Columna N (0-index)
+
+      log(`📌 Columnas detectadas → Vendedor: ${String.fromCharCode(65+colVendedor)} | Cliente: ${String.fromCharCode(65+colCliente)} | Smartphone: ${String.fromCharCode(65+colSmartphone)}`);
+
+      const rows = raw.slice(1);
+
+      // Vendedores únicos (col J)
+      const vendedoresSet = new Set();
+      rows.forEach(r => {
+        const v = String(r[colVendedor] || '').trim();
+        if (v) vendedoresSet.add(v);
+      });
+
+      // Filtrar PayJoy (col I contiene "PAY JOY")
+      const payjoyRows = rows.filter(r => {
+        const c = String(r[colCliente] || '').trim().toUpperCase();
+        return c.includes('PAY JOY') || c.includes('PAYJOY');
+      });
+
+      // De los PayJoy, los que tienen algo en col N (Smartphone no vacío)
+      const matchRows = payjoyRows.filter(r => {
+        const s = String(r[colSmartphone] || '').trim();
+        return s !== '' && s !== '0' && s.toUpperCase() !== 'NULL' && s.toUpperCase() !== 'UNDEFINED';
+      });
+
+      // Contar por vendedor
+      const counts = {};
+      matchRows.forEach(r => {
+        const v = String(r[colVendedor] || '').trim();
+        if (!v) return;
+        counts[v] = (counts[v] || 0) + 1;
+      });
+
+      // Incluir todos los vendedores únicos (incluso con 0)
+      vendedoresSet.forEach(v => {
+        if (!(v in counts)) counts[v] = 0;
+      });
+
+      allData = Object.entries(counts).map(([name, count]) => ({ name, count }));
+      totalMatches = matchRows.length;
+
+      document.getElementById('statVendedores').textContent = vendedoresSet.size;
+      document.getElementById('statPayjoy').textContent = payjoyRows.length;
+      document.getElementById('statTotal').textContent = matchRows.length;
+
+      log(`✅ Análisis completo — ${vendedoresSet.size} vendedores | ${payjoyRows.length} registros PayJoy | ${matchRows.length} con Smartphone`);
+
+      sortTable('count', false);
+      results.style.display = 'block';
+
+    } catch(err) {
+      log(`❌ Error al leer el archivo: ${err.message}`);
+      dropZone.style.display = 'flex';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function sortTable(col, toggle = true) {
+  if (toggle) sortDir[col] = sortDir[col] === 'asc' ? 'desc' : 'asc';
+  currentSort = col;
+
+  allData.sort((a, b) => {
+    let res = col === 'name'
+      ? a.name.localeCompare(b.name)
+      : a.count - b.count;
+    return sortDir[col] === 'desc' ? -res : res;
+  });
+
+  document.querySelectorAll('th[data-col]').forEach(th => th.classList.remove('sorted'));
+  const active = document.querySelector(`th[data-col="${col}"]`);
+  if (active) {
+    active.classList.add('sorted');
+    active.textContent = (col === 'name' ? 'Vendedor' : 'PayJoy + Smartphone')
+      + (sortDir[col] === 'asc' ? ' ▲' : ' ▾');
+  }
+
+  renderTable(document.getElementById('searchInput').value);
+}
+
+function renderTable(filter = '') {
+  const q = filter.trim().toLowerCase();
+  const filtered = q ? allData.filter(d => d.name.toLowerCase().includes(q)) : allData;
+
+  document.getElementById('totalBadge').textContent = `${filtered.length} vendedores`;
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '';
+  document.getElementById('noData').classList.toggle('no-data', filtered.length > 0);
+  document.getElementById('noData').style.display = filtered.length === 0 ? 'block' : 'none';
+
+  const max = filtered.length ? Math.max(...filtered.map(d => d.count)) : 1;
+
+  // Rank original para medallas (sobre allData ya ordenado por count desc)
+  const rankMap = {};
+  [...allData].sort((a,b) => b.count - a.count).forEach((d, i) => { rankMap[d.name] = i + 1; });
+
+  filtered.forEach((d, i) => {
+    const rank = rankMap[d.name];
+    const pct = max > 0 ? Math.round((d.count / max) * 100) : 0;
+    const totalPct = totalMatches > 0 ? ((d.count / totalMatches) * 100).toFixed(1) : '0.0';
+
+    let medal = `<span class="rank">${rank}</span>`;
+    if (rank === 1) medal = `<span class="medal gold">1</span>`;
+    else if (rank === 2) medal = `<span class="medal silver">2</span>`;
+    else if (rank === 3) medal = `<span class="medal bronze">3</span>`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${medal}</td>
+      <td class="name">${d.name}</td>
+      <td class="count-cell">${d.count}</td>
+      <td>
+        <div class="bar-wrap">
+          <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <span class="pct">${totalPct}%</span>
+        </div>
+      </td>`;
+    body.appendChild(tr);
+  });
+}
+
+function exportExcel() {
+  if (!allData.length) return;
+
+  const sorted = [...allData].sort((a,b) => b.count - a.count);
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja principal: ranking
+  const wsData = [
+    ['#', 'Vendedor', 'PayJoy + Smartphone', '% del Total'],
+    ...sorted.map((d, i) => [
+      i + 1,
+      d.name,
+      d.count,
+      totalMatches > 0 ? parseFloat(((d.count / totalMatches) * 100).toFixed(2)) : 0
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 22 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'PayJoy x Vendedor');
+
+  // Hoja resumen
+  const wsSummary = XLSX.utils.aoa_to_sheet([
+    ['Métrica', 'Valor'],
+    ['Vendedores únicos', new Set(allData.map(d=>d.name)).size],
+    ['Total PayJoy + Smartphone', totalMatches],
+    ['Vendedor top', sorted[0]?.name || ''],
+    ['Ventas del top', sorted[0]?.count || 0],
+  ]);
+  wsSummary['!cols'] = [{ wch: 28 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen');
+
+  XLSX.writeFile(wb, 'PayJoy_Ventas_por_Vendedor.xlsx');
+}
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

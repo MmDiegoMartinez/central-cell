@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kardex de Movimientos · Centralcell</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .compare-table{width:100%;border-collapse:collapse;margin-top:var(--space-md);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--outline-variant);}
+  .compare-table th,.compare-table td{padding:12px 16px;text-align:left;font-size:14px;}
+  .compare-table thead th{background:var(--surface-container-high);color:var(--on-surface);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;}
+  .compare-table tbody tr:nth-child(even){background:var(--surface-container-low);}
+  .compare-table tbody tr:nth-child(odd){background:var(--surface-container-lowest);}
+  .compare-table td{color:var(--on-surface-variant);border-top:1px solid var(--outline-variant);}
+  .compare-table td.feature{color:var(--on-surface);font-weight:600;}
+  .flow-step{
+    display:flex;align-items:center;gap:var(--space-md);
+    background:var(--surface-container-low);border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:10px;
+  }
+  .flow-num{
+    flex:0 0 32px;height:32px;border-radius:var(--radius-full);
+    background:var(--primary);color:var(--on-primary);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div>
+      <h1 class="text-headline-sm sidebar-brand">Centralcell</h1>
+      <p class="text-body-sm sidebar-sub">Capacitación General</p>
+    </div>
+    <button class="sidebar-close material-symbols-outlined" id="sidebarClose" aria-label="Cerrar menú">close</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-label">Capacitación</div>
+    <a class="sidebar-link" href="material.html">
+      <span class="material-symbols-outlined">home</span>Centro de Capacitación
+    </a>
+     <a class="sidebar-link" href="proceso-venta-centralcell.html">
+      <span class="material-symbols-outlined">storefront</span> Proceso de Venta
+    </a>
+    
+  <a class="sidebar-link" href="libro-objeciones-soluciones.html">
+      <span class="material-symbols-outlined">menu_book</span> Libro de Objeciones y Soluciones
+    </a>
+    <a class="sidebar-link active" href="#inicio">
+      <span class="material-symbols-outlined">inventory</span> Kardex de Movimientos
+    </a>
+    <div class="sidebar-steps">
+      <a class="sidebar-step" href="#video">Mira el funcionamiento</a>
+      <a class="sidebar-step" href="#que-es">¿Qué es el Kardex?</a>
+      <a class="sidebar-step" href="#movimientos">5 movimientos principales</a>
+      <a class="sidebar-step" href="#datos">Datos registrados</a>
+      <a class="sidebar-step" href="#procedimiento">Consulta del Kardex</a>
+      <a class="sidebar-step" href="#beneficios">Beneficios</a>
+    </div>
+    
+  </nav>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle material-symbols-outlined" id="menuToggle" aria-label="Abrir menú">menu</button>
+      <h2 class="text-headline-sm" style="margin:0;">Kardex de Movimientos</h2>
+    </div>
+  </header>
+
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="container" id="inicio">
+    <article class="lesson">
+      <div class="lesson-body">
+
+        <span class="eyebrow">Capacitación · Inventario</span>
+        <h1 class="text-headline-lg" style="margin:8px 0 0;">Kardex de Movimientos</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px;">swap_horiz</span> 5 tipos de movimiento</span>
+          <span><span class="material-symbols-outlined" style="font-size:16px;">groups</span> Todo el equipo de piso</span>
+        </div>
+
+      </div>
+
+      <div class="lesson-body">
+
+      <!-- VIDEO -->
+      <section class="step-section" id="video" style="border-top:none;padding-top:0;">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">play_circle</span></div>
+          <h3 class="text-headline-sm step-title">Mira el Funcionamiento</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Observa el video para comprender cómo se utiliza el Kardex de Movimientos.
+        </p>
+        <div class="video-embed">
+          <iframe src="https://www.youtube.com/embed/AHe_Mm3YUlI" title="Kardex de Movimientos" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </section>
+
+      <!-- QUÉ ES -->
+      <section class="step-section" id="que-es">
+        <div class="step-head">
+          <div class="step-num"><span class="material-symbols-outlined">help</span></div>
+          <h3 class="text-headline-sm step-title">¿Qué es el Kardex de Movimientos?</h3>
+        </div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          El Kardex de Movimientos es una herramienta que registra y almacena el historial de todas las entradas y salidas de los productos dentro del inventario. Su función es permitir el seguimiento detallado de cada movimiento realizado, facilitando el control de existencias y la identificación de cualquier ajuste o modificación efectuada sobre un producto.
+        </p>
+        <div class="takeaway">
+          <div class="icon-badge"><span class="material-symbols-outlined">info</span></div>
+          <div><p style="margin:0;">Gracias a esta información es posible conocer cuándo se realizó un movimiento, qué tipo de movimiento fue, cuántas piezas se afectaron y cuál fue el resultado final en el inventario.</p></div>
+        </div>
+      </section>
+
+      <!-- 5 MOVIMIENTOS PRINCIPALES -->
+      <h2 class="text-headline-md" id="movimientos" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">5 Movimientos Principales</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Conoce los cinco movimientos principales que existen dentro del Kardex.
+      </p>
+
+      <section class="step-section" style="border-top:none;padding-top:0;">
+        <div class="step-head">
+          <div class="step-num">01</div>
+          <h3 class="text-headline-sm step-title">Salida por Venta</h3>
+        </div>
+        <div class="sub-note">¿Qué es?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-sm);">
+          Es el movimiento que se genera cuando un producto es vendido a un cliente mediante una operación de venta registrada en el sistema.
+        </p>
+        <div class="sub-note">¿Para qué se utiliza?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Para descontar automáticamente del inventario las piezas que fueron comercializadas.
+        </p>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">02</div>
+          <h3 class="text-headline-sm step-title">Salida por Ajuste</h3>
+        </div>
+        <div class="sub-note">¿Qué es?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-sm);">
+          Es un movimiento que reduce la existencia de un producto en inventario sin que exista una venta de por medio.
+        </p>
+        <div class="sub-note">¿Para qué se utiliza?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Se utiliza principalmente para registrar mermas, garantías, productos dañados, extraviados o cualquier situación en la que el artículo ya no se encuentre físicamente en tienda, pero continúe apareciendo en el inventario.
+        </p>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">03</div>
+          <h3 class="text-headline-sm step-title">Entrada por Ajuste</h3>
+        </div>
+        <div class="sub-note">¿Qué es?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-sm);">
+          Es un movimiento que incrementa la existencia de un producto dentro del inventario mediante una corrección administrativa.
+        </p>
+        <div class="sub-note">¿Para qué se utiliza?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Se emplea cuando existe físicamente mercancía en tienda que no está registrada en el sistema, permitiendo regularizar las existencias.
+        </p>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">04</div>
+          <h3 class="text-headline-sm step-title">Salida por Transferencia</h3>
+        </div>
+        <div class="sub-note">¿Qué es?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-sm);">
+          Es el movimiento que se genera cuando una sucursal envía mercancía a otra sucursal.
+        </p>
+        <div class="sub-note">¿Para qué se utiliza?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Permite descontar del inventario los productos que serán transferidos a otra ubicación.
+        </p>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">05</div>
+          <h3 class="text-headline-sm step-title">Entrada por Transferencia</h3>
+        </div>
+        <div class="sub-note">¿Qué es?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-sm);">
+          Es el movimiento que se registra cuando una sucursal recibe mercancía enviada desde otra sucursal.
+        </p>
+        <div class="sub-note">¿Para qué se utiliza?</div>
+        <p class="text-body-md" style="color:var(--on-surface-variant);">
+          Permite incorporar al inventario los productos recibidos mediante una transferencia.
+        </p>
+      </section>
+
+      <!-- DATOS REGISTRADOS -->
+      <h2 class="text-headline-md" id="datos" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Datos Registrados — Información Disponible en el Kardex</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Cada movimiento registrado muestra información importante para el control y seguimiento del inventario.
+      </p>
+
+      <ul class="step-list check">
+        <li>Tipo de movimiento</li>
+        <li>Número de ajuste o folio</li>
+        <li>Fecha de realización</li>
+        <li>Existencia inicial</li>
+        <li>Cantidad afectada</li>
+        <li>Existencia final</li>
+      </ul>
+
+      <div class="takeaway">
+        <div class="icon-badge"><span class="material-symbols-outlined">info</span></div>
+        <div><p style="margin:0;">Esta información permite conocer con exactitud cómo se modificó el inventario en cada operación realizada.</p></div>
+      </div>
+
+      <!-- PROCEDIMIENTO -->
+      <h2 class="text-headline-md" id="procedimiento" style="margin:var(--space-2xl) 0 4px;scroll-margin-top:80px;">Procedimiento — Consulta del Kardex de Movimientos</h2>
+      <p class="text-body-md" style="color:var(--on-surface-variant);margin:0 0 var(--space-md);">
+        Para consultar el historial de un producto, sigue estos pasos.
+      </p>
+
+      <div>
+        <div class="flow-step"><div class="flow-num">01</div><div>Ingresar al apartado <strong>Almacenes</strong></div></div>
+        <div class="flow-step"><div class="flow-num">02</div><div>Seleccionar la opción <strong>Kardex de Movimientos</strong></div></div>
+        <div class="flow-step"><div class="flow-num">03</div><div>Buscar el producto mediante escaneo o código interno</div></div>
+        <div class="flow-step"><div class="flow-num">04</div><div>Seleccionar el almacén o sucursal correspondiente</div></div>
+        <div class="flow-step"><div class="flow-num">05</div><div>Definir el rango de fechas que se desea consultar</div></div>
+        <div class="flow-step"><div class="flow-num">06</div><div>Aplicar el filtro para visualizar los movimientos registrados</div></div>
+      </div>
+
+      <div class="callout-warning">
+        <div class="icon-badge"><span class="material-symbols-outlined">link</span></div>
+        <div>
+          <h4>🔗 Relación con garantías y mermas</h4>
+          <p>El Kardex también permite validar que los ajustes derivados de garantías y mermas hayan sido aplicados correctamente. Cuando una garantía o merma es procesada, se genera un número de ajuste, el cual debe coincidir con el registrado en el Kardex.</p>
+        </div>
+      </div>
+
+      <!-- BENEFICIOS -->
+      <div class="pinned" id="beneficios" style="scroll-margin-top:80px;">
+        <span class="eyebrow">📈 Beneficios — Importancia del Kardex</span>
+        <h3 class="text-headline-sm" style="color:var(--on-primary);margin:8px 0 var(--space-md);">Trazabilidad Total</h3>
+        <p>La principal ventaja del Kardex de Movimientos es que proporciona total trazabilidad sobre los productos. Todos los movimientos quedan registrados y pueden ser consultados en cualquier momento, lo que facilita la identificación de diferencias de inventario, la validación de ajustes, el seguimiento de transferencias y la resolución de dudas relacionadas con las existencias de la tienda.</p>
+      </div>
+
+      </div>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;width:100%;gap:var(--space-md);">
+      <span>© <span id="current-year"></span> Centralcell · Capacitación General</span>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  document.getElementById('current-year').textContent = new Date().getFullYear();
+
+  // Abrir / cerrar el menú en móvil
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+
+  document.getElementById('menuToggle').addEventListener('click', openSidebar);
+  document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', closeSidebar));
+
+  // Barra de progreso de lectura
+  const fill = document.getElementById('progressFill');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    fill.style.width = scrolled + '%';
+  });
+
+  // Resaltar la sección activa en el sidebar mientras se hace scroll
+  const sections = document.querySelectorAll('#video, #que-es, #movimientos, #datos, #procedimiento, #beneficios');
+  const links = document.querySelectorAll('.sidebar-step');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar-step[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => io.observe(s));
+</script>
+
+</body>
+</html>

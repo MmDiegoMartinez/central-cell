@@ -1,112 +1,293 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ventas Celulares por Modelo — TECNOLOGIA MOVIL</title>
+<link rel="stylesheet" href="../styles.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+
 <style>
-.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-input[type=file],input[type=text]{padding:8px;border-radius:6px;border:1px solid #ccc}
-button{padding:8px 14px;background:#2f6fa6;color:white;border:none;border-radius:6px;cursor:pointer}
-.list{margin-top:20px;background:white;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.1);overflow:hidden}
-.item{padding:10px 14px;border-bottom:1px solid #eee;cursor:pointer}
-.item:hover{background:#f0f6ff}
-.brand{font-weight:bold;color:#00b4d8}
-.model{font-size:14px}
 
-/* Badge de tipo producto */
-.tipo-badge{
-  display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;
-  border-radius:10px;margin-left:6px;vertical-align:middle;
-}
-.tipo-badge.smartphone{background:#e0f7fa;color:#00838f}
-.tipo-badge.basico{background:#ede7f6;color:#5c6bc0}
+  #inputFile{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
 
-.panel{position:fixed;top:0;right:0;width:420px;height:100%;background:white;
-       box-shadow:-4px 0 10px rgba(0,0,0,.15);padding:20px;overflow:auto;display:none}
-.store{padding:8px;border-bottom:1px solid #ddd;cursor:pointer}
-.store:hover{background:#eef4ff}
-.store.total-row{background:#e3f2fd;font-weight:bold;color:#1976d2;cursor:default}
-.product-detail{margin-top:10px;background:#f5f7fa;padding:10px;border-radius:6px}
+  .controls{
+    display:flex;flex-wrap:wrap;gap:var(--space-md);align-items:center;
+    margin-bottom:var(--space-md);
+  }
+  .controls .btn{margin:0;}
+  .search-input{
+    flex:1;min-width:220px;
+    padding:12px 16px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    color:var(--on-surface);
+    font-size:14px;font-family:inherit;
+    transition:border-color .15s ease;
+  }
+  .search-input:focus{outline:none;border-color:var(--primary);}
 
-/* Filtro tipo */
-.filtro-tipo{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.filtro-btn{padding:6px 14px;border-radius:20px;border:2px solid #ccc;background:white;
-            cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
-.filtro-btn.activo{border-color:#00838f;background:#e0f7fa;color:#00838f}
-.filtro-btn.activo.basico{border-color:#5c6bc0;background:#ede7f6;color:#5c6bc0}
+  /* Filtros por tipo de producto */
+  .filtro-tipo{
+    display:flex;flex-wrap:wrap;gap:var(--space-sm);
+    margin-bottom:var(--space-lg);
+  }
+  .filtro-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 16px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-full,999px);
+    background:var(--surface-container-low);
+    color:var(--on-surface-variant);
+    font-size:13px;font-weight:600;font-family:inherit;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .filtro-btn .material-symbols-outlined{font-size:18px;}
+  .filtro-btn:hover{border-color:var(--primary);color:var(--primary);}
+  .filtro-btn.activo{
+    background:var(--primary);border-color:var(--primary);
+    color:var(--on-primary,#fff);
+  }
+  .filtro-btn.basico.activo{
+    background:#5C6BC0;border-color:#5C6BC0;color:#fff;
+  }
+
+  /* Lista de modelos */
+  .model-list{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:var(--space-md);margin-bottom:var(--space-lg);
+  }
+  .model-item{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .model-item:hover{
+    border-color:var(--primary);
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);
+  }
+  .model-item .brand{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    font-weight:700;font-size:14px;color:var(--on-surface);margin-bottom:4px;
+  }
+  .model-item .model-name{
+    font-size:13px;color:var(--on-surface-variant);
+  }
+  .tipo-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--radius-full,999px);
+  }
+  .tipo-badge .material-symbols-outlined{font-size:14px;}
+  .tipo-badge.smartphone{background:rgba(0,131,143,0.12);color:#00838F;}
+  .tipo-badge.basico{background:rgba(92,107,192,0.12);color:#5C6BC0;}
+
+  .empty-state{
+    padding:var(--space-lg);text-align:center;color:var(--on-surface-variant);
+    border:1px dashed var(--outline-variant);border-radius:var(--radius-lg);
+  }
+
+  .loader{
+    display:none;
+    align-items:center;justify-content:center;gap:var(--space-md);
+    padding:var(--space-lg);margin-bottom:var(--space-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+  }
+  .loader.active{display:flex;}
+  .spinner{
+    width:22px;height:22px;border-radius:50%;
+    border:3px solid var(--outline-variant);
+    border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loader-text{font-size:14px;font-weight:600;color:var(--on-surface-variant);}
+
+  /* Panel de detalle */
+  .detail-panel{display:none;}
+  .detail-panel.open{display:block;}
+  .store-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:var(--space-sm);margin:var(--space-md) 0;
+  }
+  .store-chip{
+    padding:10px 14px;border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    border:1px solid var(--outline-variant);
+    font-size:13px;font-weight:600;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .store-chip:hover{border-color:var(--primary);color:var(--primary);}
+  .store-chip.total-row{
+    background:rgba(0,131,143,0.10);border-color:var(--primary);
+    color:var(--primary);cursor:default;
+  }
+  .detail-list{margin-top:var(--space-md);}
+  .detail-row{
+    display:flex;justify-content:space-between;
+    padding:8px 0;border-bottom:1px solid var(--outline-variant);
+    font-size:13px;
+  }
+
+  .sidebar-brand-logo{display:flex;align-items:center;gap:10px;}
+  .sidebar-brand-logo img{border-radius:6px;}
 </style>
-<link rel="stylesheet" href="estilos.css">
 </head>
+
 <body>
-<header>
-  <nav>
-    <div class="nav-inner">
-      <label class="bar-menu">
-        <input type="checkbox" id="menu-check">
-        <span class="top"></span><span class="middle"></span><span class="bottom"></span>
-      </label>
-      <ul id="nav-menu">
-        <li>
-        <a href="../garantias/validador/validador.php" class="menu-link">
-          <span class="logo-container">
-            <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" class="logo" width="25" height="25"/>
-          </span>
-          Home
-        </a>
-      </li>
-      <li>
-        <a href="index.php" class="menu-link">
-          📊 Panel KPIs
-        </a>
-      </li>
-        <li><a href="celularesstock.php">📦 Distribución por Modelo</a></li>
-        <li><a href="analisis_celulares_ventas_existencias.php">📊 Ventas vs Existencias</a></li>
-      </ul>
+
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-brand-logo">
+      <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+      <div>
+        <p class="sidebar-brand text-headline-sm">Central Cell</p>
+        <p class="sidebar-sub text-label-sm">Panel de Análisis de Celulares</p>
+      </div>
     </div>
+    <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <p class="sidebar-label">Navegación</p>
+    <a href="../garantias/validador/validador.php" class="sidebar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="sidebar-link">
+      <span class="material-symbols-outlined">bar_chart</span>
+      Panel de Herramientas
+    </a>
+
+    <a href="analisis_celulares_ventas_existencias.php" class="sidebar-link">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      Ventas vs Existencias
+    </a>
+
+    <a href="celularesstock.php" class="sidebar-link">
+      <span class="material-symbols-outlined">inventory_2</span>
+      Distribución por Modelo
+    </a>
+    <a href="ventascelulares.php" class="sidebar-link active">
+      <span class="material-symbols-outlined">storefront</span>
+      Ventas por Modelo
+    </a>
   </nav>
-</header>
 
-<div class="container">
-  <h1>🛍️ Ventas Celulares por Modelo — TECNOLOGIA MOVIL</h1>
+  <div class="sidebar-foot">
+    <p class="text-label-sm" style="color:var(--outline)">Innovación Móvil</p>
+  </div>
+</aside>
 
-  <div class="controls">
-    <div class="file-upload">
-      <input id="inputFile" type="file" accept=".xlsx,.xls" hidden/>
-      <button class="boton" id="fileButton" type="button">
-        <div class="contenedorCarpeta">
-          <div class="folder folder_one"></div><div class="folder folder_two"></div>
-          <div class="folder folder_three"></div><div class="folder folder_four"></div>
-        </div>
-        <div class="active_line"></div>
-        <span class="text">Análisis de Ventas</span>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ===================== MAIN ===================== -->
+<div class="main">
+
+  <header class="topheader">
+    <div class="topheader-left">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú">
+        <span class="material-symbols-outlined">menu</span>
       </button>
+      <h2 class="text-headline-sm" style="margin:0">Ventas Celulares por Modelo</h2>
     </div>
-    <input type="text" id="search" placeholder="Buscar modelo...">
+  </header>
+
+  <div class="container">
+    <div class="lesson">
+      <div class="lesson-body">
+
+        <span class="eyebrow">Reportes</span>
+        <h1 class="text-headline-lg" style="margin:6px 0 0">Ventas Celulares por Modelo — TECNOLOGIA MOVIL</h1>
+        <div class="lesson-meta">
+          <span><span class="material-symbols-outlined" style="font-size:16px">storefront</span> Tecnología Móvil</span>
+        </div>
+
+        <div class="intro-panel">
+          <div class="icon-badge"><span class="material-symbols-outlined">insights</span></div>
+          <div>
+            <h3 style="margin:0">Explora las ventas por modelo</h3>
+            <p>Carga tu archivo de ventas, filtra por tipo de producto y da clic en un modelo para ver el detalle de ventas por almacén.</p>
+          </div>
+        </div>
+
+        <!-- Paso 1: Carga de archivo -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">1</div>
+            <h3 class="step-title text-headline-sm">Carga tu archivo de ventas</h3>
+          </div>
+
+          <div class="controls">
+            <input type="file" id="inputFile" accept=".xlsx,.xls">
+            <button class="btn btn-outline" id="fileButton" type="button">
+              <span class="material-symbols-outlined">upload_file</span>
+              Seleccionar Archivo de Ventas
+            </button>
+            <input type="text" id="search" class="search-input" placeholder="Buscar modelo...">
+          </div>
+
+          <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <div class="loader-text">Procesando archivo...</div>
+          </div>
+        </section>
+
+        <!-- Paso 2: Filtro y listado -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">2</div>
+            <h3 class="step-title text-headline-sm">Filtra y elige un modelo</h3>
+          </div>
+
+          <div class="filtro-tipo">
+            <button class="filtro-btn activo" data-tipo="TODOS" id="btn-todos">
+              <span class="material-symbols-outlined">apps</span> Todos
+            </button>
+            <button class="filtro-btn" data-tipo="SMARTPHONE" id="btn-smartphone">
+              <span class="material-symbols-outlined">smartphone</span> Smartphone
+            </button>
+            <button class="filtro-btn basico" data-tipo="EQUIPO_BASICO" id="btn-basico">
+              <span class="material-symbols-outlined">dialpad</span> Equipo Básico
+            </button>
+          </div>
+
+          <div id="list" class="model-list"></div>
+        </section>
+
+        <!-- Panel de detalle -->
+        <section class="step-section detail-panel" id="panel">
+          <div class="step-head">
+            <div class="step-num"><span class="material-symbols-outlined" style="font-size:20px">storefront</span></div>
+            <h3 class="step-title text-headline-sm" id="panelTitle"></h3>
+          </div>
+
+          <button class="btn btn-primary" id="download" type="button">
+            <span class="material-symbols-outlined">download</span>
+            Descargar Reporte de Ventas
+          </button>
+
+          <div class="store-grid" id="stores"></div>
+          <div class="detail-list" id="detail"></div>
+        </section>
+
+      </div>
+    </div>
   </div>
 
-  <!-- Filtros por tipo de producto -->
-  <div class="filtro-tipo">
-    <button class="filtro-btn activo" data-tipo="TODOS" id="btn-todos">📋 Todos</button>
-    <button class="filtro-btn" data-tipo="SMARTPHONE" id="btn-smartphone">📱 Smartphone</button>
-    <button class="filtro-btn basico" data-tipo="EQUIPO_BASICO" id="btn-basico">📟 Equipo Básico</button>
-  </div>
-
-  <div id="list" class="list"></div>
-  <div id="loader" class="loader-container" style="display:none;">
-    <div class="cloud front"><span class="left-front"></span><span class="right-front"></span></div>
-    <span class="sun sunshine"></span><span class="sun"></span>
-    <div class="cloud back"><span class="left-back"></span><span class="right-back"></span></div>
-  </div>
-</div>
-
-<div id="panel" class="panel" style="display:none">
-  <h3 id="panelTitle"></h3>
-  <button id="download">📥 Descargar Reporte de Ventas</button>
-  <div id="stores"></div>
-  <div id="detail"></div>
 </div>
 
 <script>
@@ -168,7 +349,7 @@ function formatFecha(d){
 }
 
 function loadExcel(file){
-  loader.style.display = "flex";
+  loader.classList.add('active');
   const reader = new FileReader();
   reader.onload = e =>{
     const wb   = XLSX.read(new Uint8Array(e.target.result), {type:"array"});
@@ -203,7 +384,7 @@ function loadExcel(file){
       });
     }
     renderModels();
-    loader.style.display = "none";
+    loader.classList.remove('active');
   };
   reader.readAsArrayBuffer(file);
 }
@@ -227,24 +408,35 @@ function renderModels(){
     map[key].total += p.cantidad;
   });
 
-  Object.values(map)
-    .sort((a,b)=> b.total - a.total)
-    .forEach(({ marca, modelo, tipo, total })=>{
-      const badgeClass = tipo === 'SMARTPHONE' ? 'smartphone' : 'basico';
-      const badgeLabel = tipo === 'SMARTPHONE' ? '📱 Smartphone' : '📟 Básico';
+  const items = Object.values(map).sort((a,b)=> b.total - a.total);
 
-      const d = document.createElement("div");
-      d.className = "item";
-      d.innerHTML = `
-        <div class="brand">
-          ${marca}
-          <span class="tipo-badge ${badgeClass}">${badgeLabel}</span>
-        </div>
-        <div class="model">${modelo} — ${total} uds</div>
-      `;
-      d.onclick = ()=> openModel(marca, modelo, tipo);
-      list.appendChild(d);
-    });
+  if(!items.length){
+    list.innerHTML = `<div class="empty-state">
+      <span class="material-symbols-outlined" style="font-size:28px">search_off</span>
+      <p style="margin:8px 0 0">No hay modelos que coincidan. Carga un archivo o ajusta la búsqueda.</p>
+    </div>`;
+    return;
+  }
+
+  items.forEach(({ marca, modelo, tipo, total })=>{
+    const badgeClass = tipo === 'SMARTPHONE' ? 'smartphone' : 'basico';
+    const badgeIcon  = tipo === 'SMARTPHONE' ? 'smartphone' : 'dialpad';
+    const badgeLabel = tipo === 'SMARTPHONE' ? 'Smartphone' : 'Básico';
+
+    const d = document.createElement("div");
+    d.className = "model-item";
+    d.innerHTML = `
+      <div class="brand">
+        ${marca}
+        <span class="tipo-badge ${badgeClass}">
+          <span class="material-symbols-outlined">${badgeIcon}</span>${badgeLabel}
+        </span>
+      </div>
+      <div class="model-name">${modelo} — ${total} uds</div>
+    `;
+    d.onclick = ()=> openModel(marca, modelo, tipo);
+    list.appendChild(d);
+  });
 }
 
 /* ── Abrir panel de detalle ── */
@@ -254,7 +446,7 @@ function openModel(marca, modelo, tipo){
   tipoActivo   = tipo;
 
   const panel = document.getElementById("panel");
-  panel.style.display = "block";
+  panel.classList.add('open');
   document.getElementById("stores").innerHTML = "";
   document.getElementById("detail").innerHTML = "";
 
@@ -271,7 +463,7 @@ function openModel(marca, modelo, tipo){
     rangoVentas = "";
   }
 
-  const tipoLabel = tipo === 'SMARTPHONE' ? '📱 Smartphone' : '📟 Equipo Básico';
+  const tipoLabel = tipo === 'SMARTPHONE' ? 'Smartphone' : 'Equipo Básico';
   document.getElementById("panelTitle").textContent =
     `${marca} ${modelo} · ${tipoLabel}${rangoVentas ? " ("+rangoVentas+")" : ""}`;
 
@@ -291,27 +483,28 @@ function openModel(marca, modelo, tipo){
     const total = prods.reduce((s,p)=>s+p.cantidad, 0);
     granTotal  += total;
     const d = document.createElement("div");
-    d.className = "store";
+    d.className = "store-chip";
     d.innerHTML = `${alm} — ${total}`;
     d.onclick   = ()=> showDetail(alm, prods);
     stores.appendChild(d);
   });
 
   const totalDiv = document.createElement("div");
-  totalDiv.className = "store total-row";
+  totalDiv.className = "store-chip total-row";
   totalDiv.innerHTML = `TOTAL — ${granTotal}`;
   stores.appendChild(totalDiv);
+
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 /* ── Detalle por almacén ── */
 function showDetail(alm, prods){
   const detail = document.getElementById("detail");
-  detail.innerHTML = `<h4>${alm}</h4>`;
+  detail.innerHTML = `<h4 style="margin:0 0 8px">${alm}</h4>`;
   const map = {};
   prods.forEach(p=>{ if(!map[p.prod]) map[p.prod]=0; map[p.prod]+=p.cantidad; });
   Object.entries(map).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>{
-    detail.innerHTML +=
-      `<div style="padding:4px 0;border-bottom:1px solid #ddd">${n} — ${c}</div>`;
+    detail.innerHTML += `<div class="detail-row"><span>${n}</span><span>${c}</span></div>`;
   });
 }
 
@@ -359,13 +552,28 @@ document.getElementById("download").onclick = async ()=>{
   a.download= `Ventas_${marcaActiva}_${modeloActivo}.xlsx`;
   a.click();
 };
-
-document.getElementById('menu-check').addEventListener('change', function(){
-  const m = document.getElementById('nav-menu');
-  m.style.opacity       = this.checked ? '1' : '0';
-  m.style.visibility    = this.checked ? 'visible' : 'hidden';
-  m.style.pointerEvents = this.checked ? 'auto' : 'none';
-});
 </script>
+
+<script>
+  // Control del sidebar en móvil (mismo patrón que el resto del panel)
+  const sidebar        = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const menuToggle      = document.getElementById('menuToggle');
+  const sidebarClose    = document.getElementById('sidebarClose');
+
+  function abrirSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('show');
+  }
+  function cerrarSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+  }
+
+  menuToggle.addEventListener('click', abrirSidebar);
+  sidebarClose.addEventListener('click', cerrarSidebar);
+  sidebarOverlay.addEventListener('click', cerrarSidebar);
+</script>
+
 </body>
 </html>

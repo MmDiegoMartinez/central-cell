@@ -155,6 +155,11 @@
     white-space: normal !important;
   }
 }
+.validado-cerrado {
+    background: #d6eaf8 !important;
+    color: #174f72 !important;
+    font-weight: 600;
+}
 </style>
 
 <script>
@@ -503,19 +508,30 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu()
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        initializeData();
+    initializeData();
 
-        document.querySelectorAll('tbody tr').forEach(fila => {
-            const celdas = fila.querySelectorAll('td');
-            celdas.forEach(celda => {
-                if (celda.textContent.includes('(Validado)')) {
-                    [12,13,14,15].forEach(i => { if (celdas[i]) celdas[i].classList.add('validado'); });
+    document.querySelectorAll('tbody tr').forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        const estatus = fila.dataset.estatus;
+
+        celdas.forEach(celda => {
+            if (celda.textContent.includes('(Validado)')) {
+                let claseColor = 'validado'; // verde por defecto
+
+                if (estatus === 'Cerrada') {
+                    claseColor = 'validado-cerrado'; // azul
+                } else if (estatus === 'Ajuste Realizado') {
+                    claseColor = 'validado'; // verde (sin cambios)
                 }
-            });
-            if (celdas[16] && celdas[16].textContent.trim()) celdas[16].classList.add('anotacionvalidador');
-            if (celdas[17] && celdas[17].textContent.trim()) celdas[17].classList.add('anotacionvalidador');
+
+                [12,13,14,15].forEach(i => { if (celdas[i]) celdas[i].classList.add(claseColor); });
+            }
         });
+
+        if (celdas[16] && celdas[16].textContent.trim()) celdas[16].classList.add('anotacionvalidador');
+        if (celdas[17] && celdas[17].textContent.trim()) celdas[17].classList.add('anotacionvalidador');
     });
+});
 
     /* Modal Fotos */
     let fotosActuales = [], fotoIdx = 0;

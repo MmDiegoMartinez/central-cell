@@ -31,20 +31,24 @@ $precioMax = $precios ? (int)ceil(max($precios))  : 99999;
 
 // ── Mapa de colores (búsqueda O(1) con array_key_first match) ─
 const COLOR_MAP = [
+    // ── Compuestos primero (más específicos) ──────────────────
+    'GRIS OBSCURO' => ['#333333','#fff'],
+    'AZUL MARINO'  => ['#5164c0','#fff'],
+    'AZUL CIELO'   => ['#B3E5FC','#0D1B2A'],
+    'VERDE MENTA'  => ['#80cbc4','#333'],
+    'VERDE LIMA'   => ['#AEEA00','#0F1A00'],
+    'HIELO ASTRAL' => ['#BFF6FF','#333'],
+    'ARCTIC GLOW'  => ['#E8F1F7','#1A0B2E'],
+    // ── Simples después ───────────────────────────────────────
     'NEGRO'        => ['#1a1a1a','#fff'],
     'BLANCO'       => ['#f5f5f5','#333'],
-    'GRIS OBSCURO' => ['#333333','#fff'],
     'GRIS'         => ['#9e9e9e','#fff'],
     'PLATA'        => ['#c0c0c0','#333'],
     'PLATEADO'     => ['#c0c0c0','#333'],
     'DORADO'       => ['#c9a84c','#fff'],
     'ORO'          => ['#c9a84c','#fff'],
-    'AZUL MARINO'  => ['#5164c0','#fff'],
-    'AZUL CIELO'   => ['#B3E5FC','#0D1B2A'],
     'AZUL'         => ['#1a73e8','#fff'],
     'CELESTE'      => ['#4fc3f7','#333'],
-    'VERDE MENTA'  => ['#80cbc4','#333'],
-    'VERDE LIMA'   => ['#AEEA00','#0F1A00'],
     'VERDE'        => ['#2e7d32','#fff'],
     'ROJO'         => ['#c62828','#fff'],
     'ROSA'         => ['#f48fb1','#333'],
@@ -55,10 +59,8 @@ const COLOR_MAP = [
     'CAFE'         => ['#5d4037','#fff'],
     'TITANIO'      => ['#8d8d8d','#fff'],
     'OBSIDIANA'    => ['#1C1C1C','#fff'],
-    'HIELO ASTRAL' => ['#BFF6FF','#333'],
     'LAVANDA'      => ['#D8B4F8','#2B1B3A'],
     'VIOLETA'      => ['#A78BFA','#1A0B2E'],
-    
 ];
 
 // Caché de resultados de colorCSS para evitar recalcular el mismo color
@@ -77,7 +79,7 @@ function colorCSS(string $color): string {
 function colorHex(string $color): string { return explode('|', colorCSS($color))[0]; }
 
 function iconoCategoria(string $cat): string {
-    return match($cat) { 'Smartphones'=>'📱','Equipo Básico'=>'📞','Smartwatch'=>'⌚', default=>'📦' };
+    return match($cat) { 'Smartphones'=>'smartphone','Equipo Básico'=>'call','Smartwatch'=>'watch', default=>'inventory_2' };
 }
 
 // Precalcular stock de categoría de forma eficiente
@@ -94,10 +96,29 @@ function stockCategoria(array $marcasGrupo): int {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📱 Catálogo de Smartphones</title>
+<title>Catálogo de Smartphones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  vertical-align: middle;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
 /* ══════════════════════════════════════════════════════════════
    VARIABLES — LIGHT & DARK
    ══════════════════════════════════════════════════════════════ */
@@ -151,12 +172,12 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .aviso-modal { background:var(--surface); border-radius:22px; max-width:460px; width:100%; box-shadow:0 28px 80px rgba(0,0,0,.5); overflow:hidden; animation:avisoUp .35s cubic-bezier(.34,1.4,.64,1); }
 @keyframes avisoUp { from{opacity:0;transform:translateY(30px) scale(.96)} to{opacity:1;transform:none} }
 .aviso-head { background:var(--header-bg); border-bottom:3px solid var(--accent); padding:22px 24px 18px; display:flex; align-items:flex-start; gap:14px; }
-.aviso-head-icon { font-size:34px; flex-shrink:0; line-height:1; }
+.aviso-head-icon { font-size:34px; flex-shrink:0; line-height:1; color:#fff; }
 .aviso-head-title { font-family:var(--display); font-size:18px; font-weight:800; color:#fff; letter-spacing:-.4px; line-height:1.25; }
 .aviso-head-sub { font-size:11px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:1.2px; margin-top:4px; }
 .aviso-body { padding:20px 24px 16px; display:flex; flex-direction:column; gap:9px; max-height:58vh; overflow-y:auto; }
 .aviso-regla-main { background:#FFFBEB; border:1.5px solid #FCD34D; border-radius:14px; padding:14px 16px; font-size:13.5px; line-height:1.6; color:#78350f; }
-.aviso-regla-main strong { font-family:var(--display); font-size:15px; font-weight:800; display:block; margin-bottom:4px; color:#92400e; }
+.aviso-regla-main strong { font-family:var(--display); font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; margin-bottom:4px; color:#92400e; }
 .aviso-regla { display:flex; align-items:flex-start; gap:12px; padding:11px 14px; border-radius:12px; font-size:13px; font-weight:500; line-height:1.5; }
 .aviso-icon { font-size:17px; flex-shrink:0; margin-top:1px; }
 .aviso-regla.green  { background:#F0FDF4; color:#14532d; }
@@ -220,7 +241,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .header-brand { display:flex; align-items:center; gap:10px; flex-shrink:0; }
 .header-brand .dot { width:9px; height:9px; background:var(--accent); border-radius:50%; animation:pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
-.brand-title { font-family:var(--display); font-size:19px; font-weight:800; letter-spacing:-.5px; }
+.brand-title { font-family:var(--display); font-size:19px; font-weight:800; letter-spacing:-.5px; display:flex; align-items:center; gap:8px; }
 
 .header-controls { display:flex; align-items:center; gap:10px; flex-shrink:0; }
 .header-stats { display:flex; gap:10px; }
@@ -256,6 +277,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .sidebar-title { font-family:var(--display); font-size:9.5px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--ink3); padding:0 18px 8px; border-bottom:1px solid var(--border); margin-bottom:6px; }
 .sidebar-btn { display:block; width:100%; text-align:left; padding:9px 18px; background:none; border:none; font-family:var(--sans); font-size:12.5px; font-weight:500; color:var(--ink2); cursor:pointer; transition:all .15s; border-left:3px solid transparent; }
 .sidebar-btn:hover,.sidebar-btn.active { background:var(--surface2); color:var(--ink); border-left-color:var(--accent); }
+.sidebar-btn .material-symbols-outlined { color:var(--ink3); }
+.sidebar-btn:hover .material-symbols-outlined,.sidebar-btn.active .material-symbols-outlined { color:var(--accent); }
 .sb-badges { float:right; display:flex; gap:3px; align-items:center; }
 .sb-badge { font-size:9.5px; border-radius:99px; padding:1px 5px; font-weight:600; line-height:1.6; }
 .sb-badge.stock { background:rgba(26,122,74,.14); color:var(--success); }
@@ -293,9 +316,9 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .rstat-lbl { font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--ink3); margin-top:2px; }
 .rstat.accent .rstat-num { color:var(--accent); }
 .results-actions { display:flex; align-items:center; gap:8px; }
-.clear-btn { display:none; font-size:12px; color:var(--accent); background:none; border:none; cursor:pointer; font-family:var(--sans); font-weight:600; padding:5px 10px; border-radius:7px; transition:background .15s; }
+.clear-btn { display:none; align-items:center; gap:4px; font-size:12px; color:var(--accent); background:none; border:none; cursor:pointer; font-family:var(--sans); font-weight:600; padding:5px 10px; border-radius:7px; transition:background .15s; }
 .clear-btn:hover { background:rgba(232,68,10,.08); }
-.clear-btn.show  { display:block; }
+.clear-btn.show  { display:flex; }
 
 /* Vista toggle */
 .view-toggle { display:flex; gap:2px; background:var(--surface2); border-radius:8px; padding:3px; }
@@ -306,11 +329,11 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 /* ── Categoría ── */
 .cat-bloque  { margin-bottom:48px; }
 .cat-divider { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-.cat-icon    { font-size:26px; flex-shrink:0; }
+.cat-icon    { font-size:26px; flex-shrink:0; color:var(--accent); }
 .cat-label   { font-family:var(--display); font-size:26px; font-weight:800; letter-spacing:-1.5px; }
 .cat-line    { flex:1; height:2px; background:var(--border); border-radius:2px; }
 .cat-counts  { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; gap:2px; }
-.cat-count   { font-size:10.5px; font-weight:600; white-space:nowrap; }
+.cat-count   { font-size:10.5px; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
 .cat-count.s { color:var(--success); }
 
 /* ── Marca ── */
@@ -319,7 +342,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .marca-label  { font-family:var(--display); font-size:15px; font-weight:700; letter-spacing:-.3px; color:var(--ink2); background:var(--surface2); border-radius:8px; padding:4px 13px; transition:background .3s; }
 .marca-line   { flex:1; height:1px; background:var(--border); }
 .marca-counts { display:flex; gap:7px; align-items:center; }
-.marca-count  { font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; white-space:nowrap; }
+.marca-count  { font-size:10px; font-weight:600; padding:2px 7px; border-radius:99px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
 .marca-count.s { background:rgba(26,122,74,.1); color:var(--success); }
 
 /* ══ GRID VIEW ═════════════════════════════════════════════════ */
@@ -399,7 +422,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 .no-results-icon { font-size:52px; margin-bottom:14px; opacity:.4; }
 .no-results h3   { font-family:var(--display); font-size:20px; color:var(--ink2); margin-bottom:6px; }
 
-/* ══ RESPONSIVE ════════════════════════════════════════════════ */
+/* RESPONSIVE  */
 @media(max-width:1060px){ .header-stats{display:none} }
 @media(max-width:900px){
   .layout{grid-template-columns:1fr;}
@@ -426,31 +449,31 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 </head>
 <body>
 
-<!-- ══ LIGHTBOX ════════════════════════════════════════════════ -->
+
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Imagen ampliada">
-  <button class="lightbox-close" onclick="cerrarLightbox()" aria-label="Cerrar">✕</button>
+  <button class="lightbox-close" onclick="cerrarLightbox()" aria-label="Cerrar"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
   <img id="lightboxImg" src="" alt="">
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
-<!-- ══ MODAL AVISO ═════════════════════════════════════════════ -->
+
 <div class="aviso-overlay" id="avisoOverlay" role="dialog" aria-modal="true" aria-labelledby="avisoTitulo">
   <div class="aviso-modal">
     <div class="aviso-head">
-      <div class="aviso-head-icon">📋</div>
+      <div class="aviso-head-icon material-symbols-outlined">checklist</div>
       <div>
         <div class="aviso-head-title" id="avisoTitulo">Protocolo de Traspasos</div>
         <div class="aviso-head-sub">Leer antes de continuar</div>
       </div>
     </div>
     <div class="aviso-body">
-      <div class="aviso-regla-main"><strong>🔁 Traspaso entre tiendas</strong>Todo traspaso debe solicitarse previamente en el grupo, indicando almacén y vendedor, antes de mover el producto.</div>
-      <div class="aviso-regla green"><span class="aviso-icon">✔</span><span>Verificar producto y etiqueta antes de cualquier movimiento.</span></div>
-      <div class="aviso-regla blue"><span class="aviso-icon">📱</span><span>Validar <strong>IMEI</strong> en todos los teléfonos antes del traspaso.</span></div>
-      <div class="aviso-regla green"><span class="aviso-icon">🚚</span><span>Confirmar entrega con <strong>evidencia</strong> fotográfica o de recibo.</span></div>
-      <div class="aviso-regla orange"><span class="aviso-icon">⚠️</span><span>Todo equipo solicitado <strong>debe venderse</strong> o será retirado.</span></div>
-      <div class="aviso-regla orange"><span class="aviso-icon">🚫</span><span>Solo grupos autorizados — <strong>no números personales</strong>.</span></div>
-      <div class="aviso-regla red"><span class="aviso-icon">❗</span><span>Incumplimiento de cualquier punto será motivo de <strong>sanción</strong>.</span></div>
+      <div class="aviso-regla-main"><strong><span class="material-symbols-outlined" style="font-size:15px;">sync_alt</span> Traspaso entre tiendas</strong>Todo traspaso debe solicitarse previamente en el grupo, indicando almacén y vendedor, antes de mover el producto.</div>
+      <div class="aviso-regla green"><span class="aviso-icon material-symbols-outlined">check_circle</span><span>Verificar producto y etiqueta antes de cualquier movimiento.</span></div>
+      <div class="aviso-regla blue"><span class="aviso-icon material-symbols-outlined">smartphone</span><span>Validar <strong>IMEI</strong> en todos los teléfonos antes del traspaso.</span></div>
+      <div class="aviso-regla green"><span class="aviso-icon material-symbols-outlined">local_shipping</span><span>Confirmar entrega con <strong>evidencia</strong> fotográfica o de recibo.</span></div>
+      <div class="aviso-regla orange"><span class="aviso-icon material-symbols-outlined">warning</span><span>Todo equipo solicitado <strong>debe venderse</strong> o será retirado.</span></div>
+      <div class="aviso-regla orange"><span class="aviso-icon material-symbols-outlined">block</span><span>Solo grupos autorizados — <strong>no números personales</strong>.</span></div>
+      <div class="aviso-regla red"><span class="aviso-icon material-symbols-outlined">priority_high</span><span>Incumplimiento de cualquier punto será motivo de <strong>sanción</strong>.</span></div>
     </div>
     <div class="aviso-footer">
       <button class="aviso-btn" id="avisoClose" onclick="cerrarAviso()">Entendido, continuar →</button>
@@ -458,11 +481,11 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
   </div>
 </div>
 
-<!-- ══ HEADER ══════════════════════════════════════════════════ -->
+
 <header class="site-header">
   <div class="header-brand">
     <div class="dot"></div>
-    <div><div class="brand-title">📱 Catálogo</div></div>
+    <div><div class="brand-title"><span class="material-symbols-outlined" style="font-size:19px;">smartphone</span> Catálogo</div></div>
   </div>
 
   <div class="search-wrap">
@@ -477,7 +500,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
         <div class="hstat-lbl">En stock</div>
       </div>
     </div>
-    <button class="dark-toggle" id="darkToggle" title="Cambiar tema" aria-label="Modo oscuro">🌙</button>
+    <button class="dark-toggle" id="darkToggle" title="Cambiar tema" aria-label="Modo oscuro"><span class="material-symbols-outlined" style="font-size:16px;">dark_mode</span></button>
   </div>
 
   <?php if ($fechaActualizacion): ?>
@@ -487,13 +510,12 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
   <?php endif; ?>
 </header>
 
-<!-- ══ LAYOUT ══════════════════════════════════════════════════ -->
+
 <div class="layout">
 
-  <!-- Sidebar -->
+ 
   <aside class="sidebar">
 
-    <!-- Categoría -->
     <div class="sidebar-section">
       <div class="sidebar-title">Categoría</div>
       <div class="sidebar-btns">
@@ -504,7 +526,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
           $sCat = stockCategoria($marcasGrupo);
         ?>
         <button class="sidebar-btn" data-filtro-cat="<?= htmlspecialchars($cat) ?>" onclick="filtrarCat(this,'<?= htmlspecialchars(addslashes($cat)) ?>')">
-          <?= iconoCategoria($cat) ?> <?= htmlspecialchars($cat) ?>
+          <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;"><?= iconoCategoria($cat) ?></span> <?= htmlspecialchars($cat) ?>
           <span class="sb-badges"><span class="sb-badge stock"><?= $sCat ?></span></span>
         </button>
         <?php endforeach; ?>
@@ -532,7 +554,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
       </div>
     </div>
 
-    <!-- Rango de precio -->
+
     <div class="sidebar-section">
       <div class="sidebar-title">Rango de precio</div>
       <div class="price-range-wrap">
@@ -548,7 +570,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
       </div>
     </div>
 
-    <!-- Leyenda -->
+
     <div style="padding:0 0 4px;">
       <div class="dots-legend">
         <span class="dots-legend-dot" style="background:#1a1a1a;"></span>
@@ -560,7 +582,6 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 
   </aside>
 
-  <!-- Main -->
   <main class="main" id="mainArea">
 
     <div class="results-bar">
@@ -571,8 +592,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
         </div>
       </div>
       <div class="results-actions">
-        <button class="clear-btn" id="clearBtn" onclick="limpiarFiltros()">✕ Limpiar</button>
-        <!-- Vista toggle -->
+        <button class="clear-btn" id="clearBtn" onclick="limpiarFiltros()"><span class="material-symbols-outlined" style="font-size:14px;">close</span> Limpiar</button>
+        
         <div class="view-toggle" role="group" aria-label="Vista">
           <button class="view-btn active" id="btnGrid" onclick="setVista('grid')" title="Cuadrícula" aria-pressed="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -585,7 +606,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
     </div>
 
     <div id="noResults" class="no-results">
-      <div class="no-results-icon">🔍</div>
+      <div class="no-results-icon material-symbols-outlined">search_off</div>
       <h3>Sin resultados</h3>
       <p>Intenta ajustar los filtros o el rango de precio.</p>
     </div>
@@ -596,11 +617,11 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
     ?>
     <section class="cat-bloque" data-cat-bloque="<?= htmlspecialchars($cat) ?>">
       <div class="cat-divider">
-        <span class="cat-icon"><?= iconoCategoria($cat) ?></span>
+        <span class="cat-icon material-symbols-outlined"><?= iconoCategoria($cat) ?></span>
         <h2 class="cat-label"><?= htmlspecialchars($cat) ?></h2>
         <div class="cat-line"></div>
         <div class="cat-counts">
-          <span class="cat-count s">🟢 <?= $stockCat ?> en stock</span>
+          <span class="cat-count s"><span class="material-symbols-outlined" style="font-size:10px;color:var(--success);font-variation-settings:'FILL' 1;">circle</span> <?= $stockCat ?> en stock</span>
         </div>
       </div>
 
@@ -612,7 +633,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
           <span class="marca-label"><?= htmlspecialchars($marca) ?></span>
           <div class="marca-line"></div>
           <div class="marca-counts">
-            <span class="marca-count s">🟢 <?= $stockMarcaLocal ?> pzas.</span>
+            <span class="marca-count s"><span class="material-symbols-outlined" style="font-size:10px;color:var(--success);font-variation-settings:'FILL' 1;">circle</span> <?= $stockMarcaLocal ?> pzas.</span>
           </div>
         </div>
 
@@ -664,7 +685,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 
               <?php if ($phone['precio_inconsistente']): ?>
               <div class="price-alert">
-                <div class="price-alert-title">⚠ Precios inconsistentes</div>
+                <div class="price-alert-title">Precios diferentes por color</div>
                 <div class="price-alert-rows">
                   <?php foreach ($phone['precios_por_color'] as $c => $p):
                     $css2 = colorCSS($c); [$bg2] = explode('|',$css2);
@@ -735,27 +756,25 @@ body { font-family:var(--sans); background:var(--bg); color:var(--ink); min-heig
 </div>
 
 <script>
-/* ══════════════════════════════════════════════════════════════
-   CONSTANTES PHP → JS
-   ══════════════════════════════════════════════════════════════ */
+
 const PRECIO_MIN_GLOBAL = <?= $precioMin ?>;
 const PRECIO_MAX_GLOBAL = <?= $precioMax ?>;
 
-/* ══ DARK MODE ═════════════════════════════════════════════════ */
+
 const htmlEl   = document.documentElement;
 const darkBtn  = document.getElementById('darkToggle');
 setTheme(localStorage.getItem('tema') || 'light');
 
 function setTheme(t) {
   htmlEl.setAttribute('data-theme', t);
-  darkBtn.textContent = t === 'dark' ? '☀️' : '🌙';
+  darkBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">' + (t === 'dark' ? 'light_mode' : 'dark_mode') + '</span>';
   localStorage.setItem('tema', t);
 }
 darkBtn.addEventListener('click', () =>
   setTheme(htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')
 );
 
-/* ══ MODAL ══════════════════════════════════════════════════════ */
+
 function cerrarAviso() {
   const el = document.getElementById('avisoOverlay');
   el.classList.add('closing');
@@ -763,7 +782,7 @@ function cerrarAviso() {
 }
 setTimeout(() => document.getElementById('avisoClose')?.focus(), 350);
 
-/* ══ LIGHTBOX ══════════════════════════════════════════════════ */
+
 const lightbox        = document.getElementById('lightbox');
 const lightboxImg     = document.getElementById('lightboxImg');
 const lightboxCaption = document.getElementById('lightboxCaption');
@@ -781,7 +800,6 @@ function cerrarLightbox() {
 }
 lightbox.addEventListener('click', e => { if (e.target === lightbox) cerrarLightbox(); });
 
-/* ══ VISTA GRID / LIST ═════════════════════════════════════════ */
 const mainArea = document.getElementById('mainArea');
 const btnGrid  = document.getElementById('btnGrid');
 const btnList  = document.getElementById('btnList');
@@ -798,17 +816,7 @@ function setVista(v) {
 const vistaGuardada = localStorage.getItem('vista');
 if (vistaGuardada) setVista(vistaGuardada);
 
-/* ══ FILTROS + ORDEN — ALGORITMO OPTIMIZADO ════════════════════
-   - CARDS se cachea al inicio con datos pre-parseados (0 conversiones
-     en caliente). Cada card guarda su índice original para restaurar
-     el orden "por defecto" sin necesidad de re-consultar el DOM.
-   - aplicarFiltros() nunca llama querySelectorAll dentro del loop.
-   - El sort usa DocumentFragment → un solo reflow por grid.
-   - actualizarRango() solo actualiza el UI del slider; llama
-     aplicarFiltros al final (definida antes que el slider).
-   ══════════════════════════════════════════════════════════════ */
 
-// ── Caché de tarjetas con datos pre-parseados ─────────────────
 const CARDS = Array.from(document.querySelectorAll('.card')).map(el => ({
   el,
   modelo : el.dataset.modelo,
@@ -822,7 +830,7 @@ const CARDS = Array.from(document.querySelectorAll('.card')).map(el => ({
   cbEl   : el.closest('.cat-bloque'),
 }));
 
-// ── Caché de contenedores ─────────────────────────────────────
+
 const catBloques  = Array.from(document.querySelectorAll('.cat-bloque'));
 const marcaGrupos = Array.from(document.querySelectorAll('.marca-grupo'));
 
@@ -835,7 +843,7 @@ const hstatStock   = document.getElementById('hstatStock');
 let catActiva   = 'todas';
 let marcaActiva = 'todas';
 
-// Sets reutilizables (evita crear new Set() en cada llamada)
+
 const _visibleMarcas = new Set();
 const _visibleCats   = new Set();
 
@@ -893,13 +901,9 @@ function limpiarFiltros() {
   buscador.value = '';
   rangeMin.value = PRECIO_MIN_GLOBAL;
   rangeMax.value = PRECIO_MAX_GLOBAL;
-  actualizarRango(); // llama aplicarFiltros al final
-}
+  actualizarRango(); 
+                      }
 
-/* ══ SLIDER DE PRECIO — custom pointer drag ════════════════════
-   Sin inputs nativos superpuestos: cada thumb es un <span>
-   que captura pointermove. Funciona en mouse y touch por igual.
-   ══════════════════════════════════════════════════════════════ */
 const lblMin    = document.getElementById('lblMin');
 const lblMax    = document.getElementById('lblMax');
 const rangeFill = document.getElementById('rangeFill');
@@ -909,11 +913,11 @@ const track     = document.getElementById('rangeTrack');
 const STEP      = 100;
 const RANGO_TOTAL = PRECIO_MAX_GLOBAL - PRECIO_MIN_GLOBAL;
 
-// Estado actual del slider
+
 let sliderMin = PRECIO_MIN_GLOBAL;
 let sliderMax = PRECIO_MAX_GLOBAL;
 
-// Exponer como "rangeMin/rangeMax" para que limpiarFiltros() pueda resetear
+
 const rangeMin = { get value() { return sliderMin; }, set value(v) { sliderMin = +v; } };
 const rangeMax = { get value() { return sliderMax; }, set value(v) { sliderMax = +v; } };
 
@@ -966,7 +970,7 @@ function makeDraggable(thumb, isMin) {
     thumb.style.zIndex = '';
   });
 
-  // Teclado: flechas para ajuste fino
+ 
   thumb.addEventListener('keydown', e => {
     const delta = (e.key === 'ArrowRight' || e.key === 'ArrowUp') ? STEP : (e.key === 'ArrowLeft' || e.key === 'ArrowDown') ? -STEP : 0;
     if (!delta) return;
@@ -981,7 +985,7 @@ function makeDraggable(thumb, isMin) {
 makeDraggable(thumbMin, true);
 makeDraggable(thumbMax, false);
 
-// También permitir click directo en el track para mover el thumb más cercano
+
 track.addEventListener('pointerdown', e => {
   if (e.target === thumbMin || e.target === thumbMax) return;
   const val = pxToValue(e.clientX);
@@ -998,12 +1002,11 @@ renderSlider();
 aplicarFiltros();
 
 function actualizarRango() {
-  // Alias para compatibilidad con limpiarFiltros()
   renderSlider();
   aplicarFiltros();
 }
 
-// Debounce para el buscador
+
 let debounceTimer;
 buscador.addEventListener('input', () => {
   clearTimeout(debounceTimer);
