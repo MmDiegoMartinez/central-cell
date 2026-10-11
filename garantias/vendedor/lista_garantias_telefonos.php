@@ -44,6 +44,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         exit;
     }
 
+    /* ── NUEVO: editar registros tipo VENTA (tipo = 2) ── */
+    if ($_POST['accion'] === 'editar_venta') {
+        $id         = intval($_POST['id']);
+        $sucursal   = intval($_POST['sucursal']);
+        $plows      = strtoupper(trim($_POST['plows']));
+        $imei       = trim($_POST['imei']);
+        $tipo_venta = trim($_POST['tipo_venta']);
+
+        if (!preg_match('/^PLOWS\d{6}$/', $plows)) {
+            echo json_encode(['ok' => false, 'msg' => 'PLOWS inválido']);
+            exit;
+        }
+
+        $stmt = $conn->prepare("
+            UPDATE garantias_telefonos SET
+                sucursal   = :sucursal,
+                plows      = :plows,
+                imei       = :imei,
+                tipo_venta = :tipo_venta
+            WHERE id_caso = :id AND tipo = 2
+        ");
+        $stmt->execute([
+            ':sucursal'   => $sucursal,
+            ':plows'      => $plows,
+            ':imei'       => $imei,
+            ':tipo_venta' => $tipo_venta,
+            ':id'         => $id,
+        ]);
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
     echo json_encode(['ok' => false, 'msg' => 'Acción desconocida']);
     exit;
 }
@@ -53,6 +85,7 @@ $conn = conectarBD();
 
 $buscar  = trim($_GET['buscar']     ?? '');
 $sucFil  = intval($_GET['sucursal'] ?? 0);
+$tipoFil = intval($_GET['tipo']     ?? 0); // 0 = todos, 1 = garantía, 2 = venta
 $pagina  = max(1, intval($_GET['pagina'] ?? 1));
 $porPag  = 20;
 $offset  = ($pagina - 1) * $porPag;
@@ -74,6 +107,10 @@ if ($sucFil > 0) {
     $where .= " AND gt.sucursal = :suc";
     $params[':suc'] = $sucFil;
 }
+if ($tipoFil > 0) {
+    $where .= " AND gt.tipo = :tipo";
+    $params[':tipo'] = $tipoFil;
+}
 
 $sqlCount = "SELECT COUNT(*) FROM garantias_telefonos gt $where";
 $stmtC    = $conn->prepare($sqlCount);
@@ -83,7 +120,7 @@ $totalPag = (int) ceil($total / $porPag);
 
 $sql = "
     SELECT
-        gt.id_caso, gt.plows, gt.nombre_cliente, gt.numero_contacto,
+        gt.id_caso, gt.tipo, gt.sucursal, gt.plows, gt.nombre_cliente, gt.numero_contacto,
         gt.numero_ticket, gt.tipo_venta, gt.imei, gt.fecha_registro,
         s.nombre  AS sucursal_nombre,
         v.nombre  AS vendedor_nombre,
@@ -203,6 +240,10 @@ $sucursales = obtenerSucursales();
 .badge-apartado       { background:#f3e8ff; color:#6b21a8; }
 .badge-otro           { background:#f1f5f9; color:#475569; }
 
+/* ── NUEVO: badges tipo de registro (Garantía / Venta) ── */
+.badge-tipo-garantia { background:#e0eaff; color:#1e3a8a; }
+.badge-tipo-venta    { background:#dcfce7; color:#166534; }
+
 /* ── Botones acción tabla ── */
 .btn-accion {
     border: none; border-radius: 6px;
@@ -250,7 +291,6 @@ $sucursales = obtenerSucursales();
 }
 .modal-overlay.activo { display: flex; }
 
-/* reutiliza .modaldos del csstabla.css pero sin conflicto */
 .modal-inner {
     background: var(--surface);
     padding: 28px 32px;
@@ -502,6 +542,15 @@ body { padding-top: 60px; }
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <!-- NUEVO: filtro por tipo de registro -->
+                <div class="filter-group">
+                    <label>Tipo</label>
+                    <select name="tipo" id="select-tipo">
+                        <option value="">Todos</option>
+                        <option value="1" <?= $tipoFil === 1 ? 'selected' : '' ?>>Garantía</option>
+                        <option value="2" <?= $tipoFil === 2 ? 'selected' : '' ?>>Venta</option>
+                    </select>
+                </div>
             </div>
             <div class="filter-buttons">
                 <a href="lista_garantias_telefonos.php" class="btn-clear"
@@ -522,6 +571,7 @@ body { padding-top: 60px; }
             <thead>
                 <tr>
                     <th>Folio</th>
+                    <th>Registro</th>
                     <th>Fecha</th>
                     <th>Cliente</th>
                     <th>Contacto</th>
@@ -545,13 +595,19 @@ body { padding-top: 60px; }
                     'apartado'       => 'badge-apartado',
                     default          => 'badge-otro',
                 };
+                $esVenta = ((int) $r['tipo'] === 2);
             ?>
             <tr>
                 <td class="col-folio"><?= str_pad($r['id_caso'], 5, '0', STR_PAD_LEFT) ?></td>
+                <td>
+                    <span class="badge <?= $esVenta ? 'badge-tipo-venta' : 'badge-tipo-garantia' ?>">
+                        <?= $esVenta ? 'VENTA' : 'GARANTÍA' ?>
+                    </span>
+                </td>
                 <td class="col-fecha"><?= date('d/m/Y H:i', strtotime($r['fecha_registro'])) ?></td>
-                <td class="col-bold"><?= htmlspecialchars($r['nombre_cliente']) ?></td>
+                <td class="col-bold"><?= htmlspecialchars($r['nombre_cliente'] ?? '—') ?></td>
                 <td><?= htmlspecialchars($r['numero_contacto'] ?? '—') ?></td>
-                <td class="col-mono"><?= htmlspecialchars($r['numero_ticket']) ?></td>
+                <td class="col-mono"><?= htmlspecialchars($r['numero_ticket'] ?? '—') ?></td>
                 <td class="col-plows"><?= htmlspecialchars($r['plows']) ?></td>
                 <td class="col-imei"><?= htmlspecialchars($r['imei']) ?></td>
                 <td><?= htmlspecialchars($r['sucursal_nombre'] ?? '—') ?></td>
@@ -565,7 +621,7 @@ body { padding-top: 60px; }
                 <td>
                     <div class="celda-acciones">
                         <button class="btn-accion btn-pdf"
-                                onclick="descargarPDF(<?= $r['id_caso'] ?>, '<?= str_pad($r['id_caso'], 5, '0', STR_PAD_LEFT) ?>')">
+                                onclick="descargarPDF(<?= $r['id_caso'] ?>, '<?= str_pad($r['id_caso'], 5, '0', STR_PAD_LEFT) ?>', <?= (int)$r['tipo'] ?>)">
                             <span class="icon icon-sm">picture_as_pdf</span> PDF
                         </button>
                         <button class="btn-accion btn-editar"
@@ -573,7 +629,7 @@ body { padding-top: 60px; }
                             <span class="icon icon-sm">edit</span>
                         </button>
                         <button class="btn-accion btn-borrar"
-                                onclick="confirmarEliminar(<?= $r['id_caso'] ?>, '<?= htmlspecialchars($r['nombre_cliente'], ENT_QUOTES) ?>')">
+                                onclick="confirmarEliminar(<?= $r['id_caso'] ?>, '<?= htmlspecialchars($r['nombre_cliente'] ?? 'este registro', ENT_QUOTES) ?>')">
                             <span class="icon icon-sm">delete</span>
                         </button>
                     </div>
@@ -587,7 +643,7 @@ body { padding-top: 60px; }
 
     <!-- Paginación -->
     <?php if ($totalPag > 1):
-        $qs  = http_build_query(['buscar' => $buscar, 'sucursal' => $sucFil]);
+        $qs  = http_build_query(['buscar' => $buscar, 'sucursal' => $sucFil, 'tipo' => $tipoFil]);
         $ini = max(1, $pagina - 2);
         $fin = min($totalPag, $pagina + 2);
     ?>
@@ -616,7 +672,7 @@ body { padding-top: 60px; }
 
 </div><!-- /container -->
 
-<!-- ══ Modal Editar ══ -->
+<!-- ══ Modal Editar GARANTÍA (original, sin cambios) ══ -->
 <div id="modal-editar" class="modal-overlay">
     <div class="modal-inner">
         <button class="modal-cerrar" onclick="cerrarModal('modal-editar')"><span class="icon icon-md">close</span></button>
@@ -646,6 +702,39 @@ body { padding-top: 60px; }
         <div class="modal-footer">
             <button class="btn-cancelar" onclick="cerrarModal('modal-editar')">Cancelar</button>
             <button class="btn-ok"       onclick="guardarEdicion()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ Modal Editar VENTA (nuevo) ══ -->
+<div id="modal-editar-venta" class="modal-overlay">
+    <div class="modal-inner">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-editar-venta')"><span class="icon icon-md">close</span></button>
+        <h3><span class="icon icon-md">edit</span> Editar venta</h3>
+        <input type="hidden" id="editv-id">
+
+        <label class="modal-label">Sucursal</label>
+        <select id="editv-sucursal" class="modal-field">
+            <?php foreach ($sucursales as $s): ?>
+            <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre']) ?></option>
+            <?php endforeach; ?>
+        </select>
+
+        <label class="modal-label">PLOWS</label>
+        <input type="text" id="editv-plows" maxlength="11" class="modal-field">
+
+        <label class="modal-label">IMEI</label>
+        <input type="text" id="editv-imei" maxlength="50" class="modal-field">
+
+        <label class="modal-label">Tipo de venta</label>
+        <select id="editv-tipo-venta" class="modal-field">
+            <option value="contado">Contado</option>
+            <option value="credito">PayJoy / Crédito</option>
+        </select>
+
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="cerrarModal('modal-editar-venta')">Cancelar</button>
+            <button class="btn-ok"       onclick="guardarEdicionVenta()">Guardar cambios</button>
         </div>
     </div>
 </div>
@@ -707,7 +796,7 @@ function cerrarModal(id) {
 function abrirModal(id) {
     document.getElementById(id).classList.add('activo');
 }
-['modal-editar','modal-confirm'].forEach(id => {
+['modal-editar','modal-editar-venta','modal-confirm'].forEach(id => {
     document.getElementById(id).addEventListener('click', function(e) {
         if (e.target === this) cerrarModal(id);
     });
@@ -715,13 +804,24 @@ function abrirModal(id) {
 
 /* ── Editar ── */
 function abrirEditar(r) {
-    document.getElementById('edit-id').value       = r.id_caso;
-    document.getElementById('edit-nombre').value   = r.nombre_cliente;
-    document.getElementById('edit-contacto').value = r.numero_contacto || '';
-    document.getElementById('edit-ticket').value   = r.numero_ticket;
-    document.getElementById('edit-tipo').value     = r.tipo_venta;
-    document.getElementById('edit-imei').value     = r.imei;
-    abrirModal('modal-editar');
+    if (parseInt(r.tipo, 10) === 2) {
+        // Venta
+        document.getElementById('editv-id').value         = r.id_caso;
+        document.getElementById('editv-sucursal').value   = r.sucursal;
+        document.getElementById('editv-plows').value      = r.plows;
+        document.getElementById('editv-imei').value       = r.imei;
+        document.getElementById('editv-tipo-venta').value = r.tipo_venta;
+        abrirModal('modal-editar-venta');
+    } else {
+        // Garantía (comportamiento original, sin cambios)
+        document.getElementById('edit-id').value       = r.id_caso;
+        document.getElementById('edit-nombre').value   = r.nombre_cliente;
+        document.getElementById('edit-contacto').value = r.numero_contacto || '';
+        document.getElementById('edit-ticket').value   = r.numero_ticket;
+        document.getElementById('edit-tipo').value     = r.tipo_venta;
+        document.getElementById('edit-imei').value     = r.imei;
+        abrirModal('modal-editar');
+    }
 }
 
 async function guardarEdicion() {
@@ -748,12 +848,36 @@ async function guardarEdicion() {
     }
 }
 
+/* ── NUEVO: guardar edición de VENTA ── */
+async function guardarEdicionVenta() {
+    const datos = new FormData();
+    datos.append('accion',      'editar_venta');
+    datos.append('id',          document.getElementById('editv-id').value);
+    datos.append('sucursal',    document.getElementById('editv-sucursal').value);
+    datos.append('plows',       document.getElementById('editv-plows').value);
+    datos.append('imei',        document.getElementById('editv-imei').value);
+    datos.append('tipo_venta',  document.getElementById('editv-tipo-venta').value);
+    try {
+        const res  = await fetch('lista_garantias_telefonos.php', { method: 'POST', body: datos });
+        const json = await res.json();
+        if (json.ok) {
+            cerrarModal('modal-editar-venta');
+            toast('<span class="icon icon-sm">check_circle</span> Venta actualizada');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            toast('<span class="icon icon-sm">error</span> Error al guardar', 'error');
+        }
+    } catch(e) {
+        toast('<span class="icon icon-sm">error</span> Error de conexión', 'error');
+    }
+}
+
 /* ── Eliminar ── */
 let _eliminarId = 0;
 function confirmarEliminar(id, nombre) {
     _eliminarId = id;
     document.getElementById('confirm-texto').textContent =
-        `¿Seguro que deseas eliminar la garantía de "${nombre}"? Esta acción no se puede deshacer.`;
+        `¿Seguro que deseas eliminar el registro de "${nombre}"? Esta acción no se puede deshacer.`;
     abrirModal('modal-confirm');
 }
 async function ejecutarEliminar() {
@@ -778,12 +902,13 @@ async function ejecutarEliminar() {
 /* ══════════════════════════════════════════════════════
    Auto-filtrado sin botón
    — buscar: debounce 450 ms al escribir
-   — sucursal: inmediato al cambiar
+   — sucursal / tipo: inmediato al cambiar
    ══════════════════════════════════════════════════════ */
 (function () {
-    const form    = document.querySelector('.filters-container form');
-    const buscar  = document.getElementById('input-buscar');
+    const form     = document.querySelector('.filters-container form');
+    const buscar   = document.getElementById('input-buscar');
     const sucursal = document.getElementById('select-sucursal');
+    const tipoSel  = document.getElementById('select-tipo');
 
     function enviar() {
         form.submit();
@@ -796,12 +921,14 @@ async function ejecutarEliminar() {
     });
 
     sucursal.addEventListener('change', enviar);
+    tipoSel.addEventListener('change', enviar);
 })();
 
 /* ══════════════════════════════════════════════════════
-   Descargar PDF — apunta a formato_garantia.php?id=X
+   Descargar PDF — decide entre garantía (?id=) y venta (?id_venta=)
+   según el tipo del registro
    ══════════════════════════════════════════════════════ */
-async function descargarPDF(id, folio) {
+async function descargarPDF(id, folio, tipo) {
     const overlay = document.getElementById('overlay-carga');
     const txtEl   = document.getElementById('texto-carga');
     const barraEl = document.getElementById('barra-fill');
@@ -831,9 +958,13 @@ async function descargarPDF(id, folio) {
         }, p.delay)
     );
 
+    /* ✅ Distinción clave: tipo 2 = venta → ?id_venta=, si no → ?id= (garantía) */
+    const esVenta        = parseInt(tipo, 10) === 2;
+    const param           = esVenta ? 'id_venta' : 'id';
+    const nombreArchivo   = esVenta ? 'Venta-' : 'Garantia-';
+
     try {
-        /* ✅ URL corregida: formato_garantia.php */
-        const resp = await fetch('formato_garantia.php?id=' + id, { method: 'GET' });
+        const resp = await fetch('formato_garantia.php?' + param + '=' + id, { method: 'GET' });
 
         timers.forEach(t => clearTimeout(t));
 
@@ -861,7 +992,7 @@ async function descargarPDF(id, folio) {
         const url = URL.createObjectURL(blob);
         const a   = document.createElement('a');
         a.href     = url;
-        a.download = 'Garantia-' + folio + '.pdf';
+        a.download = nombreArchivo + folio + '.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

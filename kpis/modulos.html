@@ -53,6 +53,75 @@
 
   .mod-wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--space-xl) var(--space-3xl);}
 
+  /* --- Buscador de módulos --- */
+  .module-search{position:relative;max-width:560px;margin-top:var(--space-lg);}
+  .module-search-box{
+    display:flex;align-items:center;gap:10px;
+    padding:0 14px;height:48px;
+    background:var(--surface-container-lowest);
+    border:1px solid var(--outline-variant);
+    border-radius:999px;
+    box-shadow:0 1px 2px rgba(17,28,45,0.06);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .module-search-box:focus-within{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(0,65,145,0.14);
+  }
+  .module-search-box .material-symbols-outlined{font-size:22px;color:var(--outline);}
+  .module-search-box input{
+    flex:1;min-width:0;border:0;outline:0;background:transparent;
+    font:inherit;font-size:15px;color:var(--on-surface);
+  }
+  .module-search-box input::placeholder{color:var(--outline);}
+  .module-search-clear{
+    display:none;background:none;border:0;cursor:pointer;padding:0;line-height:1;
+  }
+  .module-search-clear.show{display:inline-flex;}
+  .module-search-hint{
+    font-size:11px;font-weight:700;color:var(--outline);
+    border:1px solid var(--outline-variant);border-radius:6px;padding:2px 7px;
+  }
+  .module-search-box:focus-within .module-search-hint,
+  .module-search-box.has-text .module-search-hint{display:none;}
+
+  .search-results{
+    display:none;position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:30;
+    max-height:min(420px,60vh);overflow-y:auto;
+    background:var(--surface-container-lowest);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    box-shadow:0 16px 32px rgba(17,28,45,0.18);
+    padding:6px;
+  }
+  .search-results.open{display:block;}
+  .search-item{
+    display:flex;align-items:center;gap:12px;
+    padding:10px 12px;border-radius:12px;
+    color:var(--on-surface);
+  }
+  .search-item.active, .search-item:hover{background:var(--surface-container-low);}
+  .search-item-icon{
+    flex:none;width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .search-item-icon .material-symbols-outlined{
+    font-size:20px;color:#fff;
+    font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;
+  }
+  .search-item-text{min-width:0;flex:1;}
+  .search-item-title{font-size:14px;font-weight:700;line-height:18px;}
+  .search-item-title mark, .search-item-desc mark{background:rgba(0,88,190,0.16);color:inherit;border-radius:3px;padding:0 1px;}
+  .search-item-desc{
+    font-size:12px;line-height:16px;color:var(--on-surface-variant);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .search-item-section{
+    flex:none;font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--outline);
+  }
+  .search-empty{padding:18px 14px;font-size:13.5px;color:var(--on-surface-variant);text-align:center;}
+  @media (max-width:720px){ .search-item-section{display:none;} }
+
   /* --- Etiquetas de sección --- */
   .section-label{
     display:flex;align-items:center;gap:10px;
@@ -150,8 +219,15 @@
   }
   .module-card:hover .module-overlay p,
   .module-card:focus-visible .module-overlay p{
-    max-height:80px;opacity:1;margin-top:6px;
+    max-height:110px;opacity:1;margin-top:6px;
     transform:translateY(0);
+  }
+
+  /* resaltado al llegar desde el buscador */
+  .module-card.flash{animation:cardFlash 1.6s ease;}
+  @keyframes cardFlash{
+    0%,100%{box-shadow:0 1px 2px rgba(17,28,45,0.06);}
+    25%,60%{box-shadow:0 0 0 4px var(--primary), 0 20px 40px rgba(17,28,45,0.22);}
   }
 
   @media (max-width:520px){
@@ -213,6 +289,7 @@
     }
     .module-card:hover{transform:none;}
     .module-art{transform:none !important;}
+    .module-card.flash{animation:none;}
   }
 </style>
 </head>
@@ -236,37 +313,33 @@
   </nav>
 </header>
 
-<!-- ENCABEZADO -->
+<!-- ENCABEZADO + BUSCADOR -->
 <section class="mod-hero">
   <span class="eyebrow">Sistema Centralcell</span>
   <h1 class="text-headline-lg">Panel de Herramientas</h1>
-  <p class="text-body-md">Accede directamente a los reportes y herramientas de análisis. Pasa el cursor sobre cada tarjeta para ver el detalle del módulo.</p>
+  <p class="text-body-md">Accede directamente a los reportes y herramientas de análisis. Busca un módulo por nombre o función, o pasa el cursor sobre cada tarjeta para ver su detalle.</p>
+
+  <div class="module-search" id="moduleSearch" role="search">
+    <label class="module-search-box" id="searchBox">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" id="searchInput" placeholder="Buscar módulo… (ej. inventario, garantías, IMEI)"
+             autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="false" aria-controls="searchResults" aria-autocomplete="list"
+             aria-label="Buscar módulo">
+      <button type="button" class="module-search-clear material-symbols-outlined" id="searchClear" aria-label="Limpiar búsqueda">close</button>
+      <span class="module-search-hint">/</span>
+    </label>
+    <div class="search-results" id="searchResults" role="listbox"></div>
+  </div>
 </section>
 
-<!-- ACCESOS FRECUENTES (discreto, ordenado por frecuencia de uso) -->
+<!-- ACCESOS INTELIGENTES (los 5 módulos más usados; se generan con JS) -->
 <div class="quick-access">
   <div class="quick-access-inner">
-    <span class="quick-access-label">
-      <span class="material-symbols-outlined">bolt</span> Frecuentes
+    <span class="quick-access-label" id="quickLabel">
+      <span class="material-symbols-outlined">bolt</span> <span id="quickLabelText">Frecuentes</span>
     </span>
-    <a class="quick-chip" href="../existencias/index.php">
-      <span class="material-symbols-outlined">warehouse</span> Existencias de Almacenes
-    </a>
-    <a class="quick-chip" href="../garantias/validador/colaboradores.php">
-      <span class="material-symbols-outlined">groups</span> Colaboradores
-    </a>
-     <a class="quick-chip" href="../garantias/validador/maquinas.php">
-      <span class="material-symbols-outlined">store</span> Control de Equipos
-    </a>
-    <a class="quick-chip" href="../garantias/validador/guardar_imagen.php">
-      <span class="material-symbols-outlined">photo_library</span> Gestor de Imágenes
-    </a>
-    <a class="quick-chip" href="semanaventas.php">
-      <span class="material-symbols-outlined">bar_chart</span> Análisis de Ventas
-    </a>
-    <a class="quick-chip" href="telefonos.html">
-      <span class="material-symbols-outlined">smartphone</span> Reconocimiento Ventas Teléfonos
-    </a>
+    <span id="quickChips" style="display:contents;"></span>
   </div>
 </div><br>
 
@@ -276,7 +349,8 @@
   <div class="section-label">Ventas y desempeño</div>
   <div class="module-grid">
 
-    <a class="module-card" href="semanaventas.php">
+    <a class="module-card" href="semanaventas.php" data-module-id="analisis-ventas"
+       data-keywords="ventas metas desempeño tienda vendedor sucursal semana reporte">
       <div class="module-art art-1"><span class="material-symbols-outlined">bar_chart</span></div>
       <div class="module-overlay">
         <h3>Análisis de Ventas</h3>
@@ -284,7 +358,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="telefonos.html">
+    <a class="module-card" href="telefonos.html" data-module-id="reconocimiento-telefonos"
+       data-keywords="celulares smartphones tarjetas reconocimiento vendedor ranking premio">
       <div class="module-art art-2"><span class="material-symbols-outlined">smartphone</span></div>
       <div class="module-overlay">
         <h3>Reconocimiento Ventas Teléfonos</h3>
@@ -292,7 +367,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="analisis_general.php">
+    <a class="module-card" href="analisis_general.php" data-module-id="analisis-multisemana"
+       data-keywords="semanas comparar desempeño semanal vendedores sucursales general tendencia">
       <div class="module-art art-3"><span class="material-symbols-outlined">insights</span></div>
       <div class="module-overlay">
         <h3>Análisis Multisemana</h3>
@@ -300,7 +376,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="comparativo_mensual.php">
+    <a class="module-card" href="comparativo_mensual.php" data-module-id="comparativo-mensual"
+       data-keywords="mes meses aumento disminución variación crecimiento caída ventas">
       <div class="module-art art-4"><span class="material-symbols-outlined">calendar_month</span></div>
       <div class="module-overlay">
         <h3>Comparativo Mensual</h3>
@@ -308,7 +385,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="comparativo_semanal.php">
+    <a class="module-card" href="comparativo_semanal.php" data-module-id="comparativo-semanal"
+       data-keywords="semana semanas aumento disminución variación crecimiento caída ventas">
       <div class="module-art art-1"><span class="material-symbols-outlined">date_range</span></div>
       <div class="module-overlay">
         <h3>Comparativo Semanal</h3>
@@ -316,7 +394,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="comparativo_meses.html">
+    <a class="module-card" href="comparativo_meses.html" data-module-id="comparativo-periodos"
+       data-keywords="periodos fechas rango comparar categoría tienda cambios ventas">
       <div class="module-art art-2"><span class="material-symbols-outlined">event_repeat</span></div>
       <div class="module-overlay">
         <h3>Comparativo de Ventas por Períodos</h3>
@@ -324,7 +403,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="topproductos.php">
+    <a class="module-card" href="topproductos.php" data-module-id="productos-mas-vendidos"
+       data-keywords="top ranking best sellers más vendidos productos artículos">
       <div class="module-art art-3"><span class="material-symbols-outlined">military_tech</span></div>
       <div class="module-overlay">
         <h3>Productos Más Vendidos</h3>
@@ -332,7 +412,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="ticket.php">
+    <a class="module-card" href="ticket.php" data-module-id="tickets-premium"
+       data-keywords="tickets premium recibos notas venta comprobantes">
       <div class="module-art art-4"><span class="material-symbols-outlined">receipt_long</span></div>
       <div class="module-overlay">
         <h3>Tickets Premium</h3>
@@ -340,7 +421,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="analizador_ventas_payjoy.html">
+    <a class="module-card" href="analizador_ventas_payjoy.html" data-module-id="ventas-payjoy"
+       data-keywords="payjoy crédito financiamiento ranking vendedor ventas">
       <div class="module-art art-1"><span class="material-symbols-outlined">payments</span></div>
       <div class="module-overlay">
         <h3>Ventas PayJoy por Vendedor</h3>
@@ -348,11 +430,30 @@
       </div>
     </a>
 
-    <a class="module-card" href="reporte_mobo.html">
+    <a class="module-card" href="reporte_mobo.html" data-module-id="reporte-mobo"
+       data-keywords="mobo excel reporte sucursal categoría descargar ventas">
       <div class="module-art art-2"><span class="material-symbols-outlined">summarize</span></div>
       <div class="module-overlay">
         <h3>Reporte de Ventas MOBO</h3>
         <p>Carga el archivo de ventas y genera automáticamente reportes de ventas MOBO por sucursal y categoría, listos para descargar en Excel.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="An%C3%A1lisis%20de%20productividad.html" data-module-id="analisis-productividad"
+       data-keywords="productividad excel vendedores tiendas seis semanas tendencias desempeño oportunidades mejora informe">
+      <div class="module-art art-3"><span class="material-symbols-outlined">monitoring</span></div>
+      <div class="module-overlay">
+        <h3>Productividad 6 semanas</h3>
+        <p>Analiza archivos de Excel para generar informes de productividad de vendedores y tiendas con datos de las últimas seis semanas. Facilita identificar tendencias, comparar resultados y detectar oportunidades de mejora.</p>
+      </div>
+    </a>
+
+    <a class="module-card" href="analizador_chips.html" data-module-id="analizador-chips"
+       data-keywords="chips sim simcard telefónicos líneas ventas periodos comparar variaciones">
+      <div class="module-art art-4"><span class="material-symbols-outlined">sim_card</span></div>
+      <div class="module-overlay">
+        <h3>Analizador de chips</h3>
+        <p>Analiza las ventas de chips telefónicos de un periodo específico o compara dos periodos para identificar variaciones y entender el desempeño comercial.</p>
       </div>
     </a>
 
@@ -362,7 +463,8 @@
   <div class="section-label">Inventario y productos</div>
   <div class="module-grid">
 
-    <a class="module-card" href="analisisproductos.html">
+    <a class="module-card" href="analisisproductos.html" data-module-id="analisis-inventario"
+       data-keywords="inventario compras ventas existencias stock decisiones productos">
       <div class="module-art art-4"><span class="material-symbols-outlined">inventory_2</span></div>
       <div class="module-overlay">
         <h3>Análisis de Inventario</h3>
@@ -370,7 +472,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="inventario_series.html">
+    <a class="module-card" href="inventario_series.html" data-module-id="escaneo-series"
+       data-keywords="escáner scanner series imei número de serie verificar equipos código barras">
       <div class="module-art art-1"><span class="material-symbols-outlined">qr_code_scanner</span></div>
       <div class="module-overlay">
         <h3>Escaneo de Series</h3>
@@ -378,14 +481,16 @@
       </div>
     </a>
 
-    <a class="module-card" href="analisis_fundas_ventas_existencias.php">
+    <a class="module-card" href="analisis_fundas_ventas_existencias.php" data-module-id="fundas-ventas-existencias"
+       data-keywords="fundas cases carcasas accesorios ventas inventario modelo sucursal">
       <div class="module-art art-2"><span class="material-symbols-outlined">compare_arrows</span></div>
       <div class="module-overlay">
         <h3>Ventas vs Existencias Fundas</h3>
         <p>Reporte que compara ventas e inventario por modelo y sucursal de fundas.</p>
       </div>
     </a>
-    <a class="module-card" href="analisis_celulares_ventas_existencias.php">
+    <a class="module-card" href="analisis_celulares_ventas_existencias.php" data-module-id="celulares-ventas-existencias"
+       data-keywords="celulares teléfonos smartphones equipos ventas inventario modelo sucursal">
       <div class="module-art art-2"><span class="material-symbols-outlined">smartphone</span></div>
       <div class="module-overlay">
         <h3>Ventas vs Existencias Celulares</h3>
@@ -393,7 +498,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="protectores.php">
+    <a class="module-card" href="protectores.php" data-module-id="analisis-protectores"
+       data-keywords="protectores mica cristal templado pantalla ventas sucursal vendedor">
       <div class="module-art art-3"><span class="material-symbols-outlined">shield</span></div>
       <div class="module-overlay">
         <h3>Análisis de Protectores</h3>
@@ -401,7 +507,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="hidrogel-polimero.php">
+    <a class="module-card" href="hidrogel-polimero.php" data-module-id="hidrogel-protection-pro"
+       data-keywords="hidrogel polimero protection pro protectores pantalla ventas">
       <div class="module-art art-4"><span class="material-symbols-outlined">water_drop</span></div>
       <div class="module-overlay">
         <h3>Ventas de Hidrogel y Protection Pro</h3>
@@ -409,7 +516,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="analizador-proveedor.html">
+    <a class="module-card" href="analizador-proveedor.html" data-module-id="compras-proveedor"
+       data-keywords="proveedor compras abastecimiento inventario ventas comparar">
       <div class="module-art art-1"><span class="material-symbols-outlined">local_shipping</span></div>
       <div class="module-overlay">
         <h3>Análisis de Compras por Proveedor</h3>
@@ -417,7 +525,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="comparador_imei.html">
+    <a class="module-card" href="comparador_imei.html" data-module-id="comparador-imei"
+       data-keywords="imei iccid series listas comparar coincidencias diferencias chips">
       <div class="module-art art-2"><span class="material-symbols-outlined">difference</span></div>
       <div class="module-overlay">
         <h3>Comparador de Series IMEI / ICCID</h3>
@@ -425,7 +534,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="transferencias_costos.html">
+    <a class="module-card" href="transferencias_costos.html" data-module-id="analisis-transferencias"
+       data-keywords="transferencias traspasos costos precios movimientos almacenes existencias">
       <div class="module-art art-3"><span class="material-symbols-outlined">sync_alt</span></div>
       <div class="module-overlay">
         <h3>Análisis de Transferencias</h3>
@@ -433,7 +543,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="../existencias/inventario.php">
+    <a class="module-card" href="../existencias/inventario.php" data-module-id="inventarios"
+       data-keywords="inventario conteo físico levantar sucursales auditoría">
       <div class="module-art art-4"><span class="material-symbols-outlined">fact_check</span></div>
       <div class="module-overlay">
         <h3>Inventarios</h3>
@@ -441,7 +552,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="rotacion-smartwhach.html">
+    <a class="module-card" href="rotacion-smartwhach.html" data-module-id="rotacion-smartwatch"
+       data-keywords="smartwatch reloj relojes rotación faltantes excedentes redistribuir existencias">
       <div class="module-art art-3"><span class="material-symbols-outlined">watch</span></div>
       <div class="module-overlay">
         <h3>Rotación Smartwatch</h3>
@@ -455,7 +567,8 @@
   <div class="section-label">Garantías y mermas</div>
   <div class="module-grid">
 
-    <a class="module-card" href="reporte_garantias.php">
+    <a class="module-card" href="reporte_garantias.php" data-module-id="mermas-vs-ventas"
+       data-keywords="mermas garantías pérdidas ventas sucursal comparar">
       <div class="module-art art-1"><span class="material-symbols-outlined">gpp_maybe</span></div>
       <div class="module-overlay">
         <h3>Mermas vs Ventas</h3>
@@ -463,7 +576,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="analisis_mermas.php">
+    <a class="module-card" href="analisis_mermas.php" data-module-id="mermas-frecuentes"
+       data-keywords="mermas incidencia productos dañados pérdidas garantías frecuentes">
       <div class="module-art art-2"><span class="material-symbols-outlined">report</span></div>
       <div class="module-overlay">
         <h3>Mermas Frecuentes</h3>
@@ -477,7 +591,8 @@
   <div class="section-label">Administración y herramientas</div>
   <div class="module-grid">
 
-    <a class="module-card" href="../existencias/index.php">
+    <a class="module-card" href="../existencias/index.php" data-module-id="existencias-almacenes"
+       data-keywords="existencias stock almacenes inventario productos actualizar">
       <div class="module-art art-3"><span class="material-symbols-outlined">warehouse</span></div>
       <div class="module-overlay">
         <h3>Existencias de Almacenes</h3>
@@ -485,7 +600,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="../capacitados/capa.php">
+    <a class="module-card" href="../capacitados/capa.php" data-module-id="capacitacion"
+       data-keywords="capacitación cursos formación entrenamiento colaboradores material">
       <div class="module-art art-4"><span class="material-symbols-outlined">school</span></div>
       <div class="module-overlay">
         <h3>Capacitación</h3>
@@ -493,22 +609,25 @@
       </div>
     </a>
 
-    <a class="module-card" href="../garantias/validador/colaboradores.php">
+    <a class="module-card" href="../garantias/validador/colaboradores.php" data-module-id="colaboradores"
+       data-keywords="colaboradores vendedores empleados personal estatus payjoy cuenta">
       <div class="module-art art-1"><span class="material-symbols-outlined">groups</span></div>
       <div class="module-overlay">
         <h3>Colaboradores</h3>
         <p>Consulta la información de los vendedores, su estatus dentro de la empresa y el estado de su cuenta de PayJoy.</p>
       </div>
     </a>
-     <a class="module-card" href="../garantias/validador/maquinas.php">
-      <div class="module-art art-1"><span class="material-symbols-outlined">store</span></div>
+     <a class="module-card" href="../garantias/validador/maquinas.php" data-module-id="control-equipos"
+        data-keywords="contraseñas passwords claves credenciales accesos equipos máquinas computadoras sucursal control">
+      <div class="module-art art-1"><span class="material-symbols-outlined">key</span></div>
       <div class="module-overlay">
-        <h3>Control de Equipos</h3>
-        <p>Administra las máquinas y credenciales asignadas a cada sucursal desde un solo lugar.</p>
+        <h3>Gestor de contraseñas y equipos</h3>
+        <p>Administra y consulta la información de los equipos de cada sucursal y gestiona sus contraseñas y credenciales de acceso desde un solo lugar.</p>
       </div>
     </a>
 
-    <a class="module-card" href="../garantias/validador/guardar_imagen.php">
+    <a class="module-card" href="../garantias/validador/guardar_imagen.php" data-module-id="gestor-imagenes"
+       data-keywords="imágenes fotos galería archivos subir guardar">
       <div class="module-art art-2"><span class="material-symbols-outlined">photo_library</span></div>
       <div class="module-overlay">
         <h3>Gestor de Imágenes</h3>
@@ -516,7 +635,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="../compatibilidades/consultar.php">
+    <a class="module-card" href="../compatibilidades/consultar.php" data-module-id="compatibilidad-accesorios"
+       data-keywords="compatibilidad fundas protectores mica modelos teléfonos accesorios">
       <div class="module-art art-3"><span class="material-symbols-outlined">phonelink</span></div>
       <div class="module-overlay">
         <h3>Compatibilidad de Accesorios</h3>
@@ -524,7 +644,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="../garantias/validador/sucursales.php">
+    <a class="module-card" href="../garantias/validador/sucursales.php" data-module-id="sucursales"
+       data-keywords="sucursales tiendas metas venta administrar">
       <div class="module-art art-4"><span class="material-symbols-outlined">storefront</span></div>
       <div class="module-overlay">
         <h3>Sucursales</h3>
@@ -532,7 +653,8 @@
       </div>
     </a>
 
-    <a class="module-card" href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing" target="_blank" rel="noopener">
+    <a class="module-card" href="https://docs.google.com/spreadsheets/d/1QIicEhXQNDOwBXIwqZs9Y0KT1MdWluXwdPh68vwlCVc/edit?usp=sharing" target="_blank" rel="noopener" data-module-id="bitacora-negados"
+       data-keywords="bitácora negados rechazados no autorizados registro google sheets hoja de cálculo">
       <div class="module-art art-1"><span class="material-symbols-outlined">assignment_late</span></div>
       <div class="module-overlay">
         <h3>Bitácora de Productos Negados</h3>
@@ -540,14 +662,16 @@
       </div>
     </a>
 
-    <a class="module-card" href="../garantias/validador/validadores.php">
+    <a class="module-card" href="../garantias/validador/validadores.php" data-module-id="validadores"
+       data-keywords="validadores usuarios cuentas permisos garantías accesos">
       <div class="module-art art-2"><span class="material-symbols-outlined">verified_user</span></div>
       <div class="module-overlay">
         <h3>Validadores</h3>
         <p>Administra las cuentas y permisos de los usuarios encargados de validar garantías y procesos.</p>
       </div>
     </a>
-    <a class="module-card" href="descuentos/index.php">
+    <a class="module-card" href="descuentos/index.php" data-module-id="ofertas"
+       data-keywords="ofertas descuentos promociones cupones códigos promocionales">
       <div class="module-art art-3"><span class="material-symbols-outlined">local_offer</span></div>
       <div class="module-overlay">
         <h3>Ofertas</h3>
@@ -574,6 +698,279 @@
   navToggle.addEventListener('click', () => {
     const open = dashNav.classList.toggle('open');
     navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* =========================================================
+     CATÁLOGO DE MÓDULOS
+     Se construye a partir de las tarjetas del HTML (única fuente
+     de verdad): al agregar una tarjeta con data-module-id, el
+     buscador y los accesos inteligentes la reconocen solos.
+     ========================================================= */
+  const MODULES = Array.from(document.querySelectorAll('.module-card[data-module-id]')).map(card => ({
+    id: card.dataset.moduleId,
+    href: card.getAttribute('href'),
+    external: card.getAttribute('target') === '_blank',
+    title: card.querySelector('h3').textContent.trim(),
+    desc: card.querySelector('p').textContent.trim(),
+    icon: card.querySelector('.material-symbols-outlined').textContent.trim(),
+    art: (card.querySelector('.module-art').className.match(/art-\d/) || ['art-1'])[0],
+    keywords: card.dataset.keywords || '',
+    section: (function () {
+      let el = card.parentElement.previousElementSibling;
+      return el && el.classList.contains('section-label') ? el.textContent.trim() : '';
+    })(),
+    card
+  }));
+  const BY_ID = Object.fromEntries(MODULES.map(m => [m.id, m]));
+
+  // Quita acentos y pasa a minúsculas para comparar
+  const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  MODULES.forEach(m => {
+    m.nTitle = norm(m.title);
+    m.nDesc = norm(m.desc);
+    m.nKeys = norm(m.keywords);
+    m.nSection = norm(m.section);
+  });
+
+  /* =========================================================
+     ACCESOS INTELIGENTES (localStorage)
+     ========================================================= */
+  const USAGE_KEY = 'centralcell_modulos_uso_v1';
+  const MAX_SHORTCUTS = 5;
+  // Sugerencias iniciales mientras no haya historial suficiente
+  const DEFAULT_SHORTCUTS = [
+    'existencias-almacenes',
+    'colaboradores',
+    'control-equipos',
+    'gestor-imagenes',
+    'analisis-ventas'
+  ];
+
+  function loadUsage() {
+    try {
+      const data = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}');
+      return (data && typeof data === 'object') ? data : {};
+    } catch (e) { return {}; }
+  }
+  function saveUsage(data) {
+    try { localStorage.setItem(USAGE_KEY, JSON.stringify(data)); } catch (e) { /* almacenamiento no disponible */ }
+  }
+  function registerUse(id) {
+    if (!BY_ID[id]) return;
+    const data = loadUsage();
+    const entry = data[id] || { count: 0, last: 0 };
+    entry.count += 1;
+    entry.last = Date.now();
+    data[id] = entry;
+    saveUsage(data);
+  }
+
+  function getShortcutIds() {
+    const data = loadUsage();
+    // Más usados primero; en empate, el usado más recientemente
+    const used = Object.keys(data)
+      .filter(id => BY_ID[id] && data[id] && data[id].count > 0)
+      .sort((a, b) => (data[b].count - data[a].count) || (data[b].last - data[a].last))
+      .slice(0, MAX_SHORTCUTS);
+    // Si falta historial, se completa con las sugerencias iniciales (sin duplicar)
+    for (const id of DEFAULT_SHORTCUTS) {
+      if (used.length >= MAX_SHORTCUTS) break;
+      if (BY_ID[id] && !used.includes(id)) used.push(id);
+    }
+    return { ids: used, hasHistory: Object.keys(data).some(id => BY_ID[id]) };
+  }
+
+  function renderShortcuts() {
+    const { ids, hasHistory } = getShortcutIds();
+    const box = document.getElementById('quickChips');
+    box.innerHTML = '';
+    ids.forEach(id => {
+      const m = BY_ID[id];
+      const a = document.createElement('a');
+      a.className = 'quick-chip';
+      a.href = m.href;
+      a.dataset.moduleId = m.id;
+      if (m.external) { a.target = '_blank'; a.rel = 'noopener'; }
+      const ic = document.createElement('span');
+      ic.className = 'material-symbols-outlined';
+      ic.textContent = m.icon;
+      a.appendChild(ic);
+      a.appendChild(document.createTextNode(' ' + m.title));
+      box.appendChild(a);
+    });
+    document.getElementById('quickLabelText').textContent = hasHistory ? 'Frecuentes' : 'Sugeridos';
+  }
+
+  // Registro único y consistente: tarjetas, accesos y resultados del buscador
+  function onModuleOpen(e) {
+    if (e.type === 'auxclick' && e.button !== 1) return;
+    const el = e.target.closest('[data-module-id]');
+    if (el) registerUse(el.dataset.moduleId);
+  }
+  document.addEventListener('click', onModuleOpen);
+  document.addEventListener('auxclick', onModuleOpen);
+
+  // Al volver a la página (botón "atrás", otra pestaña) se refrescan los accesos
+  window.addEventListener('pageshow', renderShortcuts);
+  window.addEventListener('focus', renderShortcuts);
+  window.addEventListener('storage', e => { if (e.key === USAGE_KEY) renderShortcuts(); });
+  renderShortcuts();
+
+  /* =========================================================
+     BUSCADOR DE MÓDULOS
+     ========================================================= */
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  const clearBtn = document.getElementById('searchClear');
+  const searchBox = document.getElementById('searchBox');
+  let activeIndex = -1;
+
+  function scoreModule(m, tokens) {
+    let score = 0;
+    for (const t of tokens) {
+      let s = 0;
+      if (m.nTitle.startsWith(t)) s = 6;
+      else if (m.nTitle.split(/\s+/).some(w => w.startsWith(t))) s = 5;
+      else if (m.nTitle.includes(t)) s = 4;
+      else if (m.nKeys.split(/\s+/).some(w => w.startsWith(t))) s = 3;
+      else if (m.nKeys.includes(t)) s = 2;
+      else if (m.nDesc.includes(t) || m.nSection.includes(t)) s = 1;
+      if (!s) return 0;           // todas las palabras deben coincidir
+      score += s;
+    }
+    return score;
+  }
+
+  function highlight(text, tokens) {
+    const frag = document.createDocumentFragment();
+    const n = norm(text);
+    // marca rangos (la normalización NFD sin diacríticos conserva longitudes en estos textos)
+    const marks = new Array(text.length).fill(false);
+    tokens.forEach(t => {
+      let i = n.indexOf(t);
+      while (i !== -1 && t) {
+        for (let k = i; k < i + t.length && k < marks.length; k++) marks[k] = true;
+        i = n.indexOf(t, i + t.length);
+      }
+    });
+    let buf = '', on = false;
+    const flush = () => {
+      if (!buf) return;
+      if (on) { const mk = document.createElement('mark'); mk.textContent = buf; frag.appendChild(mk); }
+      else frag.appendChild(document.createTextNode(buf));
+      buf = '';
+    };
+    for (let i = 0; i < text.length; i++) {
+      if (marks[i] !== on) { flush(); on = marks[i]; }
+      buf += text[i];
+    }
+    flush();
+    return frag;
+  }
+
+  function closeResults() {
+    results.classList.remove('open');
+    input.setAttribute('aria-expanded', 'false');
+    activeIndex = -1;
+  }
+
+  function setActive(i) {
+    const items = results.querySelectorAll('.search-item');
+    items.forEach(el => el.classList.remove('active'));
+    if (!items.length) { activeIndex = -1; return; }
+    activeIndex = (i + items.length) % items.length;
+    items[activeIndex].classList.add('active');
+    items[activeIndex].scrollIntoView({ block: 'nearest' });
+  }
+
+  function renderResults() {
+    const q = input.value.trim();
+    searchBox.classList.toggle('has-text', !!q);
+    clearBtn.classList.toggle('show', !!q);
+    if (!q) { closeResults(); results.innerHTML = ''; return; }
+
+    const tokens = norm(q).split(/\s+/).filter(Boolean);
+    const found = MODULES
+      .map(m => ({ m, s: scoreModule(m, tokens) }))
+      .filter(x => x.s > 0)
+      .sort((a, b) => b.s - a.s || a.m.title.localeCompare(b.m.title, 'es'))
+      .slice(0, 8);
+
+    results.innerHTML = '';
+    if (!found.length) {
+      const empty = document.createElement('div');
+      empty.className = 'search-empty';
+      empty.textContent = 'No se encontraron módulos para "' + q + '".';
+      results.appendChild(empty);
+    } else {
+      found.forEach(({ m }) => {
+        const a = document.createElement('a');
+        a.className = 'search-item';
+        a.href = m.href;
+        a.dataset.moduleId = m.id;
+        a.setAttribute('role', 'option');
+        if (m.external) { a.target = '_blank'; a.rel = 'noopener'; }
+
+        const ico = document.createElement('div');
+        ico.className = 'search-item-icon ' + m.art;
+        ico.innerHTML = '<span class="material-symbols-outlined"></span>';
+        ico.firstChild.textContent = m.icon;
+
+        const txt = document.createElement('div');
+        txt.className = 'search-item-text';
+        const t = document.createElement('div');
+        t.className = 'search-item-title';
+        t.appendChild(highlight(m.title, tokens));
+        const d = document.createElement('div');
+        d.className = 'search-item-desc';
+        d.appendChild(highlight(m.desc, tokens));
+        txt.append(t, d);
+
+        const sec = document.createElement('span');
+        sec.className = 'search-item-section';
+        sec.textContent = m.section;
+
+        a.append(ico, txt, sec);
+        a.addEventListener('mousemove', () => {
+          const idx = Array.from(results.children).indexOf(a);
+          if (idx !== activeIndex) setActive(idx);
+        });
+        results.appendChild(a);
+      });
+    }
+    results.classList.add('open');
+    input.setAttribute('aria-expanded', 'true');
+    setActive(found.length ? 0 : -1);
+  }
+
+  input.addEventListener('input', renderResults);
+  input.addEventListener('focus', () => { if (input.value.trim()) renderResults(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIndex + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIndex - 1); }
+    else if (e.key === 'Enter') {
+      const items = results.querySelectorAll('.search-item');
+      if (items[activeIndex]) { e.preventDefault(); items[activeIndex].click(); } // registra el uso y abre el módulo
+    }
+    else if (e.key === 'Escape') {
+      if (input.value) { input.value = ''; renderResults(); } else input.blur();
+    }
+  });
+  clearBtn.addEventListener('click', () => { input.value = ''; renderResults(); input.focus(); });
+
+  // Cerrar al hacer clic fuera
+  document.addEventListener('click', e => {
+    if (!document.getElementById('moduleSearch').contains(e.target)) closeResults();
+  });
+
+  // Atajo "/" para enfocar el buscador
+  document.addEventListener('keydown', e => {
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(tag) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
   });
 </script>
 

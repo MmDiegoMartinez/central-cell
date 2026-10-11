@@ -7,7 +7,8 @@ include_once '../funciones.php';
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Análisis Completo de Ventas — INNOVACION MOVIL</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- xlsx-js-style: fork de SheetJS con la misma API, pero que sí aplica estilos/colores -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <link rel="stylesheet" href="../styles.css">
   <style>
@@ -638,7 +639,94 @@ function mostrarTablaTiendas(arr, divId, caption) {
   div.innerHTML=html;
 }
 
-/* ─── Descargar Excel con 4 hojas ─────────────────────────────────── */
+/* ─── Descargar Excel con 4 hojas (solo presentación) ─────────────── */
+const COLOR_ENC_IM = '6595EB';
+const COLOR_ENC_TM = '61995F';
+
+/* Semáforo: p llega como decimal (1 = 100 %) */
+function colorPct(p) {
+  const v = p * 100;
+  if (v >= 100) return { bg: 'C6EFCE', fg: '006100' }; // verde
+  if (v >= 70)  return { bg: 'FFEB9C', fg: '7F6000' }; // amarillo
+  return              { bg: 'FFC7CE', fg: '9C0006' };  // rojo
+}
+
+/* Fila final de sucursales: sumas acumuladas y % general
+   (se calcula con los totales, no promediando porcentajes) */
+function filaFinalTiendas(arr, nombre) {
+  if (!arr.length) return null;
+  const sum = k => arr.reduce((a, t) => a + (t[k] || 0), 0);
+  const sumMeta = sum('MetaDiaria');
+  const f = {};
+  Object.keys(arr[0]).forEach(k => {
+    if (k === 'Almacen')            f[k] = nombre;
+    else if (k === 'MetaDiaria')    f[k] = round2(sumMeta);
+    else if (k === 'TotalSemana')   f[k] = round2(sum('TotalSemana'));
+    else if (k === '% CumplSemana') f[k] = sumMeta ? round2((sum('TotalSemana') / (sumMeta * 7)) * 100) : 0;
+    else if (k.endsWith(' Monto'))  f[k] = round2(sum(k));
+    else if (k.endsWith(' %')) {
+      const monto = f[k.replace(' %', ' Monto')] || 0;
+      f[k] = sumMeta ? round2((monto / sumMeta) * 100) : 0;
+    }
+  });
+  return f;
+}
+
+/* Aplica estilos a una hoja ya creada */
+function estilizarHoja(ws, colorEnc, tieneFilaFinal) {
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const borde = { style: 'thin', color: { rgb: 'C4C5D7' } };
+  const bordes = { top: borde, bottom: borde, left: borde, right: borde };
+  const moneyCols = ['MetaDiaria', 'TotalSemana', 'VentasTotales', 'MetaAsignada'];
+  const anchos = [];
+
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const hCell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    const hdr = hCell ? String(hCell.v) : '';
+    const esPct = hdr.includes('%') || hdr === 'PorcentajeCumplimiento';
+    const esMoney = hdr.endsWith(' Monto') || moneyCols.includes(hdr);
+    anchos[c] = { wch: Math.max(hdr.length + 2, 14) };
+
+    for (let r = range.s.r; r <= range.e.r; r++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (!cell) continue;
+      const esFinal = tieneFilaFinal && r === range.e.r;
+
+      if (r === 0) {
+        cell.s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { patternType: 'solid', fgColor: { rgb: colorEnc } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: bordes
+        };
+        continue;
+      }
+
+      const estilo = { border: bordes, alignment: { vertical: 'center' } };
+      if (esFinal) {
+        estilo.font = { bold: true };
+        estilo.fill = { patternType: 'solid', fgColor: { rgb: 'E5E7EB' } };
+        estilo.border = { ...bordes, top: { style: 'medium', color: { rgb: colorEnc } } };
+      }
+      if (esPct && typeof cell.v === 'number') {
+        const col = colorPct(cell.v);
+        cell.z = '0.00%';
+        estilo.fill = { patternType: 'solid', fgColor: { rgb: col.bg } };
+        estilo.font = { bold: esFinal, color: { rgb: col.fg } };
+        estilo.alignment = { horizontal: 'center', vertical: 'center' };
+      } else if (esMoney && typeof cell.v === 'number') {
+        cell.z = '#,##0.00';
+      }
+      cell.s = estilo;
+
+      const len = String(cell.v ?? '').length + 2;
+      if (len > anchos[c].wch) anchos[c].wch = Math.min(len, 40);
+    }
+  }
+  ws['!cols'] = anchos;
+  ws['!rows'] = [{ hpt: 24 }];
+}
+
 function descargaResultados() {
   if(!vendedoresResumenIM.length&&!vendedoresResumenTM.length){
     alert("Procesa el archivo primero."); return;
@@ -652,10 +740,24 @@ function descargaResultados() {
     return n;
   });
 
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pctDecimal(vendedoresResumenIM)), "Metas por Vendedor IM");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pctDecimalTiendas(tiendasResumenIM)), "Analisis Semanal Tienda IM");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pctDecimal(vendedoresResumenTM)), "Metas por Vendedor TM");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pctDecimalTiendas(tiendasResumenTM)), "Analisis Semanal Tienda TM");
+  /* Tiendas + fila final con el nombre de la empresa */
+  const tiendasConFinal = (arr, nombre) => {
+    const fin = filaFinalTiendas(arr, nombre);
+    return pctDecimalTiendas(fin ? [...arr, fin] : arr);
+  };
+
+  const hojas = [
+    { nombre: "Metas por Vendedor IM",       datos: pctDecimal(vendedoresResumenIM),                              color: COLOR_ENC_IM, final: false },
+    { nombre: "Analisis Semanal Tienda IM",  datos: tiendasConFinal(tiendasResumenIM, 'Innovación Móvil'),         color: COLOR_ENC_IM, final: tiendasResumenIM.length > 0 },
+    { nombre: "Metas por Vendedor TM",       datos: pctDecimal(vendedoresResumenTM),                              color: COLOR_ENC_TM, final: false },
+    { nombre: "Analisis Semanal Tienda TM",  datos: tiendasConFinal(tiendasResumenTM, 'Tecnología Móvil'),         color: COLOR_ENC_TM, final: tiendasResumenTM.length > 0 }
+  ];
+
+  hojas.forEach(h => {
+    const ws = XLSX.utils.json_to_sheet(h.datos);
+    if (ws['!ref']) estilizarHoja(ws, h.color, h.final);
+    XLSX.utils.book_append_sheet(wb, ws, h.nombre);
+  });
 
   XLSX.writeFile(wb, 'Resultados_Analisis_Ventas.xlsx');
 }

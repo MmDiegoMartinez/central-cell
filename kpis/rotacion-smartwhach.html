@@ -265,6 +265,18 @@
           <div class="panel" id="panelMovimientos"></div>
         </section>
 
+        <!-- ===== SECCIÓN AGREGADA: faltaba el panel de la Fase 2 (redistribución de excedente en sucursales sin venta) ===== -->
+        <section class="step-section">
+          <div class="step-head">
+            <div class="step-num">6.1</div>
+            <h3 class="step-title text-headline-sm">Redistribución de excedente (sucursales sin venta)</h3>
+          </div>
+          <div class="lesson-meta" style="margin-bottom:8px">
+            <span>Sucursales que no vendieron nada y superan el 50% de su stock original tras la rotación por déficit</span>
+          </div>
+          <div class="panel" id="panelRedistribucionExtra"></div>
+        </section>
+
         <section class="step-section">
           <div class="step-head">
             <div class="step-num">7</div>
@@ -595,6 +607,123 @@ function generarMovimientos(cruce){
   return {movimientos, faltantes};
 }
 
+/* ==================== FASE 2: REDISTRIBUCIÓN DE EXCEDENTE EN SUCURSALES SIN VENTA ====================
+   Regla (a petición de Dego, no modifica la fase 1 de arriba):
+   - Aplica solo a sucursales cuyo total de ventas (todos los modelos) fue 0 en el periodo.
+   - Se calcula el 50% de su existencia ORIGINAL (todos los modelos juntos), contando lo que
+     la fase 1 ya le retiró para cubrir déficits de otras sucursales.
+   - Lo que le falte quitar para llegar a ese 50% se toma de sus modelos con más existencia
+     restante y se manda a las sucursales que más venden (de mayor a menor venta total),
+     priorizando enviarlo a la primera de esas sucursales que NO tenga ese modelo en existencia.
+   - Si ninguna sucursal vendedora le falta ese modelo, se manda a la que tenga MENOS unidades
+     de ese modelo (aunque ya tenga algo).
+*/
+
+// Relaciona cada nombre de modelo (prodDisplay) con su prodKey, usando el mismo criterio
+// de "primera coincidencia" que ya usa generarMovimientos al armar porModelo.
+function obtenerProdKeyPorModelo(cruce){
+  const map = {};
+  for(const r of cruce){
+    if(!(r.prodDisplay in map)) map[r.prodDisplay] = r.prodKey;
+  }
+  return map;
+}
+
+// Existencia por sucursal+modelo después de aplicar los movimientos de la fase 1
+function calcularExistenciaPostFase1(cruce, movimientosFase1, prodKeyPorModelo){
+  const post = {}; // key almacen||prodKey -> existencia
+  for(const r of cruce){
+    post[r.almacen+'||'+r.prodKey] = r.existencia;
+  }
+  for(const m of movimientosFase1){
+    const prodKey = prodKeyPorModelo[m.modelo];
+    if(prodKey===undefined) continue;
+    const kOrigen = m.origen+'||'+prodKey;
+    const kDestino = m.destino+'||'+prodKey;
+    post[kOrigen] = (post[kOrigen]||0) - m.cantidad;
+    post[kDestino] = (post[kDestino]||0) + m.cantidad;
+  }
+  return post;
+}
+
+function generarRedistribucionExcedenteSinVenta(cruce, movimientosFase1, resultadoFinalFase1){
+  const prodKeyPorModelo = obtenerProdKeyPorModelo(cruce);
+  const postModelo = calcularExistenciaPostFase1(cruce, movimientosFase1, prodKeyPorModelo);
+
+  const existenciaDe = (almacen, prodKey) => postModelo[almacen+'||'+prodKey] || 0;
+
+  // Ventas totales por sucursal (todos los modelos), para saber quién no vendió nada
+  // y para armar el ranking de "sucursales que más venden".
+  const ventasPorSucursal = {};
+  for(const r of cruce){
+    ventasPorSucursal[r.almacen] = (ventasPorSucursal[r.almacen]||0) + r.ventas;
+  }
+
+  const rankingVendedoras = Object.entries(ventasPorSucursal)
+    .filter(([, v])=> v>0)
+    .sort((a,b)=> b[1]-a[1])
+    .map(([almacen])=> almacen);
+
+  const movimientosExtra = [];
+
+  for(const resFinal of resultadoFinalFase1){
+    const almacen = resFinal.almacen;
+    const ventasTotales = ventasPorSucursal[almacen] || 0;
+    if(ventasTotales > 0) continue; // solo sucursales SIN ninguna venta
+
+    const stockOriginal = resFinal.existenciaActual; // total original, todos los modelos
+    if(stockOriginal <= 0) continue;
+
+    const objetivo = Math.round(stockOriginal * 0.5); // 50% del stock original
+    let faltaQuitar = resFinal.existenciaFinal - objetivo; // ya considera lo retirado/agregado en fase 1
+    if(faltaQuitar <= 0) continue;
+
+    // Modelos que le quedan a esta sucursal tras la fase 1, del que más piezas tiene al que menos
+    const modelosDisponibles = cruce
+      .filter(r=> r.almacen===almacen)
+      .map(r=> ({prodKey:r.prodKey, prodDisplay:r.prodDisplay, disponible: existenciaDe(almacen, r.prodKey)}))
+      .filter(m=> m.disponible>0)
+      .sort((a,b)=> b.disponible - a.disponible);
+
+    for(const modelo of modelosDisponibles){
+      if(faltaQuitar<=0) break;
+      const cantidadAMover = Math.min(modelo.disponible, faltaQuitar);
+      if(cantidadAMover<=0) continue;
+
+      const candidatas = rankingVendedoras.filter(s=> s!==almacen);
+      if(!candidatas.length) continue;
+
+      // 1) primera sucursal vendedora, en orden de más a menos venta, que NO tenga este modelo
+      let destino = candidatas.find(s=> existenciaDe(s, modelo.prodKey)===0);
+      let leFaltaba = true;
+
+      // 2) si todas ya lo tienen, va a la que tenga MENOS unidades de ese modelo
+      if(!destino){
+        const ordenadasPorExistencia = [...candidatas].sort((a,b)=> existenciaDe(a, modelo.prodKey) - existenciaDe(b, modelo.prodKey));
+        destino = ordenadasPorExistencia[0];
+        leFaltaba = false;
+      }
+
+      movimientosExtra.push({
+        origen: almacen,
+        destino,
+        modelo: modelo.prodDisplay,
+        cantidad: cantidadAMover,
+        motivo: `${almacen} no registró ninguna venta de smartwatches en el periodo y tenía ${stockOriginal} piezas en total (todos los modelos). Tras la rotación por déficit le quedaron ${resFinal.existenciaFinal}; para bajarlo al 50% de su stock original (${objetivo} piezas) se le retiran ${cantidadAMover} unidad(es) de "${modelo.prodDisplay}". Se envían a ${destino}, una de las sucursales con más ventas, ${leFaltaba ? 'que actualmente no tiene este modelo en existencia' : `que es la que menos unidades tiene de este modelo entre las que más venden (${existenciaDe(destino, modelo.prodKey)})`}.`
+      });
+
+      // Reflejar el movimiento en memoria para que el resto de esta misma sucursal
+      // (y otras sucursales sin venta que se procesen después) vean el estado actualizado.
+      postModelo[almacen+'||'+modelo.prodKey] = modelo.disponible - cantidadAMover;
+      postModelo[destino+'||'+modelo.prodKey] = existenciaDe(destino, modelo.prodKey) + cantidadAMover;
+
+      faltaQuitar -= cantidadAMover;
+    }
+  }
+
+  return movimientosExtra;
+}
+
 function clasificarSucursales(cruce, movimientos){
   const recibido = {};
   const enviado = {};
@@ -695,7 +824,7 @@ function renderResultados(a){
     <p><b>Modelos analizados:</b> ${numModelos}</p>
   `;
 
-  // Clasificación sucursales
+  // Clasificación sucursales (ya considera fase 1 + fase 2)
   const {verdes, rojos, amarillos} = a.clasificacion;
   let htmlClas = '<p>🟢 <span class="tag-verde">Necesitan recibir mercancía</span></p>';
   htmlClas += tabla(['Sucursal','Ventas julio','Existencia actual','Unidades a recibir (según propuesta)'],
@@ -720,11 +849,17 @@ function renderResultados(a){
     a.modelos.filter(m=>m.clase==='Rotación nula').map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesExistencia.size]));
   document.getElementById('panelModelos').innerHTML = htmlMod;
 
-  // Movimientos
+  // Movimientos (fase 1: cubrir déficits)
   document.getElementById('panelMovimientos').innerHTML = a.movimientos.length
     ? tabla(['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
         a.movimientos.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo]))
     : '<p>No se detectaron movimientos recomendados con los datos cargados.</p>';
+
+  // Redistribución adicional (fase 2: excedente en sucursales sin venta)
+  document.getElementById('panelRedistribucionExtra').innerHTML = a.movimientosExtra.length
+    ? tabla(['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
+        a.movimientosExtra.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo]))
+    : '<p>No hay sucursales sin venta que superen el 50% de su stock original tras la rotación por déficit.</p>';
 
   // Faltantes
   document.getElementById('panelFaltantes').innerHTML = a.faltantes.length
@@ -738,7 +873,7 @@ function renderResultados(a){
     a.cruce.map(r=>[r.almacen, r.prodDisplay, r.ventas, r.existencia, r.dias, r.rotacionDiaria.toFixed(3), r.recomendacion])
   );
 
-  // Resultado final por sucursal
+  // Resultado final por sucursal (ya considera fase 1 + fase 2)
   document.getElementById('panelResultadoFinal').innerHTML = tabla(
     ['Sucursal','Existencia actual (total)','Unidades retiradas','Unidades agregadas','Existencia final (proyectada)'],
     a.resultadoFinalSucursales.map(r=>[r.almacen, r.existenciaActual, r.unidadesRetiradas, r.unidadesAgregadas, r.existenciaFinal])
@@ -766,7 +901,7 @@ function descargarExcel(a){
   const wsResumen = XLSX.utils.aoa_to_sheet([['Concepto','Valor'], ...resumenRows]);
   XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
 
-  // Hoja 2 - Propuesta de rotación
+  // Hoja 2 - Propuesta de rotación (fase 1: cubrir déficits)
   const wsMov = XLSX.utils.aoa_to_sheet([
     ['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
     ...a.movimientos.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo])
@@ -787,7 +922,7 @@ function descargarExcel(a){
   ]);
   XLSX.utils.book_append_sheet(wb, wsNecesitan, 'Necesitan mercancia');
 
-  // Hoja 4 - Sucursales de las que conviene retirar
+  // Hoja 4 - Sucursales de las que conviene retirar (fase 1)
   const retirarRows = a.movimientos.map(m=>[m.origen, m.modelo, '', '', m.cantidad, `Cede hacia ${m.destino}: ${m.motivo}`]);
   const wsRetirar = XLSX.utils.aoa_to_sheet([
     ['Sucursal','Modelo','Ventas','Existencia actual','Cantidad sugerida para retirar','Motivo'],
@@ -795,21 +930,28 @@ function descargarExcel(a){
   ]);
   XLSX.utils.book_append_sheet(wb, wsRetirar, 'Conviene retirar');
 
-  // Hoja 5 - Analisis de modelos
+  // Hoja 5 - Redistribución de excedente en sucursales sin venta (fase 2, nueva)
+  const wsExtra = XLSX.utils.aoa_to_sheet([
+    ['Sucursal origen','Sucursal destino','Modelo','Cantidad','Motivo'],
+    ...a.movimientosExtra.map(m=>[m.origen, m.destino, m.modelo, m.cantidad, m.motivo])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsExtra, 'Redistribucion excedente');
+
+  // Hoja 6 - Analisis de modelos
   const wsModelos = XLSX.utils.aoa_to_sheet([
     ['Modelo','Ventas totales','Existencia total','Sucursales donde se vende','Sucursales donde existe inventario','Clasificacion de rotacion'],
     ...a.modelos.map(m=>[m.prodDisplay, m.totalVentas, m.totalExistencia, m.sucursalesVenta.size, m.sucursalesExistencia.size, m.clase])
   ]);
   XLSX.utils.book_append_sheet(wb, wsModelos, 'Analisis de modelos');
 
-  // Hoja 6 - Inventario y ventas por sucursal
+  // Hoja 7 - Inventario y ventas por sucursal
   const wsCruce = XLSX.utils.aoa_to_sheet([
     ['Sucursal','Modelo','Unidades vendidas','Existencia actual','Dias del periodo','Rotacion diaria','Recomendacion'],
     ...a.cruce.map(r=>[r.almacen, r.prodDisplay, r.ventas, r.existencia, r.dias, Number(r.rotacionDiaria.toFixed(3)), r.recomendacion])
   ]);
   XLSX.utils.book_append_sheet(wb, wsCruce, 'Sucursal-Modelo');
 
-  // Hoja 7 - Resultado final por sucursal
+  // Hoja 8 - Resultado final por sucursal (fase 1 + fase 2)
   const wsFinal = XLSX.utils.aoa_to_sheet([
     ['Sucursal','Existencia actual (total)','Unidades retiradas','Unidades agregadas','Existencia final (proyectada)'],
     ...a.resultadoFinalSucursales.map(r=>[r.almacen, r.existenciaActual, r.unidadesRetiradas, r.unidadesAgregadas, r.existenciaFinal])
@@ -849,11 +991,16 @@ document.getElementById('btnProcesar').addEventListener('click', async ()=>{
 
     status.textContent = 'Generando propuesta de rotación...';
     const {movimientos, faltantes} = generarMovimientos(cruce);
+    const resultadoFinalFase1 = calcularResultadoFinalSucursales(cruce, movimientos);
 
-    const clasificacion = clasificarSucursales(cruce, movimientos);
-    const resultadoFinalSucursales = calcularResultadoFinalSucursales(cruce, movimientos);
+    status.textContent = 'Redistribuyendo excedente de sucursales sin venta...';
+    const movimientosExtra = generarRedistribucionExcedenteSinVenta(cruce, movimientos, resultadoFinalFase1);
 
-    ULTIMO_ANALISIS = {fechaMin, fechaMax, dias, totalRegistros, cruce, modelos, movimientos, faltantes, clasificacion, resultadoFinalSucursales};
+    const movimientosTotales = [...movimientos, ...movimientosExtra];
+    const clasificacion = clasificarSucursales(cruce, movimientosTotales);
+    const resultadoFinalSucursales = calcularResultadoFinalSucursales(cruce, movimientosTotales);
+
+    ULTIMO_ANALISIS = {fechaMin, fechaMax, dias, totalRegistros, cruce, modelos, movimientos, movimientosExtra, faltantes, clasificacion, resultadoFinalSucursales};
 
     renderResultados(ULTIMO_ANALISIS);
     document.getElementById('btnDescargar').classList.remove('hidden');

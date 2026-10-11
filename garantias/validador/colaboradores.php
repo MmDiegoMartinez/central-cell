@@ -3,6 +3,108 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 require_once '../../funciones.php';
 
+/**
+ * Genera un .xlsx real sin librerías externas (solo requiere la extensión zip de PHP).
+ */
+function generarXlsxSimple(array $encabezados, array $filas, string $nombreArchivo): bool
+{
+    if (!class_exists('ZipArchive')) return false;
+
+    $esc = fn($v) => htmlspecialchars((string) $v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    $col = fn(int $i) => chr(65 + $i); // A..Z (suficiente para pocas columnas)
+
+    $anchos = [];
+    foreach ($encabezados as $i => $h) $anchos[$i] = mb_strlen((string) $h);
+    foreach ($filas as $f) foreach ($f as $i => $v) $anchos[$i] = max($anchos[$i] ?? 0, mb_strlen((string) $v));
+
+    $cols = '';
+    foreach ($anchos as $i => $w) {
+        $n = $i + 1;
+        $cols .= '<col min="' . $n . '" max="' . $n . '" width="' . min(60, $w + 4) . '" customWidth="1"/>';
+    }
+
+    $rows = '<row r="1">';
+    foreach ($encabezados as $i => $h) {
+        $rows .= '<c r="' . $col($i) . '1" s="1" t="inlineStr"><is><t>' . $esc($h) . '</t></is></c>';
+    }
+    $rows .= '</row>';
+
+    foreach ($filas as $r => $f) {
+        $n = $r + 2;
+        $rows .= '<row r="' . $n . '">';
+        foreach ($f as $i => $v) {
+            $ref = $col($i) . $n;
+            if (is_int($v) || (is_string($v) && ctype_digit($v) && $i === 0)) {
+                $rows .= '<c r="' . $ref . '"><v>' . (int) $v . '</v></c>';
+            } else {
+                $rows .= '<c r="' . $ref . '" t="inlineStr"><is><t>' . $esc($v) . '</t></is></c>';
+            }
+        }
+        $rows .= '</row>';
+    }
+
+    $ultima = $col(count($encabezados) - 1);
+    $hoja = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        . '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+        . '<cols>' . $cols . '</cols>'
+        . '<sheetData>' . $rows . '</sheetData>'
+        . '<autoFilter ref="A1:' . $ultima . (count($filas) + 1) . '"/>'
+        . '</worksheet>';
+
+    $estilos = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        . '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>'
+        . '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>'
+        . '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+        . '<fill><patternFill patternType="solid"><fgColor rgb="FF00838F"/><bgColor indexed="64"/></patternFill></fill></fills>'
+        . '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+        . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+        . '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+        . '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>'
+        . '</styleSheet>';
+
+    $tmp = tempnam(sys_get_temp_dir(), 'xlsx');
+    $zip = new ZipArchive();
+    if ($zip->open($tmp, ZipArchive::OVERWRITE) !== true) return false;
+
+    $zip->addFromString('[Content_Types].xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        . '<Default Extension="xml" ContentType="application/xml"/>'
+        . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+        . '</Types>');
+    $zip->addFromString('_rels/.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        . '</Relationships>');
+    $zip->addFromString('xl/workbook.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        . '<sheets><sheet name="Colaboradores" sheetId="1" r:id="rId1"/></sheets></workbook>');
+    $zip->addFromString('xl/_rels/workbook.xml.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+        . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+        . '</Relationships>');
+    $zip->addFromString('xl/styles.xml', $estilos);
+    $zip->addFromString('xl/worksheets/sheet1.xml', $hoja);
+    $zip->close();
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xlsx"');
+    header('Content-Length: ' . filesize($tmp));
+    header('Cache-Control: max-age=0');
+    readfile($tmp);
+    unlink($tmp);
+    return true;
+}
+
 $mensaje_flash = null;
 $accion = $_POST['accion'] ?? '';
 
@@ -49,6 +151,63 @@ switch ($accion) {
         $res = fusionarColaboradores((int) ($_POST['id_origen'] ?? 0), (int) ($_POST['id_destino'] ?? 0));
         $mensaje_flash = ['tipo' => $res['ok'] ? 'success' : 'error', 'texto' => $res['mensaje']];
         break;
+
+    case 'exportar_excel':
+        $datos = obtenerColab();
+        $filas = [];
+        foreach ($datos as $c) {
+            $estado = calcularEstadoPayjoy((int) $c['payjoy_int'], $c['fecha_ingreso']);
+            $filas[] = [
+                (int) $c['id'],
+                $c['nombre'],
+                $c['fecha_ingreso']       ? date('d/m/Y', strtotime($c['fecha_ingreso']))       : '',
+                $c['fecha_capacitacion']  ? date('d/m/Y', strtotime($c['fecha_capacitacion']))  : '',
+                $estado['etiqueta'],
+            ];
+        }
+        $encabezados   = ['#', 'Nombre', 'Fecha ingreso', 'Capacitación', 'PayJoy'];
+        $nombreArchivo = 'colaboradores_' . date('Y-m-d');
+
+        while (ob_get_level()) ob_end_clean();
+
+        // 1) Si existe PhpSpreadsheet, se usa
+        $autoload = __DIR__ . '/../../vendor/autoload.php';
+        if (file_exists($autoload)) require_once $autoload;
+
+        if (class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Colaboradores');
+            $sheet->fromArray($encabezados, null, 'A1');
+            $sheet->fromArray($filas, null, 'A2');
+            $sheet->getStyle('A1:E1')->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '00838F']],
+            ]);
+            foreach (range('A', 'E') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header("Content-Disposition: attachment; filename=\"$nombreArchivo.xlsx\"");
+            header('Cache-Control: max-age=0');
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save('php://output');
+            exit;
+        }
+
+        // 2) Sin librerías: genera el .xlsx directamente (solo requiere la extensión zip)
+        if (generarXlsxSimple($encabezados, $filas, $nombreArchivo)) {
+            exit;
+        }
+
+        // 3) Último recurso: CSV
+        header('Content-Type: text/csv; charset=UTF-8');
+        header("Content-Disposition: attachment; filename=\"$nombreArchivo.csv\"");
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, $encabezados);
+        foreach ($filas as $f) fputcsv($out, $f);
+        fclose($out);
+        exit;
 }
 
 $colaboradores = obtenerColab();
@@ -142,6 +301,8 @@ $colaboradores = obtenerColab();
         border-bottom:1px solid var(--outline-variant);
         background:var(--surface);
       }
+      .panel-header-flex{display:flex;align-items:center;justify-content:space-between;gap:var(--space-sm);flex-wrap:wrap;}
+      .panel-header-flex form{margin:0;}
       .panel-title{font-weight:700;font-size:15px;color:var(--on-surface);}
       .panel-body{padding:var(--space-md);}
       .section-gap{margin-top:var(--space-lg);}
@@ -412,7 +573,18 @@ $colaboradores = obtenerColab();
         </div>
 
         <div class="panel">
-            <div class="panel-header"><span class="panel-title">Lista de colaboradores</span></div>
+            <div class="panel-header panel-header-flex">
+                <span class="panel-title">Lista de colaboradores</span>
+                <?php if (!empty($colaboradores)): ?>
+                <form method="POST" action="">
+                    <input type="hidden" name="accion" value="exportar_excel">
+                    <button type="submit" class="btn btn-accent btn-sm">
+                        <span class="material-symbols-outlined" style="font-size:16px">download</span>
+                        Descargar Excel
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
             <div class="table-wrap">
                 <?php if (empty($colaboradores)): ?>
                     <div class="empty-state">No hay colaboradores registrados.</div>

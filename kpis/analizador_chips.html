@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador de Ventas de Chips</title>
+
+<link rel="stylesheet" href="../styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntico al del Comparador de Series) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  /* Utilidades */
+  .hidden{display:none !important;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-top:var(--space-sm);}
+  .step-hint{font-size:13px;color:var(--on-surface-variant);margin:0 0 var(--space-md);}
+
+  /* Campos de formulario */
+  .row{display:flex;gap:var(--space-md);flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;min-width:180px;}
+  .field label{
+    font-size:12px;font-weight:700;color:var(--on-surface-variant);
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+  input[type=date],select{
+    font-size:13px;font-family:inherit;
+    padding:9px 12px;
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface);color:var(--on-surface);
+  }
+  input[type=date]:focus,select:focus{outline:none;border-color:var(--primary);}
+  .period-block{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    margin-bottom:var(--space-md);
+  }
+  .period-block strong{display:block;font-size:13px;margin-bottom:8px;color:var(--on-surface);}
+  .days-label{font-size:12px;color:var(--on-surface-variant);}
+
+  /* Selector de tipo de análisis */
+  .choice-row{display:flex;gap:var(--space-md);flex-wrap:wrap;}
+  .choice{
+    flex:1;min-width:200px;
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .choice:hover{border-color:var(--primary);}
+  .choice.selected{border-color:var(--primary);background:var(--surface-container-low);box-shadow:inset 0 0 0 1px var(--primary);}
+  .choice strong{display:block;font-size:15px;margin-bottom:4px;color:var(--on-surface);}
+  .choice span{font-size:13px;color:var(--on-surface-variant);}
+
+  /* Zona de carga */
+  .file-drop{
+    display:block;
+    border:2px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    padding:34px 20px;text-align:center;cursor:pointer;
+    background:var(--surface-container-low);
+    color:var(--on-surface);
+    transition:border-color .15s ease;
+  }
+  .file-drop:hover{border-color:var(--primary);}
+  .file-drop input{display:none;}
+  .file-drop .fname{font-size:13px;color:var(--on-surface-variant);margin-top:8px;}
+
+  /* Datos clave */
+  .kv{display:flex;gap:32px;flex-wrap:wrap;margin-top:14px;}
+  .kv div{font-size:12px;color:var(--on-surface-variant);}
+  .kv div b{display:block;font-size:16px;color:var(--on-surface);font-weight:700;margin-top:2px;}
+
+  /* Avisos */
+  .banner{
+    padding:12px 16px;border-radius:var(--radius-lg);
+    font-size:13px;margin-bottom:var(--space-sm);
+  }
+  .banner.error{background:rgba(192,57,43,0.12);color:#C0392B;}
+  .banner.warn{background:rgba(214,158,0,0.15);color:#8A6500;}
+  .banner.ok{background:rgba(0,131,143,0.12);color:#00838F;}
+
+  /* Progreso */
+  .progress-wrap{height:6px;background:var(--outline-variant);border-radius:4px;overflow:hidden;margin:14px 0;}
+  .progress-bar{height:100%;background:var(--primary);width:0%;transition:width .15s ease;}
+
+  /* Resumen */
+  .summary-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:var(--space-md);margin:var(--space-sm) 0;
+  }
+  .summary-grid .stat{
+    padding:14px 16px;
+    border:1px solid var(--outline-variant);
+    border-top:3px solid #00838F;
+    border-radius:var(--radius-lg);
+    background:var(--surface);
+  }
+  .summary-grid .stat .n{font-size:22px;font-weight:700;color:var(--on-surface);}
+  .summary-grid .stat .l{font-size:12px;color:var(--on-surface-variant);margin-top:2px;}
+  .tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .tag{
+    display:inline-flex;align-items:center;
+    padding:4px 10px;border-radius:var(--radius-full,999px);
+    font-size:12px;font-weight:700;
+    background:rgba(0,131,143,0.12);color:#00838F;
+  }
+
+  .page-footer{color:var(--on-surface-variant);font-size:12px;margin-top:var(--space-lg);}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Analizador de Chips</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Herramientas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Analizador de <span>Chips</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">sim_card</span> Ventas de chips por almacén y vendedor</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">analytics</span></div>
+        <div>
+          <h3 style="margin:0">Carga tu Excel y genera el análisis</h3>
+          <p>Procesamiento 100% local en tu navegador. Ningún dato sale de tu equipo.</p>
+        </div>
+      </div>
+
+      <!-- STEP 1: Upload -->
+      <section class="step-section" id="card-1">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Cargar archivo Excel</h3>
+        </div>
+        <p class="step-hint">Selecciona el archivo .xlsx con el detalle de ventas. Se buscarán automáticamente las columnas por su nombre de encabezado (Almacen, N2, Fecha, Vendedor, ProdConcat, Marca), sin importar su posición.</p>
+        <div id="upload-banner"></div>
+        <label class="file-drop" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx">
+          <div>
+            <span class="material-symbols-outlined" style="font-size:28px;display:block;margin-bottom:6px">upload_file</span>
+            Haz clic o arrastra tu archivo .xlsx aquí
+          </div>
+          <div class="fname" id="fname">Ningún archivo seleccionado</div>
+        </label>
+        <div class="progress-wrap hidden" id="uploadProgressWrap"><div class="progress-bar" id="uploadProgressBar"></div></div>
+        <div id="upload-result"></div>
+      </section>
+
+      <!-- STEP 2: Analysis type -->
+      <section class="step-section hidden" id="card-2">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Tipo de análisis</h3>
+        </div>
+        <p class="step-hint">¿Quieres analizar un solo periodo de tiempo o comparar dos periodos entre sí?</p>
+        <div class="choice-row">
+          <div class="choice" data-mode="single">
+            <strong>Analizar un periodo</strong>
+            <span>Ventas totales de un rango de fechas.</span>
+          </div>
+          <div class="choice" data-mode="double">
+            <strong>Comparar dos periodos</strong>
+            <span>Crecimiento o decremento entre dos rangos.</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-to-3" disabled>Continuar</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: Dates -->
+      <section class="step-section hidden" id="card-3">
+        <div class="step-head">
+          <div class="step-num">3</div>
+          <h3 class="step-title text-headline-sm">Selecciona el/los periodo(s)</h3>
+        </div>
+        <p class="step-hint" id="step3hint"></p>
+        <div class="period-block" id="period1-block">
+          <strong>Periodo 1</strong>
+          <div class="row">
+            <div class="field"><label>Fecha inicial</label><input type="date" id="p1start"></div>
+            <div class="field"><label>Fecha final</label><input type="date" id="p1end"></div>
+          </div>
+          <div class="days-label mono" id="p1days"></div>
+        </div>
+        <div class="period-block hidden" id="period2-block">
+          <strong>Periodo 2</strong>
+          <div class="row">
+            <div class="field"><label>Fecha inicial</label><input type="date" id="p2start"></div>
+            <div class="field"><label>Fecha final</label><input type="date" id="p2end"></div>
+          </div>
+          <div class="days-label mono" id="p2days"></div>
+        </div>
+        <div id="dateBanner"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-to-4">Continuar</button>
+        </div>
+      </section>
+
+      <!-- STEP 4: Brand -->
+      <section class="step-section hidden" id="card-4">
+        <div class="step-head">
+          <div class="step-num">4</div>
+          <h3 class="step-title text-headline-sm">Selecciona la marca</h3>
+        </div>
+        <p class="step-hint">Estas son las marcas encontradas dentro del periodo seleccionado con N2 = CHIPS.</p>
+        <div id="brandBanner"></div>
+        <div class="field" style="max-width:280px;">
+          <label>Marca</label>
+          <select id="brandSelect"><option value="">Selecciona una marca…</option></select>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-to-5" disabled>Continuar</button>
+        </div>
+      </section>
+
+      <!-- STEP 5: Generate -->
+      <section class="step-section hidden" id="card-5">
+        <div class="step-head">
+          <div class="step-num">5</div>
+          <h3 class="step-title text-headline-sm">Generar análisis</h3>
+        </div>
+        <p class="step-hint">Se extraerán las variantes/color del producto y se generarán los reportes por almacén y por vendedor.</p>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-generate">
+            <span class="material-symbols-outlined" style="font-size:18px">play_arrow</span>
+            Generar análisis
+          </button>
+        </div>
+        <div class="progress-wrap hidden" id="genProgressWrap"><div class="progress-bar" id="genProgressBar"></div></div>
+      </section>
+
+      <!-- STEP 6: Results -->
+      <section class="step-section hidden" id="card-6">
+        <div class="step-head">
+          <div class="step-num">6</div>
+          <h3 class="step-title text-headline-sm">Descargar resultados</h3>
+        </div>
+        <div id="resultsSummary"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-download">
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Descargar Excel
+          </button>
+          <button class="btn btn-outline" id="btn-restart">
+            <span class="material-symbols-outlined" style="font-size:18px">restart_alt</span>
+            Analizar otro archivo
+          </button>
+        </div>
+      </section>
+
+      <p class="page-footer">El archivo se procesa localmente en tu navegador; ningún dato se envía a un servidor.</p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   UTILS
+   ========================================================================= */
+const Utils = {
+  normalizeHeader(s){
+    return String(s==null?'':s)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().trim();
+  },
+  normalizeSpaces(s){
+    if(s===null || s===undefined) return '';
+    return String(s).replace(/\s+/g,' ').trim();
+  },
+  normUpper(s){ return Utils.normalizeSpaces(s).toUpperCase(); },
+  MONTHS:{jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11},
+  parseDateValue(raw){
+    if(raw===null||raw===undefined||raw==='') return null;
+    if(raw instanceof Date && !isNaN(raw.getTime())) return raw;
+    if(typeof raw === 'number'){
+      // Excel serial date
+      const epoch = new Date(Date.UTC(1899,11,30));
+      const ms = raw*24*60*60*1000;
+      const d = new Date(epoch.getTime()+ms);
+      return isNaN(d.getTime())?null:d;
+    }
+    let str = String(raw).trim();
+    if(str==='') return null;
+    // Format: MMM dd yyyy h:mma with variable amounts of whitespace
+    const m = str.match(/^([A-Za-z]{3})[A-Za-z]*\s+(\d{1,2})\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if(m){
+      const monKey = m[1].toLowerCase();
+      const monthIdx = Utils.MONTHS[monKey];
+      if(monthIdx===undefined) return null;
+      const day = parseInt(m[2],10);
+      const year = parseInt(m[3],10);
+      let hour = parseInt(m[4],10);
+      const minute = parseInt(m[5],10);
+      const ampm = m[6].toUpperCase();
+      if(ampm==='PM' && hour!==12) hour+=12;
+      if(ampm==='AM' && hour===12) hour=0;
+      const d = new Date(year, monthIdx, day, hour, minute, 0);
+      return isNaN(d.getTime())?null:d;
+    }
+    // fallback: try native Date parsing
+    const d2 = new Date(str);
+    return isNaN(d2.getTime())?null:d2;
+  },
+  fmtDateShort(d){
+    if(!d) return '';
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  },
+  toISO(d){
+    if(!d) return '';
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
+    return `${yy}-${mm}-${dd}`;
+  },
+  fromISOStart(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    return new Date(y, m-1, d, 0,0,0,0);
+  },
+  fromISOEnd(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    return new Date(y, m-1, d, 23,59,59,999);
+  },
+  daysBetweenInclusive(start,end){
+    const ms = Utils.fromISOEnd(Utils.toISO(end)) - Utils.fromISOStart(Utils.toISO(start));
+    return Math.round(ms/86400000)+1;
+  },
+  rangesOverlap(s1,e1,s2,e2){
+    return !(e1 < s2 || e2 < s1);
+  },
+  growthPct(p1,p2){
+    if(p1===0 && p2===0) return {value:0,label:'0%',cls:'neutral'};
+    if(p1===0) return {value:null,label:'N/A',cls:'neutral'};
+    const pct = ((p2-p1)/p1)*100;
+    const rounded = Math.round(pct*100)/100;
+    const cls = rounded>0?'pos':(rounded<0?'neg':'neutral');
+    const sign = rounded>0?'+':'';
+    return {value:rounded,label:`${sign}${rounded.toFixed(2)}%`,cls};
+  },
+  yieldToUI(){ return new Promise(r=>setTimeout(r,0)); }
+};
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+const STATE = {
+  headerMap:null,
+  records:[],
+  minDate:null, maxDate:null,
+  mode:null,            // 'single' | 'double'
+  period1:null, period2:null,
+  chipsRecordsByPeriod:[],
+  brands:[],
+  selectedBrand:null,
+  marcaRecordsByPeriod:[],
+  variants:[],
+  report:null
+};
+
+const REQUIRED_HEADERS = ['almacen','n2','fecha','vendedor','prodconcat','marca'];
+
+/* =========================================================================
+   DOM refs
+   ========================================================================= */
+const $ = id => document.getElementById(id);
+
+function setStep(n){
+  for(let i=1;i<=6;i++){
+    const card = $('card-'+i);
+    if(card){
+      card.classList.toggle('hidden', i>n);
+    }
+  }
+  const target = $('card-'+n);
+  if(target && n>1){
+    target.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
+function banner(container, type, msg){
+  container.innerHTML = `<div class="banner ${type}">${msg}</div>`;
+}
+function clearBanner(container){ container.innerHTML=''; }
+
+/* =========================================================================
+   STEP 1: FILE UPLOAD & PARSING
+   ========================================================================= */
+const fileInput = $('fileInput');
+const dropZone = $('dropZone');
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+dropZone.addEventListener('dragover', e=>{e.preventDefault();});
+dropZone.addEventListener('drop', e=>{
+  e.preventDefault();
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+async function handleFile(file){
+  clearBanner($('upload-banner'));
+  $('upload-result').innerHTML='';
+  $('fname').textContent = file.name;
+
+  if(!file.name.toLowerCase().endsWith('.xlsx')){
+    banner($('upload-banner'),'error','El archivo debe tener extensión .xlsx.');
+    return;
+  }
+
+  $('uploadProgressWrap').classList.remove('hidden');
+  setProgress('uploadProgressBar', 8);
+
+  try{
+    const buffer = await file.arrayBuffer();
+    setProgress('uploadProgressBar', 25);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buffer);
+    setProgress('uploadProgressBar', 45);
+
+    const ws = wb.worksheets[0];
+    if(!ws || ws.rowCount===0){
+      banner($('upload-banner'),'error','El archivo está vacío o no contiene hojas con datos.');
+      $('uploadProgressWrap').classList.add('hidden');
+      return;
+    }
+
+    // Find header row (scan first 5 rows)
+    const headerMap = findHeaderRow(ws, 5);
+    if(!headerMap.ok){
+      banner($('upload-banner'),'error',`No se encontraron todas las columnas requeridas. Faltan: <b>${headerMap.missing.join(', ')}</b>. Verifica los nombres de encabezado en el archivo.`);
+      $('uploadProgressWrap').classList.add('hidden');
+      return;
+    }
+    STATE.headerMap = headerMap.map;
+    setProgress('uploadProgressBar', 55);
+
+    // Extract rows in batches so the UI stays responsive
+    const records = [];
+    let invalidDates = 0, emptyMarca=0, emptyProd=0, emptyAlmacen=0, emptyVendedor=0;
+    const startRow = headerMap.rowNumber+1;
+    const totalRows = ws.rowCount - headerMap.rowNumber;
+    let processed = 0;
+    const BATCH = 3000;
+
+    for(let r=startRow;r<=ws.rowCount;r++){
+      const row = ws.getRow(r);
+      if(row.actualCellCount>0 || row.hasValues){
+        const almacenRaw = row.getCell(headerMap.map.almacen).value;
+        const n2Raw = row.getCell(headerMap.map.n2).value;
+        const fechaRaw = row.getCell(headerMap.map.fecha).value;
+        const vendedorRaw = row.getCell(headerMap.map.vendedor).value;
+        const prodRaw = row.getCell(headerMap.map.prodconcat).value;
+        const marcaRaw = row.getCell(headerMap.map.marca).value;
+
+        // skip completely empty rows
+        const allEmpty = [almacenRaw,n2Raw,fechaRaw,vendedorRaw,prodRaw,marcaRaw].every(v=>v===null||v===undefined||v==='');
+        if(!allEmpty){
+          const fecha = Utils.parseDateValue(fechaRaw);
+          if(!fecha) invalidDates++;
+          if(Utils.normalizeSpaces(marcaRaw)==='') emptyMarca++;
+          if(Utils.normalizeSpaces(prodRaw)==='') emptyProd++;
+          if(Utils.normalizeSpaces(almacenRaw)==='') emptyAlmacen++;
+          if(Utils.normalizeSpaces(vendedorRaw)==='') emptyVendedor++;
+
+          records.push({
+            almacen: Utils.normalizeSpaces(almacenRaw) || '(Sin especificar)',
+            n2: Utils.normalizeSpaces(n2Raw),
+            fecha: fecha,
+            vendedor: Utils.normalizeSpaces(vendedorRaw) || '(Sin especificar)',
+            prodConcat: Utils.normalizeSpaces(prodRaw),
+            marca: Utils.normalizeSpaces(marcaRaw)
+          });
+        }
+      }
+      processed++;
+      if(processed % BATCH === 0){
+        setProgress('uploadProgressBar', 55 + Math.round((processed/totalRows)*40));
+        await Utils.yieldToUI();
+      }
+    }
+
+    if(records.length===0){
+      banner($('upload-banner'),'error','El archivo no contiene registros de datos.');
+      $('uploadProgressWrap').classList.add('hidden');
+      return;
+    }
+
+    // min/max dates
+    let minDate=null,maxDate=null;
+    records.forEach(rec=>{
+      if(rec.fecha){
+        if(!minDate || rec.fecha<minDate) minDate=rec.fecha;
+        if(!maxDate || rec.fecha>maxDate) maxDate=rec.fecha;
+      }
+    });
+
+    if(!minDate || !maxDate){
+      banner($('upload-banner'),'error','No fue posible interpretar ninguna fecha válida en la columna Fecha.');
+      $('uploadProgressWrap').classList.add('hidden');
+      return;
+    }
+
+    STATE.records = records;
+    STATE.minDate = minDate;
+    STATE.maxDate = maxDate;
+
+    setProgress('uploadProgressBar', 100);
+
+    const warnParts=[];
+    if(invalidDates>0) warnParts.push(`${invalidDates} registro(s) con fecha inválida o vacía (se excluirán del análisis)`);
+    if(emptyMarca>0) warnParts.push(`${emptyMarca} registro(s) sin Marca`);
+    if(emptyProd>0) warnParts.push(`${emptyProd} registro(s) sin ProdConcat`);
+    if(emptyAlmacen>0) warnParts.push(`${emptyAlmacen} registro(s) sin Almacén`);
+    if(emptyVendedor>0) warnParts.push(`${emptyVendedor} registro(s) sin Vendedor`);
+    if(warnParts.length){
+      banner($('upload-banner'),'warn', 'Se detectaron algunas inconsistencias: '+warnParts.join(' · ')+'.');
+    }
+
+    $('upload-result').innerHTML = `
+      <div class="banner ok" style="margin-top:var(--space-sm)">Archivo cargado correctamente · ${records.length.toLocaleString('es-MX')} registros leídos.</div>
+      <div class="kv">
+        <div>Fecha más antigua<b class="mono">${Utils.fmtDateShort(minDate)}</b></div>
+        <div>Fecha más reciente<b class="mono">${Utils.fmtDateShort(maxDate)}</b></div>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="btn-to-2">Continuar</button></div>
+    `;
+    $('btn-to-2').addEventListener('click', ()=>setStep(2));
+
+  }catch(err){
+    console.error(err);
+    banner($('upload-banner'),'error','Ocurrió un error al leer el archivo: '+ (err.message||err));
+  }finally{
+    setTimeout(()=>$('uploadProgressWrap').classList.add('hidden'), 500);
+  }
+}
+
+function setProgress(id, pct){
+  $(id).style.width = Math.min(100,Math.max(0,pct))+'%';
+}
+
+function findHeaderRow(ws, maxScan){
+  const targets = REQUIRED_HEADERS;
+  for(let r=1;r<=Math.min(maxScan, ws.rowCount);r++){
+    const row = ws.getRow(r);
+    const map = {};
+    row.eachCell({includeEmpty:false},(cell,colNumber)=>{
+      const norm = Utils.normalizeHeader(cell.value);
+      if(targets.includes(norm) && map[norm]===undefined){
+        map[norm]=colNumber;
+      }
+    });
+    const missing = targets.filter(t=>map[t]===undefined);
+    if(missing.length===0){
+      return {ok:true, map, rowNumber:r};
+    }
+    if(r===Math.min(maxScan,ws.rowCount)){
+      return {ok:false, missing};
+    }
+  }
+  return {ok:false, missing:targets};
+}
+
+/* =========================================================================
+   STEP 2: ANALYSIS TYPE
+   ========================================================================= */
+document.querySelectorAll('#card-2 .choice').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#card-2 .choice').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+    STATE.mode = el.dataset.mode;
+    $('btn-to-3').disabled = false;
+  });
+});
+$('btn-to-3').addEventListener('click', ()=>{
+  setupStep3();
+  setStep(3);
+});
+
+/* =========================================================================
+   STEP 3: PERIOD SELECTION
+   ========================================================================= */
+function setupStep3(){
+  const isDouble = STATE.mode==='double';
+  $('period2-block').classList.toggle('hidden', !isDouble);
+  $('step3hint').textContent = isDouble
+    ? 'Define dos rangos de fechas que no se traslapen entre sí.'
+    : 'Por defecto se usa el rango completo de fechas disponible en el archivo. Puedes modificarlo.';
+
+  const minISO = Utils.toISO(STATE.minDate), maxISO = Utils.toISO(STATE.maxDate);
+  $('p1start').min = minISO; $('p1start').max = maxISO;
+  $('p1end').min = minISO; $('p1end').max = maxISO;
+  $('p1start').value = minISO; $('p1end').value = maxISO;
+
+  if(isDouble){
+    $('p2start').min = minISO; $('p2start').max = maxISO;
+    $('p2end').min = minISO; $('p2end').max = maxISO;
+    $('p2start').value = minISO; $('p2end').value = maxISO;
+  }
+  updateDaysLabels();
+  clearBanner($('dateBanner'));
+}
+
+['p1start','p1end','p2start','p2end'].forEach(id=>{
+  $(id).addEventListener('change', updateDaysLabels);
+});
+
+function updateDaysLabels(){
+  const p1s = $('p1start').value, p1e = $('p1end').value;
+  if(p1s && p1e){
+    const s = Utils.fromISOStart(p1s), e = Utils.fromISOEnd(p1e);
+    if(e>=s){
+      $('p1days').textContent = `${Utils.fmtDateShort(s)} - ${Utils.fmtDateShort(e)} · ${Utils.daysBetweenInclusive(s,e)} días`;
+    }else{
+      $('p1days').textContent = 'La fecha final debe ser posterior a la inicial.';
+    }
+  }
+  if(STATE.mode==='double'){
+    const p2s = $('p2start').value, p2e = $('p2end').value;
+    if(p2s && p2e){
+      const s = Utils.fromISOStart(p2s), e = Utils.fromISOEnd(p2e);
+      if(e>=s){
+        $('p2days').textContent = `${Utils.fmtDateShort(s)} - ${Utils.fmtDateShort(e)} · ${Utils.daysBetweenInclusive(s,e)} días`;
+      }else{
+        $('p2days').textContent = 'La fecha final debe ser posterior a la inicial.';
+      }
+    }
+  }
+}
+
+$('btn-to-4').addEventListener('click', ()=>{
+  clearBanner($('dateBanner'));
+  const p1s = $('p1start').value, p1e = $('p1end').value;
+  if(!p1s || !p1e){ banner($('dateBanner'),'error','Selecciona ambas fechas del Periodo 1.'); return; }
+  const s1 = Utils.fromISOStart(p1s), e1 = Utils.fromISOEnd(p1e);
+  if(e1<s1){ banner($('dateBanner'),'error','En el Periodo 1, la fecha final debe ser posterior o igual a la inicial.'); return; }
+
+  STATE.period1 = {start:s1, end:e1, days:Utils.daysBetweenInclusive(s1,e1)};
+  STATE.period2 = null;
+
+  if(STATE.mode==='double'){
+    const p2s = $('p2start').value, p2e = $('p2end').value;
+    if(!p2s || !p2e){ banner($('dateBanner'),'error','Selecciona ambas fechas del Periodo 2.'); return; }
+    const s2 = Utils.fromISOStart(p2s), e2 = Utils.fromISOEnd(p2e);
+    if(e2<s2){ banner($('dateBanner'),'error','En el Periodo 2, la fecha final debe ser posterior o igual a la inicial.'); return; }
+    if(Utils.rangesOverlap(s1,e1,s2,e2)){
+      banner($('dateBanner'),'error','Los periodos no pueden tener fechas superpuestas. Ajusta los rangos.');
+      return;
+    }
+    STATE.period2 = {start:s2, end:e2, days:Utils.daysBetweenInclusive(s2,e2)};
+  }
+
+  setupStep4();
+  setStep(4);
+});
+
+/* =========================================================================
+   STEP 4: BRAND SELECTION
+   ========================================================================= */
+function filterByPeriod(records, period){
+  return records.filter(r=> r.fecha && r.fecha>=period.start && r.fecha<=period.end);
+}
+function filterChips(records){
+  return records.filter(r=> Utils.normUpper(r.n2)==='CHIPS');
+}
+
+function setupStep4(){
+  clearBanner($('brandBanner'));
+  const periods = STATE.period2 ? [STATE.period1, STATE.period2] : [STATE.period1];
+  STATE.chipsRecordsByPeriod = periods.map(p=> filterChips(filterByPeriod(STATE.records, p)));
+
+  const totalChips = STATE.chipsRecordsByPeriod.reduce((a,arr)=>a+arr.length,0);
+  if(totalChips===0){
+    banner($('brandBanner'),'error','No existen registros con N2 = CHIPS dentro del/los periodo(s) seleccionado(s).');
+    $('brandSelect').innerHTML='<option value="">—</option>';
+    $('btn-to-5').disabled = true;
+    return;
+  }
+
+  const brandMap = new Map();
+  STATE.chipsRecordsByPeriod.forEach(arr=>{
+    arr.forEach(r=>{
+      const disp = Utils.normalizeSpaces(r.marca);
+      if(disp===''){ return; }
+      const key = disp.toUpperCase();
+      if(!brandMap.has(key)) brandMap.set(key, disp);
+    });
+  });
+  const brands = Array.from(brandMap.values()).sort((a,b)=>a.localeCompare(b));
+  STATE.brands = brands;
+
+  if(brands.length===0){
+    banner($('brandBanner'),'error','No se encontraron marcas válidas en los registros filtrados.');
+    $('btn-to-5').disabled = true;
+    return;
+  }
+
+  const sel = $('brandSelect');
+  sel.innerHTML = '<option value="">Selecciona una marca…</option>' +
+    brands.map(b=>`<option value="${b}">${b}</option>`).join('');
+  $('btn-to-5').disabled = true;
+}
+
+$('brandSelect').addEventListener('change', e=>{
+  STATE.selectedBrand = e.target.value || null;
+  $('btn-to-5').disabled = !STATE.selectedBrand;
+  clearBanner($('brandBanner'));
+});
+
+$('btn-to-5').addEventListener('click', ()=>{
+  STATE.marcaRecordsByPeriod = STATE.chipsRecordsByPeriod.map(arr=>
+    arr.filter(r=> Utils.normalizeSpaces(r.marca).toUpperCase() === STATE.selectedBrand.toUpperCase())
+  );
+  const total = STATE.marcaRecordsByPeriod.reduce((a,arr)=>a+arr.length,0);
+  if(total===0){
+    banner($('brandBanner'),'error','La marca seleccionada no tiene registros dentro del periodo elegido.');
+    return;
+  }
+  setStep(5);
+});
+
+/* =========================================================================
+   VARIANT EXTRACTION
+   ========================================================================= */
+function extractVariant(prodConcat){
+  if(!prodConcat) return null;
+  // format: [SKU] - [VARIANTE] - [ESTADO] (desc...)
+  const m = prodConcat.match(/^\s*([^-]+?)\s*-\s*([^-]+?)\s*-\s*(.*)$/);
+  if(m){
+    return Utils.normalizeSpaces(m[2]) || 'N/A';
+  }
+  return 'N/A';
+}
+
+/* =========================================================================
+   STEP 5: GENERATE ANALYSIS
+   ========================================================================= */
+$('btn-generate').addEventListener('click', async ()=>{
+  $('genProgressWrap').classList.remove('hidden');
+  setProgress('genProgressBar', 10);
+  $('btn-generate').disabled = true;
+  await Utils.yieldToUI();
+
+  try{
+    const report = await buildReport();
+    setProgress('genProgressBar', 100);
+    STATE.report = report;
+    renderSummary(report);
+    setStep(6);
+  }catch(err){
+    console.error(err);
+    alert('Ocurrió un error generando el análisis: '+(err.message||err));
+  }finally{
+    $('btn-generate').disabled = false;
+    setTimeout(()=>$('genProgressWrap').classList.add('hidden'),400);
+  }
+});
+
+async function buildReport(){
+  const isDouble = !!STATE.period2;
+  const periodsRecords = STATE.marcaRecordsByPeriod;
+
+  periodsRecords.forEach(arr=> arr.forEach(r=>{ r._variant = extractVariant(r.prodConcat); }));
+
+  const variantSet = new Set();
+  periodsRecords.forEach(arr=> arr.forEach(r=> variantSet.add(r._variant)));
+  const variants = Array.from(variantSet).sort((a,b)=> a==='N/A'? -1 : b==='N/A'?1 : a.localeCompare(b));
+  if(variants.length===0){
+    throw new Error('No existen variantes válidas para la marca seleccionada.');
+  }
+  STATE.variants = variants;
+
+  await Utils.yieldToUI();
+
+  function groupCount(records, field){
+    const map = new Map();
+    records.forEach(r=>{
+      const val = r[field];
+      const key = val.toUpperCase();
+      if(!map.has(key)) map.set(key,{label:val,count:0});
+      map.get(key).count++;
+    });
+    return map;
+  }
+
+  function buildGroupTables(field){
+    const variantTables = variants.map(variant=>{
+      const perPeriodMaps = periodsRecords.map(arr=> groupCount(arr.filter(r=>r._variant===variant), field));
+      const allKeys = new Set();
+      perPeriodMaps.forEach(m=> m.forEach((v,k)=>allKeys.add(k)));
+      const labelFor = k=>{
+        for(const m of perPeriodMaps){ if(m.has(k)) return m.get(k).label; }
+        return k;
+      };
+      let rows = Array.from(allKeys).map(k=>{
+        const p1 = perPeriodMaps[0].get(k)?.count || 0;
+        const p2 = isDouble ? (perPeriodMaps[1].get(k)?.count || 0) : undefined;
+        return {label:labelFor(k), p1, p2};
+      });
+      rows.sort((a,b)=> a.label.localeCompare(b.label));
+      const totalP1 = rows.reduce((a,r)=>a+r.p1,0);
+      const totalP2 = isDouble ? rows.reduce((a,r)=>a+(r.p2||0),0) : undefined;
+      return {variant, rows, totalP1, totalP2};
+    });
+
+    const perPeriodMapsGeneral = periodsRecords.map(arr=> groupCount(arr, field));
+    const allKeysG = new Set();
+    perPeriodMapsGeneral.forEach(m=> m.forEach((v,k)=>allKeysG.add(k)));
+    const labelForG = k=>{ for(const m of perPeriodMapsGeneral){ if(m.has(k)) return m.get(k).label; } return k; };
+    let generalRows = Array.from(allKeysG).map(k=>{
+      const p1 = perPeriodMapsGeneral[0].get(k)?.count || 0;
+      const p2 = isDouble ? (perPeriodMapsGeneral[1].get(k)?.count || 0) : undefined;
+      return {label:labelForG(k), p1, p2};
+    });
+    generalRows.sort((a,b)=> a.label.localeCompare(b.label));
+    const gTotalP1 = generalRows.reduce((a,r)=>a+r.p1,0);
+    const gTotalP2 = isDouble ? generalRows.reduce((a,r)=>a+(r.p2||0),0) : undefined;
+
+    return {
+      variantTables,
+      general:{rows:generalRows, totalP1:gTotalP1, totalP2:gTotalP2}
+    };
+  }
+
+  const byAlmacen = buildGroupTables('almacen');
+  await Utils.yieldToUI();
+  const byVendedor = buildGroupTables('vendedor');
+  await Utils.yieldToUI();
+
+  const uniqueAlmacenes = new Set();
+  const uniqueVendedores = new Set();
+  periodsRecords.forEach(arr=> arr.forEach(r=>{ uniqueAlmacenes.add(r.almacen.toUpperCase()); uniqueVendedores.add(r.vendedor.toUpperCase()); }));
+
+  return {
+    isDouble,
+    brand: STATE.selectedBrand,
+    period1: STATE.period1,
+    period2: STATE.period2,
+    variants,
+    byAlmacen,
+    byVendedor,
+    totalRegistros: periodsRecords.reduce((a,arr)=>a+arr.length,0),
+    almacenesCount: uniqueAlmacenes.size,
+    vendedoresCount: uniqueVendedores.size
+  };
+}
+
+function renderSummary(report){
+  const periodLabel = report.isDouble
+    ? `Periodo 1: ${Utils.fmtDateShort(report.period1.start)} - ${Utils.fmtDateShort(report.period1.end)} (${report.period1.days} días) · Periodo 2: ${Utils.fmtDateShort(report.period2.start)} - ${Utils.fmtDateShort(report.period2.end)} (${report.period2.days} días)`
+    : `${Utils.fmtDateShort(report.period1.start)} - ${Utils.fmtDateShort(report.period1.end)} (${report.period1.days} días)`;
+
+  $('resultsSummary').innerHTML = `
+    <div class="banner ok">Análisis generado correctamente para <b>${report.brand}</b>.</div>
+    <p class="step-hint mono">${periodLabel}</p>
+    <div class="summary-grid">
+      <div class="stat"><div class="n">${report.totalRegistros.toLocaleString('es-MX')}</div><div class="l">Registros analizados</div></div>
+      <div class="stat"><div class="n">${report.variants.length}</div><div class="l">Variantes encontradas</div></div>
+      <div class="stat"><div class="n">${report.almacenesCount}</div><div class="l">Almacenes</div></div>
+      <div class="stat"><div class="n">${report.vendedoresCount}</div><div class="l">Vendedores</div></div>
+    </div>
+    <div class="tag-list">${report.variants.map(v=>`<span class="tag">${v}</span>`).join('')}</div>
+  `;
+}
+
+/* =========================================================================
+   STEP 6: EXCEL EXPORT
+   ========================================================================= */
+$('btn-download').addEventListener('click', async ()=>{
+  $('btn-download').disabled = true;
+  try{
+    await exportExcel(STATE.report);
+  }catch(err){
+    console.error(err);
+    alert('Error generando el archivo Excel: '+(err.message||err));
+  }finally{
+    $('btn-download').disabled = false;
+  }
+});
+
+$('btn-restart').addEventListener('click', ()=>{
+  location.reload();
+});
+
+const FILL = {
+  header: 'FF16211F',
+  headerAlt: 'FF0F7A6C',
+  total: 'FFEFEDE3',
+  pos: 'FFE4F5EA',
+  neg: 'FFFBE7E8',
+  neutral: 'FFF0F0EE',
+  variantTitle: 'FFE3F1EE'
+};
+const FONT = {
+  white: {color:{argb:'FFFFFFFF'}, bold:true},
+  boldDark: {color:{argb:'FF16211F'}, bold:true},
+  pos: {color:{argb:'FF157F3D'}, bold:true},
+  neg: {color:{argb:'FFB4232F'}, bold:true},
+  neutral: {color:{argb:'FF6B6F76'}, bold:false}
+};
+
+function styleHeaderRow(row, fillArgb){
+  row.eachCell(cell=>{
+    cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:fillArgb||FILL.headerAlt}};
+    cell.font = FONT.white;
+    cell.alignment = {vertical:'middle', horizontal:'left', wrapText:true};
+    cell.border = {bottom:{style:'thin', color:{argb:'FFFFFFFF'}}};
+  });
+}
+function styleTotalRow(row){
+  row.eachCell(cell=>{
+    cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:FILL.total}};
+    cell.font = FONT.boldDark;
+  });
+}
+function growthCellStyle(cell, growth){
+  cell.value = growth.label;
+  cell.alignment = {horizontal:'center'};
+  if(growth.cls==='pos'){ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL.pos}}; cell.font=FONT.pos; }
+  else if(growth.cls==='neg'){ cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL.neg}}; cell.font=FONT.neg; }
+  else { cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL.neutral}}; cell.font=FONT.neutral; }
+}
+
+function writeSingleVariantTable(ws, startRow, groupLabel, brand, variant, rows, totalP1, periodLabel){
+  let r = startRow;
+  const titleRow = ws.getRow(r);
+  titleRow.getCell(1).value = `Chips ${brand} — Variante ${variant}`;
+  ws.mergeCells(r,1,r,2);
+  titleRow.getCell(1).font = {bold:true, size:12, color:{argb:'FF16211F'}};
+  titleRow.getCell(1).fill = {type:'pattern',pattern:'solid',fgColor:{argb:FILL.variantTitle}};
+  r++;
+  const headerRow = ws.getRow(r);
+  headerRow.getCell(1).value = groupLabel;
+  headerRow.getCell(2).value = `Chips vendidos ${periodLabel}`;
+  styleHeaderRow(headerRow);
+  r++;
+  rows.forEach(row=>{
+    const dr = ws.getRow(r);
+    dr.getCell(1).value = row.label;
+    dr.getCell(2).value = row.p1;
+    r++;
+  });
+  const totalRow = ws.getRow(r);
+  totalRow.getCell(1).value = 'Total';
+  totalRow.getCell(2).value = totalP1;
+  styleTotalRow(totalRow);
+  r++;
+  r++; // spacer
+  return r;
+}
+
+function writeDoubleVariantTable(ws, startRow, groupLabel, brand, variant, rows, totalP1, totalP2, p1, p2){
+  let r = startRow;
+  const titleRow = ws.getRow(r);
+  titleRow.getCell(1).value = `${brand} — Variante ${variant}`;
+  ws.mergeCells(r,1,r,5);
+  titleRow.getCell(1).font = {bold:true, size:12, color:{argb:'FF16211F'}};
+  titleRow.getCell(1).fill = {type:'pattern',pattern:'solid',fgColor:{argb:FILL.variantTitle}};
+  r++;
+  const periodInfoRow = ws.getRow(r);
+  periodInfoRow.getCell(2).value = `Periodo 1: ${Utils.fmtDateShort(p1.start)} - ${Utils.fmtDateShort(p1.end)} (${p1.days} días)`;
+  periodInfoRow.getCell(3).value = `Periodo 2: ${Utils.fmtDateShort(p2.start)} - ${Utils.fmtDateShort(p2.end)} (${p2.days} días)`;
+  periodInfoRow.getCell(2).alignment = {wrapText:true};
+  periodInfoRow.getCell(3).alignment = {wrapText:true};
+  periodInfoRow.getCell(2).font = {italic:true, size:9, color:{argb:'FF4B5450'}};
+  periodInfoRow.getCell(3).font = {italic:true, size:9, color:{argb:'FF4B5450'}};
+  r++;
+  const headerRow = ws.getRow(r);
+  headerRow.getCell(1).value = groupLabel;
+  headerRow.getCell(2).value = 'Periodo 1';
+  headerRow.getCell(3).value = 'Periodo 2';
+  headerRow.getCell(4).value = 'Crecimiento / Decremento';
+  headerRow.getCell(5).value = 'Total';
+  styleHeaderRow(headerRow);
+  r++;
+  rows.forEach(row=>{
+    const dr = ws.getRow(r);
+    dr.getCell(1).value = row.label;
+    dr.getCell(2).value = row.p1;
+    dr.getCell(3).value = row.p2;
+    const g = Utils.growthPct(row.p1,row.p2);
+    growthCellStyle(dr.getCell(4), g);
+    dr.getCell(5).value = row.p1+row.p2;
+    r++;
+  });
+  const totalRow = ws.getRow(r);
+  totalRow.getCell(1).value = 'Total';
+  totalRow.getCell(2).value = totalP1;
+  totalRow.getCell(3).value = totalP2;
+  const gTotal = Utils.growthPct(totalP1,totalP2);
+  growthCellStyle(totalRow.getCell(4), gTotal);
+  totalRow.getCell(4).font = {...(gTotal.cls==='pos'?FONT.pos:gTotal.cls==='neg'?FONT.neg:FONT.neutral), bold:true};
+  totalRow.getCell(5).value = totalP1+totalP2;
+  styleTotalRow(totalRow);
+  r++;
+  r++; // spacer
+  return r;
+}
+
+async function exportExcel(report){
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Analizador de Chips';
+  wb.created = new Date();
+
+  const groupLabels = {almacen:'Sucursal', vendedor:'Vendedor'};
+  const sheetsDef = [
+    {name:'Por Almacén', data:report.byAlmacen, label:groupLabels.almacen},
+    {name:'Por Vendedor', data:report.byVendedor, label:groupLabels.vendedor}
+  ];
+
+  for(const def of sheetsDef){
+    const ws = wb.addWorksheet(def.name);
+    ws.getColumn(1).width = 30;
+    ws.getColumn(2).width = 26;
+    ws.getColumn(3).width = 26;
+    ws.getColumn(4).width = 24;
+    ws.getColumn(5).width = 16;
+
+    let r = 1;
+    const titleRow = ws.getRow(r);
+    titleRow.getCell(1).value = `Chips ${report.brand} — ${def.name}`;
+    titleRow.getCell(1).font = {bold:true, size:14};
+    r+=2;
+
+    if(!report.isDouble){
+      const periodLabel = `del ${Utils.fmtDateShort(report.period1.start)} al ${Utils.fmtDateShort(report.period1.end)}`;
+      for(const vt of def.data.variantTables){
+        r = writeSingleVariantTable(ws, r, def.label, report.brand, vt.variant, vt.rows, vt.totalP1, periodLabel);
+        await Utils.yieldToUI();
+      }
+      const gTitle = ws.getRow(r);
+      gTitle.getCell(1).value = 'Total general — Todas las variantes';
+      ws.mergeCells(r,1,r,2);
+      gTitle.getCell(1).fill = {type:'pattern',pattern:'solid',fgColor:{argb:FILL.headerAlt}};
+      gTitle.getCell(1).font = FONT.white;
+      r++;
+      const gHeader = ws.getRow(r);
+      gHeader.getCell(1).value = def.label;
+      gHeader.getCell(2).value = `Chips vendidos ${periodLabel}`;
+      styleHeaderRow(gHeader, FILL.header);
+      r++;
+      def.data.general.rows.forEach(row=>{
+        const dr = ws.getRow(r);
+        dr.getCell(1).value = row.label;
+        dr.getCell(2).value = row.p1;
+        r++;
+      });
+      const gTotalRow = ws.getRow(r);
+      gTotalRow.getCell(1).value = 'Total general';
+      gTotalRow.getCell(2).value = def.data.general.totalP1;
+      styleTotalRow(gTotalRow);
+      r++;
+    }else{
+      for(const vt of def.data.variantTables){
+        r = writeDoubleVariantTable(ws, r, def.label, report.brand, vt.variant, vt.rows, vt.totalP1, vt.totalP2, report.period1, report.period2);
+        await Utils.yieldToUI();
+      }
+      const gTitle = ws.getRow(r);
+      gTitle.getCell(1).value = 'Total general — Todas las variantes';
+      ws.mergeCells(r,1,r,5);
+      gTitle.getCell(1).fill = {type:'pattern',pattern:'solid',fgColor:{argb:FILL.header}};
+      gTitle.getCell(1).font = FONT.white;
+      r++;
+      const gPeriodRow = ws.getRow(r);
+      gPeriodRow.getCell(2).value = `Periodo 1: ${Utils.fmtDateShort(report.period1.start)} - ${Utils.fmtDateShort(report.period1.end)} (${report.period1.days} días)`;
+      gPeriodRow.getCell(3).value = `Periodo 2: ${Utils.fmtDateShort(report.period2.start)} - ${Utils.fmtDateShort(report.period2.end)} (${report.period2.days} días)`;
+      gPeriodRow.getCell(2).font = {italic:true, size:9, color:{argb:'FF4B5450'}};
+      gPeriodRow.getCell(3).font = {italic:true, size:9, color:{argb:'FF4B5450'}};
+      r++;
+      const gHeader = ws.getRow(r);
+      gHeader.getCell(1).value = def.label;
+      gHeader.getCell(2).value = 'Periodo 1';
+      gHeader.getCell(3).value = 'Periodo 2';
+      gHeader.getCell(4).value = 'Crecimiento / Decremento';
+      gHeader.getCell(5).value = 'Total';
+      styleHeaderRow(gHeader, FILL.header);
+      r++;
+      def.data.general.rows.forEach(row=>{
+        const dr = ws.getRow(r);
+        dr.getCell(1).value = row.label;
+        dr.getCell(2).value = row.p1;
+        dr.getCell(3).value = row.p2;
+        const g = Utils.growthPct(row.p1,row.p2);
+        growthCellStyle(dr.getCell(4), g);
+        dr.getCell(5).value = row.p1+row.p2;
+        r++;
+      });
+      const gTotalRow = ws.getRow(r);
+      gTotalRow.getCell(1).value = 'Total general';
+      gTotalRow.getCell(2).value = def.data.general.totalP1;
+      gTotalRow.getCell(3).value = def.data.general.totalP2;
+      const gT = Utils.growthPct(def.data.general.totalP1, def.data.general.totalP2);
+      growthCellStyle(gTotalRow.getCell(4), gT);
+      gTotalRow.getCell(5).value = def.data.general.totalP1+def.data.general.totalP2;
+      styleTotalRow(gTotalRow);
+      r++;
+    }
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeBrand = (report.brand||'reporte').replace(/[^a-z0-9]+/gi,'_');
+  a.href = url;
+  a.download = `Analisis_Chips_${safeBrand}_${Utils.toISO(new Date())}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+
+})();
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

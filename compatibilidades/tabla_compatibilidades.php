@@ -1,12 +1,16 @@
 <?php
 require_once '../funciones.php';
 $conn = conectarBD();
+// GROUP_CONCAT corta a 1024 caracteres por defecto; con las notas hay que ampliarlo
+try { $conn->exec("SET SESSION group_concat_max_len = 1000000"); } catch (Exception $e) {}
 // Consulta para obtener todas las compatibilidades agrupadas por modelo principal y tipo
+// Las notas (observaciones) del grupo se juntan en una sola columna, separadas por ' | '
 $sql = "
     SELECT 
         c.tipo,
         CONCAT(m1.marca, ' ', m1.modelo) AS modelo_principal,
-        GROUP_CONCAT(DISTINCT CONCAT(m2.marca, ' ', m2.modelo) ORDER BY m2.marca, m2.modelo SEPARATOR ', ') AS modelos_compatibles
+        GROUP_CONCAT(DISTINCT CONCAT(m2.marca, ' ', m2.modelo) ORDER BY m2.marca, m2.modelo SEPARATOR ', ') AS modelos_compatibles,
+        GROUP_CONCAT(DISTINCT NULLIF(TRIM(c.nota), '') ORDER BY c.nota SEPARATOR ' | ') AS observaciones
     FROM compatibilidades c
     INNER JOIN modelos m1 ON c.modelo_id = m1.id
     INNER JOIN modelos m2 ON c.compatible_id = m2.id
@@ -120,6 +124,7 @@ $compatibilidades = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <th>Tipo</th>
                                     <th>Modelo Principal</th>
                                     <th>Modelos Compatibles</th>
+                                    <th>Observaciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -129,10 +134,11 @@ $compatibilidades = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <td><?= ucfirst(htmlspecialchars($c['tipo'])) ?></td>
                                         <td><?= htmlspecialchars($c['modelo_principal']) ?></td>
                                         <td><?= htmlspecialchars($c['modelos_compatibles']) ?></td>
+                                        <td><?= htmlspecialchars((string)$c['observaciones']) ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <tr><td colspan="3" class="text-center">No hay compatibilidades registradas.</td></tr>
+                                    <tr><td colspan="4" class="text-center">No hay compatibilidades registradas.</td></tr>
                                 <?php endif; ?>
                             </tbody>
                         </table>

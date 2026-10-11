@@ -1,4 +1,7 @@
 <?php 
+
+
+
 include_once '../../funciones.php';  
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -315,6 +318,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </head>
 <body>
+    <div id="muertos"></div>
+    <div id="navidad"></div>
+    <div id="independencia"></div>
+
    <nav>
     <h1 id="nombre">Soluciones Móviles</h1>
     <input type="checkbox" id="check">
@@ -324,8 +331,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <ul id="menu">
         <li>
             <a href="garantias.php" style="display:flex;align-items:center;gap:12px;">
-                <span style="display:inline-flex;width:40px;height:40px;background:white;border-radius:50%;justify-content:center;align-items:center;overflow:visible;position:relative;">
-                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo" style="width:30px;height:30px;object-fit:contain;" />
+                <span style="display:inline-flex;width:45px;height:45px;background:white;border-radius:50%;justify-content:center;align-items:center;overflow:visible;position:relative;">
+                    <img src="../../recursos/img/Central-Cell-Logo-JUSTCELL.png?v=<?= filemtime('../../recursos/img/Central-Cell-Logo-JUSTCELL.png') ?>" alt="Logo" style="width:100px;height:50px;object-fit:contain;" />
                 </span>
                 Home
             </a>
@@ -334,7 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <li>
             <a href="formato_garantia.php" style="display:flex;align-items:center;gap:12px;">
                 <img src="../../recursos/img/tel.png" alt="Metas" style="width:40px;height:40px;object-fit:contain;" />
-                Recep. Equip.
+                Equipos
             </a>
         </li>
         <li>
@@ -568,8 +575,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
     });
+
+   
     
     </script>
+     <script src="../../recursos/efecto.js?v=<?= filemtime(__DIR__ . '/../../recursos/efecto.js') ?>"></script>
     <footer style="text-align:center;padding:16px;margin-top:50px;">
   <a href="../../existencias/buscador.php" style="
     display:inline-flex;
