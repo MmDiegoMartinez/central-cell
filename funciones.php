@@ -1672,6 +1672,7 @@ function procesarArchivoExcel(string $rutaArchivo): array
             return $resultado;
         }
 
+        // Abrir el archivo .xlsx como ZIP
         $zip = new ZipArchive();
         if ($zip->open($rutaArchivo) !== true) {
             $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
@@ -2069,233 +2070,7 @@ function procesarArchivoExceltel(string $rutaArchivo): array
 
     return $resultado;
 }
- 
-/**
- * Valida una fila y retorna el motivo de rechazo o null si es válida.
- */
-function validarFila(
-    string $almacen,
-    string $descripcion,
-    int    $existencia,
-    string $barcodeId,
-    ?float $publicoGeneral
-): ?string {
-    if (empty($almacen))       return 'Almacén vacío';
-    if (empty($descripcion))   return 'Descripción vacía';
-    if (empty($barcodeId))     return 'Falta código de barras (columna M)';
-    if ($existencia <= 0)      return 'Existencia inválida o cero';
-    if ($publicoGeneral === null || $publicoGeneral < 0) {
-        return 'Precio inválido o ausente (columna Q)';
-    }
- 
-    // Descripción demasiado corta (probable basura)
-    if (strlen($descripcion) < 3) return 'Descripción demasiado corta';
- 
-    return null; // fila válida
-}
 
-
-function registrarFechaExistencias(PDO $conn): bool
-{
-    try {
-        // Hora México via PHP (no depende de las timezone tables de MySQL)
-        $tz     = new DateTimeZone('America/Mexico_City');
-        $ahora  = (new DateTime('now', $tz))->format('Y-m-d H:i:s');
-
-        $stmt = $conn->query("SELECT id FROM fechaexistencias LIMIT 1");
-        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($fila) {
-            $upd = $conn->prepare(
-                "UPDATE fechaexistencias SET fecha = :fecha WHERE id = :id"
-            );
-            $upd->execute([':fecha' => $ahora, ':id' => $fila['id']]);
-        } else {
-            $ins = $conn->prepare(
-                "INSERT INTO fechaexistencias (fecha) VALUES (:fecha)"
-            );
-            $ins->execute([':fecha' => $ahora]);
-        }
-
-        return true;
-    } catch (Exception $e) {
-        error_log('registrarFechaExistencias error: ' . $e->getMessage());
-        return false;
-    }
-}
-
-function procesarArchivoExceltel(string $rutaArchivo): array
-{
-    $resultado = [
-        'exito'               => false,
-        'registros_insertados' => 0,
-        'registros_omitidos'  => [],
-        'mensaje'             => '',
-    ];
-
-    // ── Categorías permitidas (columna N) ────────────────────────
-    $categoriasPermitidas = [
-        'TECNOLOGIA MOVIL>SMARTPHONE>PROPIOS',
-        'TECNOLOGIA MOVIL>SMARTPHONE>BATYCELL',
-        'TECNOLOGIA MOVIL>EQUIPO BASICO',
-        'TECNOLOGIA MOVIL>SMARTWHATCH',
-    ];
-
-    try {
-        if (!eliminarExistencias()) {
-            $resultado['mensaje'] = 'Error al eliminar registros existentes';
-            return $resultado;
-        }
-        if (!reiniciarIDsExistencias()) {
-            $resultado['mensaje'] = 'Error al reiniciar IDs';
-            return $resultado;
-        }
-
-        $zip = new ZipArchive();
-        if ($zip->open($rutaArchivo) !== true) {
-            $resultado['mensaje'] = 'No se pudo abrir el archivo Excel';
-            return $resultado;
-        }
-
-        $sheetXml         = $zip->getFromName('xl/worksheets/sheet1.xml');
-        $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
-        $zip->close();
-
-        // ── Shared strings ──────────────────────────────────────────
-        $sharedStrings = [];
-        if ($sharedStringsXml) {
-            $xmlSS = new SimpleXMLElement($sharedStringsXml);
-            foreach ($xmlSS->si as $si) {
-                $texto = '';
-                if (isset($si->t)) {
-                    $texto = (string) $si->t;
-                } else {
-                    foreach ($si->r as $r) {
-                        $texto .= (string) $r->t;
-                    }
-                }
-                $sharedStrings[] = $texto;
-            }
-        }
-
-        // ── Parsear hoja ─────────────────────────────────────────────
-        $xmlSheet    = new SimpleXMLElement($sheetXml);
-        $primeraFila = true;
-        $filasValidas = [];
-        $omitidos     = [];
-        $cacheAlmacen = [];
-
-        foreach ($xmlSheet->sheetData->row as $row) {
-            if ($primeraFila) {
-                $primeraFila = false;
-                continue;
-            }
-
-            $numFila = (int) $row['r'];
-
-            // ── Leer celdas ──────────────────────────────────────────
-            $celdas = [];
-            foreach ($row->c as $c) {
-                preg_match('/^([A-Z]+)/', (string) $c['r'], $m);
-                $col = $m[1];
-                $v   = isset($c->v) ? (string) $c->v : '';
-                if (isset($c['t']) && $c['t'] == 's') {
-                    $v = $sharedStrings[(int) $v] ?? '';
-                }
-                $celdas[$col] = $v;
-            }
-
-            // ── Extraer campos ───────────────────────────────────────
-            $almacenCompleto = trim($celdas['A'] ?? '');
-            $descripcion     = trim($celdas['C'] ?? '');
-            $existencia      = (int) ($celdas['H'] ?? 0);
-            $barcodeId       = trim($celdas['M'] ?? '');
-            $nombreCategoria = trim($celdas['N'] ?? '');
-            $publicoGeneral  = isset($celdas['Q']) && $celdas['Q'] !== ''
-                                   ? (float) $celdas['Q']
-                                   : null;
-
-            // ── FILTROS SILENCIOSOS (sin reportar) ───────────────────
-            if (stripos($almacenCompleto, 'Almacén general') !== false) continue;
-            if ($existencia == 0) continue;
-
-            // ── FILTRO POR CATEGORÍA (silencioso) ────────────────────
-            if (!in_array($nombreCategoria, $categoriasPermitidas, true)) continue;
-
-            // ── VALIDACIONES CON REPORTE ─────────────────────────────
-            $motivo = validarFila(
-                $almacenCompleto,
-                $descripcion,
-                $existencia,
-                $barcodeId,
-                $publicoGeneral
-            );
-
-            if ($motivo !== null) {
-                $omitidos[] = [
-                    'fila'        => $numFila,
-                    'almacen'     => $almacenCompleto ?: '(vacío)',
-                    'descripcion' => $descripcion     ?: '(vacío)',
-                    'motivo'      => $motivo,
-                ];
-                continue;
-            }
-
-            // ── Resolver almacén ─────────────────────────────────────
-            $nombreAlmacen = (strpos($almacenCompleto, 'Central Cell ') === 0)
-                ? trim(substr($almacenCompleto, strlen('Central Cell ')))
-                : $almacenCompleto;
-
-            if (!array_key_exists($nombreAlmacen, $cacheAlmacen)) {
-                $cacheAlmacen[$nombreAlmacen] = obtenerIDSucursal($nombreAlmacen);
-            }
-            $idAlmacen = $cacheAlmacen[$nombreAlmacen];
-
-            if ($idAlmacen === null) {
-                $omitidos[] = [
-                    'fila'        => $numFila,
-                    'almacen'     => $almacenCompleto,
-                    'descripcion' => $descripcion,
-                    'motivo'      => 'Almacén no encontrado en la base de datos',
-                ];
-                continue;
-            }
-
-            $filasValidas[] = [
-                'fila'           => $numFila,
-                'almacen'        => $idAlmacen,
-                'almacenNombre'  => $almacenCompleto,
-                'descripcion'    => $descripcion,
-                'existencia'     => $existencia,
-                'barcodeId'      => $barcodeId,
-                'categoria'      => $nombreCategoria,
-                'publicoGeneral' => $publicoGeneral ?? 0.0,
-            ];
-        }
-
-        // ── Inserción masiva ─────────────────────────────────────────
-        $conn = conectarBD();
-        $bulk = insertarExistenciasBulk($conn, $filasValidas);
-
-        $resultado['exito']                = true;
-        $resultado['registros_insertados'] = $bulk['insertados'];
-        $resultado['registros_omitidos']   = array_merge($omitidos, $bulk['fallidos']);
-
-        registrarFechaExistencias($conn);
-
-        $total   = $bulk['insertados'];
-        $errores = count($resultado['registros_omitidos']);
-
-        $resultado['mensaje'] = $errores > 0
-            ? "Proceso completado. $total insertados, $errores con errores."
-            : "Proceso completado exitosamente. $total registros insertados.";
-
-    } catch (Exception $e) {
-        $resultado['mensaje'] = 'Error: ' . $e->getMessage();
-    }
-
-    return $resultado;
-}
 //aqui es el buscador 
 //Obtiene el nombre de un almacén por su ID
 function obtenerNombreAlmacen(int $idAlmacen): ?string {
@@ -3280,9 +3055,9 @@ function guardarGarantiaTelefono($datos)
 function generarPDFGarantiaTelefono($id_caso)
 {
     require_once __DIR__ . '/tcpdf/tcpdf.php';
- 
+
     $conn = conectarBD();
- 
+
     $stmt = $conn->prepare("
         SELECT
             gt.*,
@@ -3298,137 +3073,149 @@ function generarPDFGarantiaTelefono($id_caso)
     ");
     $stmt->execute([':id' => $id_caso]);
     $g = $stmt->fetch(PDO::FETCH_ASSOC);
- 
+
     if (!$g) throw new Exception("Garantía no encontrada.");
- 
+
     $modelo = 'No encontrado';
     $color  = 'No encontrado';
- 
+
     $stmtE = $conn->prepare("SELECT descripcion FROM existencias WHERE BarcodeId = :plows LIMIT 1");
     $stmtE->execute([':plows' => $g['plows']]);
     $ex = $stmtE->fetch(PDO::FETCH_ASSOC);
- 
+
     if ($ex) {
         if (preg_match('/-\s*(.*?)\s*-\s*NUEVO/i', $ex['descripcion'], $m))  $color  = trim($m[1]);
         if (preg_match('/\(\s*(.*?)\s*\//',          $ex['descripcion'], $m2)) $modelo = trim($m2[1]);
     }
- 
+
     date_default_timezone_set('America/Mexico_City');
     $fechaObj         = new DateTime($g['fecha_registro']);
     $fecha_formateada = $fechaObj->format('d/m/Y h:i A');
     $folio            = str_pad($g['id_caso'], 5, '0', STR_PAD_LEFT);
     $esCred           = strtolower(trim($g['tipo_venta'])) === 'credito';
     $sucNombre        = mb_strtoupper($g['sucursal_nombre'], 'UTF-8');
- 
-    $pdf = new TCPDF('P', 'mm', 'LETTER', true, 'UTF-8', false);
+
+    /* ─── HELPER DE CONVERSIÓN ───────────────────────────────
+       Con modo no-Unicode, TCPDF espera ISO-8859-1.
+       Este helper convierte cualquier string (literal o de BD)
+       antes de mandarlo a Cell/MultiCell. Úsalo SIEMPRE que
+       imprimas texto — así no hay que acordarse caso por caso. */
+    $t = function($s) {
+        return mb_convert_encoding((string) $s, 'ISO-8859-1', 'UTF-8');
+    };
+
+    /* ─── PDF en modo NO-Unicode (más rápido) ───────────────
+       4to parámetro: false = sin Unicode
+       5to parámetro: ISO-8859-1 = codificación de 1 byte, cubre español */
+    $pdf = new TCPDF('P', 'mm', 'LETTER', false, 'ISO-8859-1', false);
     $pdf->SetCreator('Central Cell');
     $pdf->SetAuthor('Central Cell');
-    $pdf->SetTitle('Garantía Telefonía');
+    $pdf->SetTitle($t('Garantía Telefonía'));
     $pdf->SetPrintHeader(false);
     $pdf->SetPrintFooter(false);
     $pdf->SetMargins(14, 8, 14);
     $pdf->SetAutoPageBreak(false);
     $pdf->setCellHeightRatio(1.1);
- 
+
     $pdf->AddPage();
- 
+
     $lm = 14;
     $pw = 215.9 - ($lm * 2);
     $y  = 8;
- 
+
     /* ─── ENCABEZADO AZUL ─────────────────────────────────── */
     $pdf->SetFillColor(18, 52, 104);
     $pdf->Rect($lm, $y, $pw, 18, 'F');
- 
+
     $logo = __DIR__ . '/recursos/img/central-cell-logo.png';
     if (file_exists($logo)) {
         $pdf->Image($logo, $lm + 3, $y + 2, 32, 14, '', '', '', false, 150, '', false, false, 0);
     }
- 
+
     $pdf->SetFont('helvetica', 'B', 14);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetXY($lm + 38, $y + 1);
-    $pdf->Cell($pw - 38, 8, 'CENTRAL CELL ' . $sucNombre, 0, 1, 'L');
- 
+    $pdf->Cell($pw - 38, 8, $t('CENTRAL CELL ' . $sucNombre), 0, 1, 'L');
+
     $pdf->SetFont('helvetica', '', 8);
     $pdf->SetXY($lm + 38, $y + 9);
-    $pdf->Cell($pw - 38, 6, 'Formato de Recepción de Equipo para Revisión de Garantía', 0, 1, 'L');
- 
+    $pdf->Cell($pw - 38, 6, $t('Formato de Recepción de Equipo para Revisión de Garantía'), 0, 1, 'L');
+
     $pdf->SetFont('helvetica', 'B', 10);
     $pdf->SetXY($lm, $y + 3);
-    $pdf->Cell($pw - 2, 6, 'FOLIO: ' . $folio, 0, 0, 'R');
- 
+    $pdf->Cell($pw - 2, 6, $t('FOLIO: ' . $folio), 0, 0, 'R');
+
     $y += 20;
- 
+
     /* ─── TICKET ──────────────────────────────────────────── */
     $pdf->SetFillColor(232, 240, 254);
     $pdf->SetDrawColor(18, 52, 104);
     $pdf->SetTextColor(18, 52, 104);
     $pdf->SetFont('helvetica', 'B', 9);
     $pdf->SetXY($lm, $y);
-    $pdf->Cell($pw, 6, 'NO. DE TICKET / CONTROL:  ' . $g['numero_ticket'], 1, 1, 'C', true);
+    $pdf->Cell($pw, 6, $t('NO. DE TICKET / CONTROL:  ' . $g['numero_ticket']), 1, 1, 'C', true);
     $pdf->SetDrawColor(180, 180, 180);
     $pdf->SetTextColor(0, 0, 0);
     $y += 8;
- 
+
     /* ─── HELPERS ─────────────────────────────────────────── */
-    $seccion = function(string $titulo) use ($pdf, $lm, $pw, &$y) {
+    $seccion = function(string $titulo) use ($pdf, $lm, $pw, &$y, $t) {
         $pdf->SetFillColor(18, 52, 104);
         $pdf->SetTextColor(255, 255, 255);
         $pdf->SetFont('helvetica', 'B', 8.5);
         $pdf->SetXY($lm, $y);
-        $pdf->Cell($pw, 5.5, '  ' . $titulo, 0, 1, 'L', true);
+        $pdf->Cell($pw, 5.5, $t('  ' . $titulo), 0, 1, 'L', true);
         $pdf->SetTextColor(0, 0, 0);
         $y += 6.5;
     };
- 
-    $dato2 = function(string $l1, string $v1, string $l2, string $v2) use ($pdf, $lm, $pw, &$y) {
+
+    $dato2 = function(string $l1, string $v1, string $l2, string $v2) use ($pdf, $lm, $pw, &$y, $t) {
         $half = $pw / 2;
         $lw   = $half * 0.44;
         $pdf->SetFont('helvetica', 'B', 8);
         $pdf->SetXY($lm + 2, $y);
-        $pdf->Cell($lw, 5, $l1 . ':', 0, 0, 'L');
+        $pdf->Cell($lw, 5, $t($l1 . ':'), 0, 0, 'L');
         $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($half - $lw - 2, 5, $v1, 0, 0, 'L');
+        $pdf->Cell($half - $lw - 2, 5, $t($v1), 0, 0, 'L');
         $pdf->SetFont('helvetica', 'B', 8);
-        $pdf->Cell($lw, 5, $l2 . ':', 0, 0, 'L');
+        $pdf->Cell($lw, 5, $t($l2 . ':'), 0, 0, 'L');
         $pdf->SetFont('helvetica', '', 8);
-        $pdf->Cell($half - $lw - 2, 5, $v2, 0, 1, 'L');
+        $pdf->Cell($half - $lw - 2, 5, $t($v2), 0, 1, 'L');
         $y += 5;
     };
- 
+
     /* ════ SECCIÓN 1 ════ */
     $seccion('1. DATOS DE LA RECEPCIÓN Y VENTA');
     $dato2('Fecha de Recepción', $fecha_formateada, 'Tipo de Venta', strtoupper($g['tipo_venta']));
     $dato2('Vendedor (Venta)', $g['vendedor_nombre'], 'Recibió Equipo', $g['vendedor_recibe_nombre']);
     $y += 2;
- 
+
     /* ════ SECCIÓN 2 ════ */
     $seccion('2. INFORMACIÓN DEL CLIENTE');
     $dato2('Nombre Completo', $g['nombre_cliente'], 'Número de Contacto', $g['numero_contacto']);
     $y += 2;
- 
+
     /* ════ SECCIÓN 3 ════ */
     $seccion('3. ESPECIFICACIONES DEL EQUIPO');
     $dato2('Marca y Modelo', $modelo, 'Color', $color);
     $dato2('PLOWS / Código de Barras', $g['plows'], 'Número de IMEI', $g['imei']);
     $y += 3;
- 
+
     /* ════ SECCIÓN 4 ════ */
     $seccion('4. POLÍTICAS Y REGLAS BÁSICAS PARA VALIDACIÓN DE GARANTÍA');
- 
+
     $pdf->SetFont('helvetica', 'I', 7);
     $pdf->SetXY($lm + 2, $y);
     $pdf->MultiCell($pw - 2, 3.5,
-        'Al firmar el presente documento, el cliente declara haber entregado voluntariamente el equipo antes descrito para su revisión y diagnóstico.',
+        $t('Al firmar el presente documento, el cliente declara haber entregado voluntariamente el equipo antes descrito para su revisión y diagnóstico.'),
     0, 'L');
     $y = $pdf->GetY() + 1.5;
- 
+
     $pdf->SetFont('helvetica', 'B', 7.5);
     $pdf->SetXY($lm + 2, $y);
-    $pdf->Cell($pw - 2, 4, 'Condiciones Generales', 0, 1, 'L');
+    $pdf->Cell($pw - 2, 4, $t('Condiciones Generales'), 0, 1, 'L');
     $y += 4;
- 
+
     $condiciones = [
         'El tiempo estimado de revisión y respuesta es de 1 a 4 semanas, dependiendo de la evaluación y del fabricante.',
         'La recepción del equipo no garantiza la aprobación de la garantía. El equipo será sometido a una revisión  para determinar si la falla está cubierta.',
@@ -3441,32 +3228,32 @@ function generarPDFGarantiaTelefono($id_caso)
         'En caso de aprobarse la garantía, el equipo podrá ser reparado, reemplazado o recibir la solución determinada por el fabricante o proveedor.',
         'El cliente deberá presentar este comprobante para recoger su equipo o dar seguimiento al trámite.',
     ];
- 
+
     $pdf->SetFont('helvetica', '', 7);
     foreach ($condiciones as $i => $cond) {
         $pdf->SetXY($lm + 2, $y);
         $pdf->Cell(5, 3.5, ($i + 1) . '.', 0, 0, 'R');
         $pdf->SetXY($lm + 7, $y);
-        $pdf->MultiCell($pw - 7, 3.5, $cond, 0, 'L');
+        $pdf->MultiCell($pw - 7, 3.5, $t($cond), 0, 'L');
         $y = $pdf->GetY() + 0.6;
     }
- 
+
     if ($esCred) {
         $y += 1;
         $pdf->SetFont('helvetica', 'B', 7.2);
         $pdf->SetXY($lm + 2, $y);
-        $pdf->Cell($pw - 2, 4, 'Disposición Especial de Crédito (PayJoy):', 0, 1, 'L');
+        $pdf->Cell($pw - 2, 4, $t('Disposición Especial de Crédito (PayJoy):'), 0, 1, 'L');
         $y += 4;
         $pdf->SetFont('helvetica', '', 7);
         $pdf->SetXY($lm + 2, $y);
         $pdf->MultiCell($pw - 2, 3.5,
-            'Al tratarse de un equipo adquirido bajo la modalidad de venta de crédito con la plataforma PayJoy, el cliente está obligado a continuar al corriente con sus pagos semanales/mensuales de manera regular. El ingreso del equipo a revisión no suspende, congela, ni condona la deuda ni los plazos de pago con PayJoy.',
+            $t('Al tratarse de un equipo adquirido bajo la modalidad de venta de crédito con la plataforma PayJoy, el cliente está obligado a continuar al corriente con sus pagos semanales/mensuales de manera regular. El ingreso del equipo a revisión no suspende, congela, ni condona la deuda ni los plazos de pago con PayJoy.'),
         0, 'L');
         $y = $pdf->GetY() + 1;
     }
- 
+
     $y += 2;
- 
+
     /* ─── CONTACTO ────────────────────────────────────────── */
     $pdf->SetFillColor(232, 240, 254);
     $pdf->SetDrawColor(18, 52, 104);
@@ -3474,105 +3261,105 @@ function generarPDFGarantiaTelefono($id_caso)
     $pdf->SetFont('helvetica', 'B', 7.5);
     $pdf->SetTextColor(18, 52, 104);
     $pdf->SetXY($lm + 2, $y + 1);
-    $pdf->Cell($pw - 2, 4, 'CONTACTO PARA SEGUIMIENTO', 0, 1, 'L');
+    $pdf->Cell($pw - 2, 4, $t('CONTACTO PARA SEGUIMIENTO'), 0, 1, 'L');
     $pdf->SetFont('helvetica', '', 7);
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetXY($lm + 2, $y + 5.5);
     $pdf->Cell($pw - 2, 3.8,
-        'Para cualquier duda o aclaración puede comunicarse a nuestro Call Center:   Tel. 951 215 4060   |   Horario: 10:00 a.m. a 8:00 p.m.',
+        $t('Para cualquier duda o aclaración puede comunicarse a nuestro Call Center:   Tel. 951 215 4060   |   Horario: 10:00 a.m. a 8:00 p.m.'),
     0, 1, 'L');
     $pdf->SetDrawColor(180, 180, 180);
     $y += 14;
- 
+
     /* ─── FIRMAS ──────────────────────────────────────────── */
-if ($y > 240) $y = 240;
+    if ($y > 240) $y = 240;
 
-$half  = ($pw - 10) / 2;
-$col2x = $lm + $half + 10;
+    $half  = ($pw - 10) / 2;
+    $col2x = $lm + $half + 10;
 
-$pdf->SetFont('helvetica', 'B', 8.5);
-$pdf->SetXY($lm, $y);
-$pdf->Cell($pw, 5, 'FIRMAS', 0, 1, 'C');
-$y += 7;
+    $pdf->SetFont('helvetica', 'B', 8.5);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($pw, 5, $t('FIRMAS'), 0, 1, 'C');
+    $y += 7;
 
-// Encabezados de columna
-$pdf->SetFont('helvetica', 'B', 8);
-$pdf->SetXY($lm, $y);
-$pdf->Cell($half, 4, 'Cliente', 0, 0, 'C');
-$pdf->SetXY($col2x, $y);
-$pdf->Cell($half, 4, 'Recepción Central Cell ' . $g['sucursal_nombre'], 0, 1, 'C');
-$y += 8;
+    // Encabezados de columna
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($half, 4, $t('Cliente'), 0, 0, 'C');
+    $pdf->SetXY($col2x, $y);
+    $pdf->Cell($half, 4, $t('Recepción Central Cell ' . $g['sucursal_nombre']), 0, 1, 'C');
+    $y += 8;
 
-$lw = 20;
-$pdf->SetFont('helvetica', '', 8);
-$pdf->SetDrawColor(0, 0, 0);
+    $lw = 20;
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetDrawColor(0, 0, 0);
 
-// Cliente — Nombre
-$pdf->SetXY($lm, $y);
-$pdf->Cell($lw, 4, 'Nombre:', 0, 0, 'L');
-$pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
+    // Cliente — Nombre
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($lw, 4, $t('Nombre:'), 0, 0, 'L');
+    $pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
 
-// Central Cell — solo Nombre (línea vacía, sin imprimir el valor)
-$pdf->SetXY($col2x, $y);
-$pdf->Cell($lw, 4, 'Nombre:', 0, 0, 'L');
-$pdf->Line($col2x + $lw, $y + 3.5, $col2x + $half - 2, $y + 3.5);
+    // Central Cell — solo Nombre (línea vacía, sin imprimir el valor)
+    $pdf->SetXY($col2x, $y);
+    $pdf->Cell($lw, 4, $t('Nombre:'), 0, 0, 'L');
+    $pdf->Line($col2x + $lw, $y + 3.5, $col2x + $half - 2, $y + 3.5);
 
-$y += 12;
+    $y += 12;
 
-// Cliente — Firma (solo lado izquierdo)
-$pdf->SetXY($lm, $y);
-$pdf->Cell($lw, 4, 'Firma:', 0, 0, 'L');
-$pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
+    // Cliente — Firma (solo lado izquierdo)
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($lw, 4, $t('Firma:'), 0, 0, 'L');
+    $pdf->Line($lm + $lw, $y + 3.5, $lm + $half - 2, $y + 3.5);
 
-// Lado derecho — vacío, sin línea ni etiqueta
+    // Lado derecho — vacío, sin línea ni etiqueta
 
-$pdf->SetDrawColor(180, 180, 180);
- 
+    $pdf->SetDrawColor(180, 180, 180);
+
     /* ─── PIE ─────────────────────────────────────────────── */
     $pdf->SetFont('helvetica', 'I', 6.5);
     $pdf->SetTextColor(130, 130, 130);
     $pdf->SetXY($lm, 268);
-    $pdf->Cell($pw, 4, 'Original para el Establecimiento — Copia para el Cliente', 0, 1, 'C');
- 
+    $pdf->Cell($pw, 4, $t('Original para el Establecimiento — Copia para el Cliente'), 0, 1, 'C');
+
     /* ══════════════════════════════════════════════════════
        PÁGINA 2 — Etiqueta compacta
     ══════════════════════════════════════════════════════ */
     $pdf->AddPage();
     $pdf->SetTextColor(0, 0, 0);
- 
+
     $ew  = 110;
     $exL = (215.9 - $ew) / 2;
     $ey  = 22;
- 
+
     $pdf->SetFillColor(18, 52, 104);
     $pdf->Rect($exL, $ey, $ew, 8, 'F');
     $pdf->SetFont('helvetica', 'B', 8.5);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetXY($exL, $ey + 1);
-    $pdf->Cell($ew, 6, 'CENTRAL CELL ' . $sucNombre, 0, 1, 'C');
- 
+    $pdf->Cell($ew, 6, $t('CENTRAL CELL ' . $sucNombre), 0, 1, 'C');
+
     $ey2 = $ey + 9;
- 
+
     $pdf->SetFillColor(232, 240, 254);
     $pdf->Rect($exL, $ey2, $ew, 5, 'F');
     $pdf->SetFont('helvetica', 'B', 6.5);
     $pdf->SetTextColor(18, 52, 104);
     $pdf->SetXY($exL, $ey2 + 0.8);
-    $pdf->Cell($ew, 3.5, 'COMPROBANTE DE RECEPCIÓN — FOLIO ' . $folio, 0, 1, 'C');
+    $pdf->Cell($ew, 3.5, $t('COMPROBANTE DE RECEPCIÓN — FOLIO ' . $folio), 0, 1, 'C');
     $ey2 += 6;
- 
+
     $pdf->SetTextColor(0, 0, 0);
- 
-    $etFila = function(string $lbl, string $val) use ($pdf, $exL, $ew, &$ey2) {
+
+    $etFila = function(string $lbl, string $val) use ($pdf, $exL, $ew, &$ey2, $t) {
         $lw = $ew * 0.36;
         $pdf->SetFont('helvetica', 'B', 7);
         $pdf->SetXY($exL + 3, $ey2);
-        $pdf->Cell($lw, 4.2, $lbl . ':', 0, 0, 'L');
+        $pdf->Cell($lw, 4.2, $t($lbl . ':'), 0, 0, 'L');
         $pdf->SetFont('helvetica', '', 7);
-        $pdf->Cell($ew - $lw - 3, 4.2, $val, 0, 1, 'L');
+        $pdf->Cell($ew - $lw - 3, 4.2, $t($val), 0, 1, 'L');
         $ey2 += 4.2;
     };
- 
+
     $etFila('Ticket',        $g['numero_ticket']);
     $etFila('Fecha',         $fecha_formateada);
     $etFila('Cliente',       $g['nombre_cliente']);
@@ -3584,20 +3371,273 @@ $pdf->SetDrawColor(180, 180, 180);
     $etFila('Vendedor',      $g['vendedor_nombre']);
     $etFila('Recibió',       $g['vendedor_recibe_nombre']);
     $etFila('Tipo de Venta', strtoupper($g['tipo_venta']));
- 
+
     $pdf->SetDrawColor(18, 52, 104);
     $pdf->SetLineWidth(0.5);
     $pdf->Rect($exL, $ey, $ew, $ey2 - $ey + 4, 'D');
     $pdf->SetLineWidth(0.2);
- 
+
     $pdf->SetFont('helvetica', 'I', 7);
     $pdf->SetTextColor(100, 100, 100);
     $pdf->SetXY($exL, $ey2 + 7);
-    $pdf->Cell($ew, 4, "\xe2\x9c\x82  Recortar y pegar en el equipo", 0, 1, 'C');
+    $pdf->Cell($ew, 4, $t("\xe2\x9c\x82  Recortar y pegar en el equipo"), 0, 1, 'C');
 
     while (ob_get_level()) { ob_end_clean(); }
- 
+
     $pdf->Output('Garantia-' . $folio . '.pdf', 'D');
     exit;
 }
+
+function obtenerModeloColorPorPlows($conn, $plows)
+{
+    $modelo = 'No encontrado';
+    $color  = 'No encontrado';
+
+    $stmt = $conn->prepare("SELECT descripcion FROM existencias WHERE BarcodeId = :plows LIMIT 1");
+    $stmt->execute([':plows' => $plows]);
+    $ex = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($ex) {
+        if (preg_match('/-\s*(.*?)\s*-\s*NUEVO/i', $ex['descripcion'], $m))  $color  = trim($m[1]);
+        if (preg_match('/\(\s*(.*?)\s*\//',          $ex['descripcion'], $m2)) $modelo = trim($m2[1]);
+    }
+    return ['modelo' => $modelo, 'color' => $color];
+}
+
+/* ═══════════════════════════════════════════
+   NUEVO: Guardar una VENTA (tipo = 2)
+   Reutiliza la misma tabla garantias_telefonos
+═══════════════════════════════════════════ */
+function guardarVentaTelefono($datos)
+{
+    $conn = conectarBD();
+
+    date_default_timezone_set('America/Mexico_City');
+    $fecha_registro = date('Y-m-d H:i:s');
+
+    $plows = strtoupper(trim($datos['plows'] ?? ''));
+    if (!preg_match('/^PLOWS\d{6}$/', $plows)) {
+        throw new Exception("PLOWS inválido.");
+    }
+
+    $imei = trim($datos['imei'] ?? '');
+    if (empty($imei)) {
+        throw new Exception("IMEI requerido.");
+    }
+
+    $sucursal   = intval($datos['sucursal'] ?? 0);
+    $tipo_venta = trim($datos['tipo_venta'] ?? '');
+    if (!in_array($tipo_venta, ['contado', 'credito'], true)) {
+        throw new Exception("Tipo de venta inválido.");
+    }
+
+    $sql = "
+        INSERT INTO garantias_telefonos (
+            tipo, plows, sucursal, tipo_venta, imei, fecha_registro
+        ) VALUES (
+            2, :plows, :sucursal, :tipo_venta, :imei, :fecha_registro
+        )
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([
+        ':plows'          => $plows,
+        ':sucursal'       => $sucursal,
+        ':tipo_venta'     => $tipo_venta,
+        ':imei'           => $imei,
+        ':fecha_registro' => $fecha_registro,
+    ]);
+
+    return (int) $conn->lastInsertId();
+}
+
+/* ═══════════════════════════════════════════
+   NUEVO: PDF de VENTA — 1 sola hoja
+═══════════════════════════════════════════ */
+function generarPDFVentaTelefono($id_caso)
+{
+    require_once __DIR__ . '/tcpdf/tcpdf.php';
+
+    $conn = conectarBD();
+
+    $stmt = $conn->prepare("
+        SELECT gt.*, s.nombre AS sucursal_nombre
+        FROM garantias_telefonos gt
+        LEFT JOIN sucursales s ON s.id = gt.sucursal
+        WHERE gt.id_caso = :id AND gt.tipo = 2
+        LIMIT 1
+    ");
+    $stmt->execute([':id' => $id_caso]);
+    $v = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$v) throw new Exception("Venta no encontrada.");
+
+    $mc = obtenerModeloColorPorPlows($conn, $v['plows']);
+
+    date_default_timezone_set('America/Mexico_City');
+    $fecha_formateada = (new DateTime($v['fecha_registro']))->format('d/m/Y');
+    $esCred    = strtolower(trim($v['tipo_venta'])) === 'credito';
+    $sucNombre = mb_strtoupper($v['sucursal_nombre'], 'UTF-8');
+
+    /* ─── HELPER DE CONVERSIÓN (mismo que en garantía) ── */
+    $t = function($s) {
+        return mb_convert_encoding((string) $s, 'ISO-8859-1', 'UTF-8');
+    };
+
+    /* ─── PDF en modo NO-Unicode (más rápido) ─── */
+    $pdf = new TCPDF('P', 'mm', 'LETTER', false, 'ISO-8859-1', false);
+    $pdf->SetCreator('Central Cell');
+    $pdf->SetAuthor('Central Cell');
+    $pdf->SetTitle($t('Entrega, Funcionamiento y Conformidad'));
+    $pdf->SetPrintHeader(false);
+    $pdf->SetPrintFooter(false);
+    $pdf->SetMargins(12, 8, 12);
+    $pdf->SetAutoPageBreak(false);
+    $pdf->setCellHeightRatio(1.05);
+    $pdf->AddPage();
+
+    $lm = 12;
+    $pw = 215.9 - ($lm * 2);
+    $y  = 8;
+
+    // Encabezado
+    $pdf->SetFillColor(18, 52, 104);
+    $pdf->Rect($lm, $y, $pw, 14, 'F');
+    $logo = __DIR__ . '/recursos/img/central-cell-logo.png';
+    if (file_exists($logo)) {
+        $pdf->Image($logo, $lm + 3, $y + 1.5, 26, 11, '', '', '', false, 150, '', false, false, 0);
+    }
+    $pdf->SetFont('helvetica', 'B', 11);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetXY($lm + 32, $y + 1.5);
+    $pdf->Cell($pw - 32, 6, $t('CENTRAL CELL ' . $sucNombre), 0, 1, 'L');
+    $pdf->SetFont('helvetica', '', 7.5);
+    $pdf->SetXY($lm + 32, $y + 7.5);
+    $pdf->Cell($pw - 32, 5, $t('Formato de Entrega, Funcionamiento y Conformidad del Equipo'), 0, 1, 'L');
+    $y += 17;
+
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($pw / 2, 5, $t('Fecha: ' . $fecha_formateada), 0, 0, 'L');
+    $pdf->Cell($pw / 2, 5, $t('No. de ticket: ____________________________'), 0, 1, 'R');
+    $y += 7;
+
+    $seccion = function(string $titulo) use ($pdf, $lm, $pw, &$y, $t) {
+        $pdf->SetFillColor(18, 52, 104);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetXY($lm, $y);
+        $pdf->Cell($pw, 5, $t('  ' . $titulo), 0, 1, 'L', true);
+        $pdf->SetTextColor(0, 0, 0);
+        $y += 5.5;
+    };
+
+    // Datos del equipo
+    $seccion('DATOS DEL EQUIPO');
+    $pdf->SetFont('helvetica', '', 8);
+    $half = $pw / 2;
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($half, 5, $t('Marca / Modelo: ' . $mc['modelo']), 0, 0, 'L');
+    $pdf->Cell($half, 5, $t('Color: ' . $mc['color']), 0, 1, 'L');
+    $pdf->SetXY($lm, $y + 5);
+    $pdf->Cell($half, 5, $t('IMEI: ' . $v['imei']), 0, 0, 'L');
+    $pdf->Cell($half, 5, $t('PLOWS: ' . $v['plows']), 0, 1, 'L');
+    $y += 12;
+
+    // Revisión / checklist (2 columnas)
+    $seccion('REVISIÓN Y FUNCIONAMIENTO DEL EQUIPO');
+    $pdf->SetFont('helvetica', 'I', 6.8);
+    $pdf->SetXY($lm, $y);
+    $pdf->MultiCell($pw, 3.2, $t('Antes de la entrega, el equipo fue revisado en presencia del cliente, verificando su correcto funcionamiento.'), 0, 'L');
+    $y = $pdf->GetY() + 1.5;
+
+    $items = [
+        'Encendido y apagado','Pantalla','Touch / táctil','Bocina / altavoz','Micrófono',
+        'Cámara frontal','Cámara trasera','Flash','Carga y puerto de carga','Botones físicos',
+        'Wi-Fi','Bluetooth','Red móvil / señal','Lectura de SIM','Vibración',
+        'Sin daños físicos visibles','IMEI coincide con documentación/caja',
+    ];
+    $colW = $pw / 2;
+    $mitad = ceil(count($items) / 2);
+    $col1 = array_slice($items, 0, $mitad);
+    $col2 = array_slice($items, $mitad);
+    $pdf->SetFont('helvetica', '', 8.8);
+    $yStart = $y;
+    foreach ($col1 as $it) {
+        $pdf->SetXY($lm, $y);
+        $pdf->Cell(4, 3.6, '[  ]', 0, 0, 'L');
+        $pdf->Cell($colW - 4, 3.6, $t($it), 0, 1, 'L');
+        $y += 3.6;
+    }
+    $y2 = $yStart;
+    foreach ($col2 as $it) {
+        $pdf->SetXY($lm + $colW, $y2);
+        $pdf->Cell(4, 3.6, '[  ]', 0, 0, 'L');
+        $pdf->Cell($colW - 4, 3.6, $t($it), 0, 1, 'L');
+        $y2 += 3.6;
+    }
+    $y = max($y, $y2) + 1;
+    $pdf->SetFont('helvetica', '', 6.8);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($pw, 3.6, $t('Otros: _____________________________________________________'), 0, 1, 'L');
+    $y += 5;
+    $pdf->Cell($pw, 3.6, $t('Observaciones: _____________________________________________'), 0, 1, 'L');
+    $y += 6;
+
+    // Garantía
+    $seccion('GARANTÍA');
+    $pdf->SetFont('helvetica', '', 6.8);
+    $pdf->SetXY($lm, $y);
+    $pdf->MultiCell($pw, 3.2,
+        $t('El equipo cuenta con 3 meses de garantía exclusivamente por defectos de fabricación. No cubre daños ocasionados por golpes, caídas, humedad, manipulación, mal uso, accesorios no adecuados, daños físicos o cualquier otra situación ajena a un defecto de fabricación. El cliente deberá conservar su ticket de compra y documentación correspondiente para cualquier aclaración o solicitud de garantía.'),
+    0, 'L');
+    $y = $pdf->GetY() + 2;
+
+    // PayJoy (solo si crédito)
+    if ($esCred) {
+        $seccion('EN CASO DE EQUIPO ADQUIRIDO MEDIANTE PAYJOY');
+        $pdf->SetFont('helvetica', '', 6.6);
+        $pdf->SetXY($lm, $y);
+        $pdf->MultiCell($pw, 3.1,
+            $t('El cliente se compromete a realizar los pagos de su financiamiento en las fechas y montos que indique la app de PayJoy. De no pagarse, el equipo podrá bloquearse como recordatorio, según las condiciones del financiamiento. Los pagos pueden realizarse en la sucursal donde se adquirió el equipo, con una comisión de $15.00 MXN por servicio. Cada pago debe entregarse con ticket y comprobante de PayJoy; el cliente debe solicitarlos y conservarlos.'),
+        0, 'L');
+        $y = $pdf->GetY() + 2;
+    }
+
+    // Conformidad (siempre)
+    $seccion('CONFORMIDAD DEL CLIENTE');
+    $pdf->SetFont('helvetica', '', 6.8);
+    $pdf->SetXY($lm, $y);
+    $pdf->MultiCell($pw, 3.2,
+        $t('Manifiesto que recibí el equipo descrito en este documento y que, al momento de la entrega, tuve la oportunidad de revisar su funcionamiento y estado físico. Declaro estar informado sobre las condiciones de garantía, así como, en caso de aplicar, sobre las condiciones y obligaciones correspondientes al financiamiento mediante PayJoy.'),
+    0, 'L');
+    $y = $pdf->GetY() + 4;
+
+    $half  = ($pw - 10) / 2;
+    $col2x = $lm + $half + 10;
+    $pdf->SetFont('helvetica', '', 7.5);
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($half, 4, $t('Nombre del cliente:'), 0, 0, 'L');
+    $pdf->Line($lm + 32, $y + 3.5, $lm + $half - 2, $y + 3.5);
+    $pdf->SetXY($col2x, $y);
+    $pdf->Cell($half, 4, $t('Nombre del vendedor:'), 0, 0, 'L');
+    $pdf->Line($col2x + 34, $y + 3.5, $col2x + $half - 2, $y + 3.5);
+    $y += 9;
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($half, 4, $t('Firma del cliente:'), 0, 0, 'L');
+    $pdf->Line($lm + 30, $y + 3.5, $lm + $half - 2, $y + 3.5);
+     $pdf->SetXY($col2x, $y);
+     $pdf->Cell($half, 4, $t('Firma del vendedor:'), 0, 0, 'L');
+     $pdf->Line($col2x + 30, $y + 3.5, $col2x + $half - 2, $y + 3.5);
+    $y += 8;
+    $pdf->SetXY($lm, $y);
+    $pdf->Cell($pw, 4, $t('Observaciones adicionales: ____________________________________________'), 0, 1, 'L');
+
+    while (ob_get_level()) { ob_end_clean(); }
+
+    $folio = str_pad($v['id_caso'], 5, '0', STR_PAD_LEFT);
+    $pdf->Output('Venta-' . $folio . '.pdf', 'D');
+    exit;
+}
 ?>
+

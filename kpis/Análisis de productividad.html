@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis de productividad</title>
+
+<link rel="stylesheet" href="../styles.css">
+
+<style>
+  /* ---- Ajustes puntuales que el CSS base no cubre (no se toca styles.css) ---- */
+
+  /* Navbar horizontal (idéntico al del Comparador de Series) */
+  .navbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:var(--space-md);
+    padding:12px var(--space-lg);
+    background:var(--surface);
+    border-bottom:1px solid var(--outline-variant);
+  }
+  .navbar-brand{
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--on-surface);
+  }
+  .navbar-brand img{border-radius:6px;}
+  .navbar-brand-text p{margin:0;line-height:1.2;}
+  .navbar-links{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  }
+  .navbar-link{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 14px;border-radius:var(--radius-lg);
+    color:var(--on-surface-variant);text-decoration:none;
+    font-size:14px;font-weight:600;
+    transition:all .15s ease;
+  }
+  .navbar-link .material-symbols-outlined{font-size:20px;}
+  .navbar-link:hover{background:var(--surface-container-low);color:var(--primary);}
+  .navbar-link.active{background:var(--primary);color:var(--on-primary,#fff);}
+  .navbar-toggle{display:none;}
+
+  @media (max-width:720px){
+    .navbar-links{
+      display:none;flex-direction:column;align-items:stretch;
+      position:absolute;top:100%;left:0;right:0;
+      background:var(--surface);border-bottom:1px solid var(--outline-variant);
+      padding:var(--space-sm);gap:4px;
+    }
+    .navbar-links.open{display:flex;}
+    .navbar-toggle{
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:var(--on-surface);
+    }
+  }
+
+  h1 span{color:var(--primary);}
+
+  .step-hint{font-size:13px;color:var(--on-surface-variant);margin:0 0 var(--space-md);}
+  .actions{display:flex;flex-wrap:wrap;gap:var(--space-sm);margin-top:var(--space-sm);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .input-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface-container-low);
+    margin-bottom:var(--space-md);
+  }
+  .input-label{
+    display:block;font-size:12px;font-weight:700;color:var(--on-surface-variant);
+    text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;
+  }
+  input[type=file]{
+    width:100%;box-sizing:border-box;
+    padding:12px;border:1px dashed var(--outline-variant);
+    border-radius:var(--radius-lg);
+    background:var(--surface);color:var(--on-surface);
+    font-size:13px;font-family:inherit;cursor:pointer;
+  }
+  input[type=file]:hover{border-color:var(--primary);}
+
+  .check-row{
+    display:flex;align-items:flex-start;gap:10px;
+    font-size:13px;color:var(--on-surface);line-height:1.5;cursor:pointer;
+  }
+  .check-row input{margin-top:3px;accent-color:var(--primary);}
+
+  /* Resultados */
+  .result-card{
+    padding:var(--space-md);
+    border:1px solid var(--outline-variant);
+    border-top:3px solid #00838F;
+    border-radius:var(--radius-lg);
+    background:var(--surface);
+    font-size:13px;color:var(--on-surface);
+  }
+  .result-card:empty{display:none;}
+  .result-card ul{margin:0;padding-left:20px;line-height:1.7;}
+  .result-card p{margin:8px 0 0;}
+  .result-card .err{color:#C0392B;}
+  .result-card p:last-child:not(.err){color:#00838F;font-weight:700;}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAVBAR HORIZONTAL ===================== -->
+<header class="navbar">
+  <a href="../garantias/validador/validador.php" class="navbar-brand">
+    <img src="../recursos/img/Central-Cell-Logo-JUSTCELL.png" alt="Logo" width="32" height="32">
+    <div class="navbar-brand-text">
+      <p class="text-headline-sm">Central Cell</p>
+      <p class="text-label-sm" style="color:var(--outline)">Análisis de Productividad</p>
+    </div>
+  </a>
+
+  <button class="navbar-toggle" id="navToggle" type="button" aria-label="Abrir menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+
+  <nav class="navbar-links" id="navLinks">
+    <a href="../garantias/validador/validador.php" class="navbar-link">
+      <span class="material-symbols-outlined">home</span>
+      Home
+    </a>
+    <a href="modulos.html" class="navbar-link">
+      <span class="material-symbols-outlined">apps</span>
+      Panel de Herramientas
+    </a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="lesson">
+    <div class="lesson-body">
+
+      <span class="eyebrow">Herramientas</span>
+      <h1 class="text-headline-lg" style="margin:6px 0 0">Análisis de <span>Productividad</span></h1>
+      <div class="lesson-meta">
+        <span><span class="material-symbols-outlined" style="font-size:16px">trending_up</span> Últimas 6 semanas por almacén y vendedor</span>
+      </div>
+
+      <div class="intro-panel">
+        <div class="icon-badge"><span class="material-symbols-outlined">query_stats</span></div>
+        <div>
+          <h3 style="margin:0">Carga tu hoja de cálculo y genera el análisis</h3>
+          <p>Carga un archivo con las 4 hojas semanales. Se tomarán las últimas 6 semanas de cada hoja y se generará un nuevo Excel.</p>
+        </div>
+      </div>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <h3 class="step-title text-headline-sm">Carga el archivo</h3>
+        </div>
+
+        <div class="input-card">
+          <label for="file" class="input-label">Archivo de hoja de cálculo</label>
+          <input type="file" id="file" accept=".xlsx,.xlsm,.xlsb,.xls,.xltx,.ods,.csv,.tsv">
+        </div>
+
+        <div class="input-card">
+          <label class="check-row">
+            <input type="checkbox" id="excl">
+            <span>Si no se reconoce la fila "Total" por su nombre, usar la última fila de cada tabla de almacenes como Total</span>
+          </label>
+          <div class="stat-desc" style="margin-top:8px">La fila de resultado general ("Total", "Innovación Móvil" o "Tecnología Móvil") se detecta sola y se coloca al final como "Total".</div>
+        </div>
+      </section>
+
+      <section class="step-section">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <h3 class="step-title text-headline-sm">Procesa y descarga</h3>
+        </div>
+
+        <div class="actions" style="margin-top:0;margin-bottom:var(--space-md)">
+          <button class="btn btn-primary" id="go" disabled>
+            <span class="material-symbols-outlined" style="font-size:18px">download</span>
+            Procesar y generar Excel
+          </button>
+        </div>
+
+        <div class="result-card" id="out"></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CFG=[
+  {titulo:'Almacenes Accesorios',tipo:'im',kind:'alm',cTotal:17,cPct:18,ent:'Almacen'},
+  {titulo:'Vendedores Accesorios',tipo:'im',kind:'ven',cTotal:3,cPct:6,ent:'Vendedor'},
+  {titulo:'Almacenes Telefonia',tipo:'tm',kind:'alm',cTotal:17,cPct:18,ent:'Almacen'},
+  {titulo:'Vendedores Telefonia',tipo:'tm',kind:'ven',cTotal:3,cPct:7,ent:'Vendedor'}
+];
+const norm=s=>String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const pad=n=>String(n).padStart(2,'0');
+const mesIdx=s=>{s=s.slice(0,3);if(s==='set')s='sep';return ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'].indexOf(s)};
+
+// Detección flexible de "Del DD Mes - DD Mes | TIPO"
+const RE=/^\s*del\s*(\d{1,2})\s*(?:de\s+)?([a-z]+)?\s*[-–—]+\s*(\d{1,2})\s*(?:de\s+)?([a-z]+)/;
+function parseFecha(txt){
+  const t=norm(txt),m=t.match(RE); if(!m)return null;
+  const m2=mesIdx(m[4]),m1=m[2]?mesIdx(m[2]):m2; if(m1<0||m2<0)return null;
+  const rest=t.slice(m[0].length);
+  const tp=(rest.match(/\|\s*(im|tm)/)||rest.match(/\b(im|tm)\b/)||[])[1]||null;
+  return {d1:+m[1],m1,d2:+m[3],m2,tipo:tp,label:pad(+m[1])+' '+MES[m1]+' - '+pad(+m[3])+' '+MES[m2]};
+}
+const getCell=(ws,r,c)=>ws[XLSX.utils.encode_cell({r,c})];
+const textB=(ws,r)=>{const c=getCell(ws,r,1);return c&&c.v!=null?String(c.v).trim():''};
+const toNum=c=>{
+  if(!c||c.v==null||c.v==='')return null;
+  if(typeof c.v==='number')return c.v;
+  const n=parseFloat(String(c.v).replace(/[$,\s%]/g,''));return isNaN(n)?null:n;
+};
+const toPct=c=>{
+  const n=toNum(c); if(n===null)return null;
+  if(typeof c.v==='string')return c.v.includes('%')?n/100:(n>5?n/100:n);
+  if(c.z&&String(c.z).includes('%'))return n;
+  return n>5?n/100:n;
+};
+const esTotal=n=>/^(total|totales|resultado|general|gran total|suma|innovacion movil|tecnologia movil)/.test(norm(n));
+
+function leerTablas(ws,cfg,excluirUltima){
+  const ref=XLSX.utils.decode_range(ws['!ref']||'A1'),maxR=ref.e.r,tablas=[];
+  const buscar=(a,b)=>{for(let i=a;i<=b&&i<=maxR;i++){const d=parseFecha(textB(ws,i));if(d&&(!d.tipo||d.tipo===cfg.tipo))return {i,d}}return null};
+  const key=norm(cfg.ent);
+  let f=buscar(0,maxR);
+  while(f){
+    const {i,d}=f;
+    let h=-1;
+    for(let k=i+1;k<=i+5&&k<=maxR;k++){if(norm(textB(ws,k)).startsWith(key)){h=k;break}}
+    if(h<0)for(let k=i+1;k<=i+5&&k<=maxR;k++){const t=textB(ws,k);if(t&&!parseFecha(t)){h=k;break}}
+    if(h<0){f=buscar(i+1,i+6);continue}
+    let rows=[],k=h+1;
+    while(k<=maxR){
+      const n=textB(ws,k);
+      if(!n||parseFecha(n))break;
+      rows.push({name:n,total:toNum(getCell(ws,k,cfg.cTotal)),pct:toPct(getCell(ws,k,cfg.cPct))});
+      k++;
+    }
+    let resumen=null;
+    if(cfg.kind==='alm'){
+      let ix=-1;rows.forEach((r,j)=>{if(esTotal(r.name))ix=j});
+      if(ix<0&&excluirUltima)ix=rows.length-1;
+      if(ix>=0)resumen=rows.splice(ix,1)[0];
+    }
+    rows=rows.filter(r=>!esTotal(r.name));
+    tablas.push({d,label:d.label,rows,resumen});
+    f=buscar(k,k+5); // hasta 5 filas extra buscando otra fecha
+  }
+  // Años inferidos por orden de aparición (de la más antigua a la más reciente)
+  let y=2000,prev=null;
+  tablas.forEach(t=>{const s=t.d.m1*100+t.d.d1;if(prev!==null&&s<prev)y++;prev=s;t.key=y*10000+s});
+  tablas.sort((a,b)=>a.key-b.key);
+  const u=new Map();tablas.forEach(t=>u.set(t.key,t));
+  const unicas=[...u.values()];unicas.detectadas=tablas.length;
+  return unicas;
+}
+
+function armar(tablas,n=6){
+  const ult=tablas.slice(-n),map=new Map();
+  ult.forEach((t,wi)=>t.rows.forEach(r=>{
+    const k=norm(r.name);
+    if(!map.has(k))map.set(k,{name:r.name,w:{}});
+    map.get(k).w[wi]=r;
+  }));
+  let totalRow=null;
+  ult.forEach((t,wi)=>{if(t.resumen){totalRow=totalRow||{name:'Total',w:{}};totalRow.w[wi]=t.resumen}});
+  return {semanas:ult.map(t=>t.label),ents:[...map.values()],totalRow};
+}
+
+const COL={
+  rojo:{bg:'FFFFC7CE',fg:'FF9C0006'},
+  amarillo:{bg:'FFFFEB9C',fg:'FF9C5700'},
+  verde:{bg:'FFC6EFCE',fg:'FF006100'}
+};
+function color(p){const v=p*100;return v<70?COL.rojo:(v<100?COL.amarillo:COL.verde)}
+
+async function generar(res){
+  const wb=new ExcelJS.Workbook();
+  res.forEach(({cfg,data})=>{
+    const ws=wb.addWorksheet(cfg.titulo);
+    ws.addRow([cfg.ent,...data.semanas.flatMap(s=>[s+' - Total',s+' - %']),'Promedio - Total','Promedio - %']);
+    const hr=ws.getRow(1);hr.font={bold:true};hr.alignment={wrapText:true,vertical:'middle'};
+    ws.getColumn(1).width=32;
+    data.semanas.forEach((_,i)=>{ws.getColumn(2+i*2).width=18;ws.getColumn(3+i*2).width=14});
+    const nS=data.semanas.length;ws.getColumn(2+nS*2).width=18;ws.getColumn(3+nS*2).width=14;
+    const filas=[...data.ents];if(data.totalRow)filas.push(data.totalRow);
+    filas.forEach(e=>{
+      const prom=k=>{const v=Object.values(e.w).map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+      const aT=prom('total'),aP=prom('pct');
+      const row=ws.addRow([e.name,...data.semanas.flatMap((_,i)=>{const r=e.w[i];return r?[r.total,r.pct]:[null,null]}),aT,aP]);
+      const esT=e===data.totalRow;
+      if(esT)row.eachCell({includeEmpty:true},c=>{c.border={top:{style:'thin'}};c.font={bold:true}});
+      const pt=row.getCell(2+nS*2),pp=row.getCell(3+nS*2);
+      pt.numFmt='$#,##0.00';pp.numFmt='0%';pt.font={bold:true};
+      if(aP!=null){const c=color(aP);pp.fill={type:'pattern',pattern:'solid',fgColor:{argb:c.bg}};pp.font={bold:true,color:{argb:c.fg}}}
+      data.semanas.forEach((_,i)=>{
+        const ct=row.getCell(2+i*2),cp=row.getCell(3+i*2),r=e.w[i];
+        ct.numFmt='$#,##0.00';cp.numFmt='0%';
+        if(r&&r.pct!=null){
+          const c=color(r.pct);
+          cp.fill={type:'pattern',pattern:'solid',fgColor:{argb:c.bg}};
+          cp.font={bold:esT,color:{argb:c.fg}};
+        }
+      });
+    });
+    ws.views=[{state:'frozen',xSplit:1,ySplit:1}];
+  });
+  return await wb.xlsx.writeBuffer();
+}
+
+const $=id=>document.getElementById(id);
+let wbIn=null,nombre='productividad';
+$('file').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    wbIn=XLSX.read(await f.arrayBuffer(),{type:'array',cellNF:true});
+    nombre=f.name.replace(/\.[^.]+$/,'');
+    $('go').disabled=false;$('out').textContent='';
+  }catch(err){wbIn=null;$('go').disabled=true;$('out').innerHTML='<p class="err">No se pudo leer el archivo.</p>'}
+});
+
+$('go').addEventListener('click',async()=>{
+  const out=$('out');out.textContent='Procesando...';
+  const excl=$('excl').checked,res=[],ul=document.createElement('ul');
+  CFG.forEach((cfg,i)=>{
+    const li=document.createElement('li'),name=wbIn.SheetNames[i];
+    if(!name){li.textContent='Hoja '+(i+1)+' ('+cfg.titulo+'): no existe en el archivo.';li.className='err';ul.appendChild(li);return}
+    const t=leerTablas(wbIn.Sheets[name],cfg,excl),d=armar(t);
+    res.push({cfg,data:d});
+    li.textContent='Hoja '+(i+1)+' ('+cfg.titulo+'): '+t.detectadas+' tablas detectadas'+(t.detectadas!==t.length?' ('+t.length+' semanas distintas)':'')
+      +(d.semanas.length?'; semanas usadas: '+d.semanas[0]+' a '+d.semanas[d.semanas.length-1]+' ('+d.semanas.length+'); '+d.ents.length+' registros.':'. Sin datos.');
+    if(!t.length)li.className='err';
+    ul.appendChild(li);
+  });
+  out.textContent='';out.appendChild(ul);
+  if(!res.length)return;
+  try{
+    const buf=await generar(res),fn='Analisis_'+nombre+'.xlsx';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download=fn;document.body.appendChild(a);a.click();a.remove();
+    const p=document.createElement('p');p.textContent='Archivo generado.';out.appendChild(p);
+  }catch(err){
+    const p=document.createElement('p');p.className='err';
+    p.textContent='No se pudo generar el archivo: '+(err&&err.message||err);
+    out.appendChild(p);
+  }
+});
+</script>
+
+<script>
+  // Control del menú horizontal en móvil
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+</script>
+</body>
+</html>

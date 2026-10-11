@@ -199,8 +199,9 @@
               <li>Carga el archivo de <strong>Existencias</strong> (inventario actual)</li>
               <li>Carga el archivo de <strong>Ventas por Ticket</strong></li>
               <li>Presiona el botón para generar el reporte automáticamente</li>
-              <li>El Excel mostrará una tabla con columnas: Modelo | Almacén | Ventas | Existencias</li>
-              <li>Los modelos están ordenados por ventas (mayor a menor)</li>
+              <li>Cada modelo tiene su propia tabla con encabezado: # | Marca | Modelo | Almacén | Ventas | Existencias</li>
+              <li>Las tablas están numeradas y ordenadas por ventas (mayor a menor)</li>
+              <li>Al final aparecen los modelos sin ventas que tienen existencias, en orden alfabético por marca y modelo</li>
               <li>Si un almacén no vendió, aparecerá 0 en ventas</li>
             </ul>
           </div>
@@ -355,162 +356,158 @@ analyzeBtn.onclick = async () => {
 };
 
 async function generarReporte() {
-  // 1. Calcular ventas por modelo y almacén
+  // 1. Ventas por modelo y almacén
   const ventasPorModelo = {};
   ventasData.forEach(v => {
-    const key = `${v.marca}||${v.modelo}`;
+    const marca = String(v.marca).trim();
+    const modelo = String(v.modelo).trim();
+    const key = `${marca}||${modelo}`;
     if (!ventasPorModelo[key]) {
-      ventasPorModelo[key] = {
-        marca: v.marca,
-        modelo: v.modelo,
-        total: 0,
-        porAlmacen: {}
-      };
+      ventasPorModelo[key] = { marca, modelo, total: 0, porAlmacen: {} };
     }
     ventasPorModelo[key].total += v.cantidad;
-    
-    if (!ventasPorModelo[key].porAlmacen[v.almacen]) {
-      ventasPorModelo[key].porAlmacen[v.almacen] = 0;
-    }
-    ventasPorModelo[key].porAlmacen[v.almacen] += v.cantidad;
+    ventasPorModelo[key].porAlmacen[v.almacen] =
+      (ventasPorModelo[key].porAlmacen[v.almacen] || 0) + v.cantidad;
   });
 
-  // 2. Calcular existencias por modelo y almacén
+  // 2. Existencias por modelo y almacén (ahora guarda marca y modelo)
   const existenciasPorModelo = {};
   existenciasData.forEach(e => {
-    const key = `${e.marca}||${e.modelo}`;
+    const marca = String(e.marca).trim();
+    const modelo = String(e.modelo).trim();
+    const key = `${marca}||${modelo}`;
     if (!existenciasPorModelo[key]) {
-      existenciasPorModelo[key] = {
-        porAlmacen: {}
-      };
+      existenciasPorModelo[key] = { marca, modelo, porAlmacen: {} };
     }
-    if (!existenciasPorModelo[key].porAlmacen[e.almacen]) {
-      existenciasPorModelo[key].porAlmacen[e.almacen] = 0;
-    }
-    existenciasPorModelo[key].porAlmacen[e.almacen] += e.existencia;
+    existenciasPorModelo[key].porAlmacen[e.almacen] =
+      (existenciasPorModelo[key].porAlmacen[e.almacen] || 0) + e.existencia;
   });
 
-  // 3. Ordenar modelos por ventas totales (mayor a menor)
-  const modelosOrdenados = Object.entries(ventasPorModelo)
+  // 3. Modelos con ventas: de mayor a menor
+  const conVentas = Object.entries(ventasPorModelo)
     .sort((a, b) => b[1].total - a[1].total);
 
-  // 4. Obtener lista única de almacenes
+  // 4. Modelos SIN ventas pero con existencias: alfabético por marca y luego modelo
+  const sinVentas = Object.entries(existenciasPorModelo)
+    .filter(([key, info]) => !ventasPorModelo[key] &&
+      Object.values(info.porAlmacen).reduce((s, n) => s + n, 0) > 0)
+    .sort((a, b) =>
+      a[1].marca.localeCompare(b[1].marca, 'es') ||
+      a[1].modelo.localeCompare(b[1].modelo, 'es'));
+
+  // 5. Lista única de almacenes
   const almacenesSet = new Set();
   ventasData.forEach(v => almacenesSet.add(v.almacen));
   existenciasData.forEach(e => almacenesSet.add(e.almacen));
   const almacenes = Array.from(almacenesSet).sort();
 
-  // 5. Crear Excel
+  // 6. Crear Excel
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Análisis Ventas vs Existencias');
 
-  // 6. Configurar anchos de columna
-  ws.getColumn(1).width = 20; // Marca
-  ws.getColumn(2).width = 30; // Modelo
-  ws.getColumn(3).width = 30; // Almacén
-  ws.getColumn(4).width = 12; // Ventas
-  ws.getColumn(5).width = 14; // Existencias
+  ws.getColumn(1).width = 7;  // #
+  ws.getColumn(2).width = 20; // Marca
+  ws.getColumn(3).width = 30; // Modelo
+  ws.getColumn(4).width = 30; // Almacén
+  ws.getColumn(5).width = 12; // Ventas
+  ws.getColumn(6).width = 14; // Existencias
 
-  // 7. Crear encabezado
-  const headerRow = ws.addRow(['Marca', 'Modelo', 'Almacén', 'Ventas', 'Existencias']);
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
-  headerRow.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FF2F6FA6' }
+  const agregarEncabezado = () => {
+    const headerRow = ws.addRow(['#', 'Marca', 'Modelo', 'Almacén', 'Ventas', 'Existencias']);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F6FA6' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    headerRow.height = 25;
   };
-  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  headerRow.height = 25;
 
-  // 8. Agregar datos
-  modelosOrdenados.forEach(([key, ventasInfo]) => {
-    const existenciasInfo = existenciasPorModelo[key] || { porAlmacen: {} };
+  const agregarTabla = (numero, marca, modelo, ventasPorAlmacen, existPorAlmacen, totalVentas) => {
+    // Encabezado propio para cada tabla
+    agregarEncabezado();
 
-    // Por cada almacén, agregar una fila
     almacenes.forEach((almacen, idx) => {
-      const ventas = ventasInfo.porAlmacen[almacen] || 0;
-      const existencias = existenciasInfo.porAlmacen[almacen] || 0;
+      const ventas = ventasPorAlmacen[almacen] || 0;
+      const existencias = existPorAlmacen[almacen] || 0;
 
       const row = ws.addRow([
-        idx === 0 ? ventasInfo.marca : '', // Solo mostrar marca en primera fila del modelo
-        idx === 0 ? ventasInfo.modelo : '', // Solo mostrar modelo en primera fila
+        idx === 0 ? numero : '',
+        idx === 0 ? marca : '',
+        idx === 0 ? modelo : '',
         almacen,
         ventas,
         existencias
       ]);
 
-      // Alternar colores de fondo para mejor lectura
       if (idx % 2 === 0) {
-        row.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF8FAFC' }
-        };
+        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
       }
 
-      // Alineación
-      row.getCell(1).alignment = { vertical: 'middle' };
+      row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
       row.getCell(2).alignment = { vertical: 'middle' };
-      row.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
-      row.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(3).alignment = { vertical: 'middle' };
+      row.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
       row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+      row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
 
-      // Si la primera fila del modelo, poner en negrita
       if (idx === 0) {
-        row.getCell(1).font = { bold: true, color: { argb: 'FF2F6FA6' } };
-        row.getCell(2).font = { bold: true, color: { argb: 'FF2F6FA6' } };
+        [1, 2, 3].forEach(c => {
+          row.getCell(c).font = { bold: true, color: { argb: 'FF2F6FA6' } };
+        });
       }
     });
 
-    // Fila de totales por modelo
-    const totalVentas = ventasInfo.total;
-    const totalExistencias = Object.values(existenciasInfo.porAlmacen).reduce((sum, val) => sum + val, 0);
-
-    const totalRow = ws.addRow([
-      '',
-      '',
-      'TOTAL',
-      totalVentas,
-      totalExistencias
-    ]);
-
+    const totalExistencias = Object.values(existPorAlmacen).reduce((s, n) => s + n, 0);
+    const totalRow = ws.addRow(['', '', '', 'TOTAL', totalVentas, totalExistencias]);
     totalRow.font = { bold: true };
-    totalRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE3F2FD' }
-    };
-    totalRow.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
-    totalRow.getCell(4).alignment = { horizontal: 'center', vertical: 'middle' };
+    totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } };
+    totalRow.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' };
     totalRow.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+    totalRow.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
 
-    // Espacio entre modelos
+    ws.addRow([]); // espacio entre tablas
+  };
+
+  let numero = 1;
+
+  // 7. Tablas con ventas (numeradas de la más vendida a la menos vendida)
+  conVentas.forEach(([key, info]) => {
+    const exist = existenciasPorModelo[key] || { porAlmacen: {} };
+    agregarTabla(numero++, info.marca, info.modelo, info.porAlmacen, exist.porAlmacen, info.total);
+  });
+
+  // 8. Tablas sin ventas (al final, alfabético), con separador
+  if (sinVentas.length) {
+    const sep = ws.addRow(['MODELOS SIN VENTAS (orden alfabético por marca y modelo)']);
+    ws.mergeCells(sep.number, 1, sep.number, 6);
+    sep.font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+    sep.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF555555' } };
+    sep.alignment = { horizontal: 'center', vertical: 'middle' };
+    sep.height = 28;
     ws.addRow([]);
+
+    sinVentas.forEach(([key, info]) => {
+      agregarTabla(numero++, info.marca, info.modelo, {}, info.porAlmacen, 0);
+    });
+  }
+
+  // 9. Bordes
+  ws.eachRow(row => {
+    row.eachCell(cell => {
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+      };
+    });
   });
 
-  // 9. Aplicar bordes a todas las celdas con datos
-  ws.eachRow((row, rowNumber) => {
-    if (rowNumber > 0) {
-      row.eachCell((cell) => {
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-        };
-      });
-    }
-  });
-
-  // 10. Descargar archivo
+  // 10. Descargar
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer]);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  
-  const fecha = new Date().toISOString().split('T')[0];
-  a.download = `Analisis_Ventas_Existencias_${fecha}.xlsx`;
+  a.download = `Analisis_Ventas_Existencias_${new Date().toISOString().split('T')[0]}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -536,7 +533,8 @@ async function generarReporte() {
   sidebarClose.addEventListener('click', cerrarSidebar);
   sidebarOverlay.addEventListener('click', cerrarSidebar);
 
-  document.getElementById('anioActual').textContent = new Date().getFullYear();
+  const anioEl = document.getElementById('anioActual');
+  if (anioEl) anioEl.textContent = new Date().getFullYear();
 </script>
 
 </body>

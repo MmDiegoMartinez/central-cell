@@ -1,47 +1,5 @@
 <?php 
 include_once '../../funciones.php'; 
-
-define(
-    "GOOGLE_SCRIPT_URL",
-    "https://script.google.com/macros/s/AKfycbynYy67vrk7v0GzC7gzBrjzseVPj6RrxRAxn5AssxVdith8SwcejDzHjytWUlJSTjtW/exec"
-);   
-
-$mensaje = "";
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $data = [
-        "marca_modelo" => $_POST['marca_modelo'],
-        "producto" => $_POST['producto'],
-        "sucursal" => $_POST['sucursal'],
-        "colaborador" => $_POST['apasionado'],
-        "estatus" => $_POST['estatus'],
-        "anotaciones" => $_POST['anotaciones_vendedor'] ?? ''
-    ];
-
-    //  USAR cURL EN LUGAR DE file_get_contents
-    $ch = curl_init(GOOGLE_SCRIPT_URL);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); //  IMPORTANTE: Sigue redirecciones
-    
-    $result = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($result === FALSE || $httpCode !== 200) {
-        $mensaje = "Error al enviar datos a Google Sheets. Código HTTP: $httpCode";
-    } else {
-        $respuesta = json_decode($result, true);
-        if ($respuesta && $respuesta["ok"]) {
-            $mensaje = "Producto registrado correctamente.";
-        } else {
-            $mensaje = "Error: " . ($respuesta["error"] ?? "Respuesta inválida");
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -57,25 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 
     <script>
+       
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynYy67vrk7v0GzC7gzBrjzseVPj6RrxRAxn5AssxVdith8SwcejDzHjytWUlJSTjtW/exec";
+
         $(function() {
-
-            // Evita el doble envío del formulario cuando el usuario
-            // aprieta "Guardar Producto" varias veces por la lentitud.
-            $("form").on("submit", function() {
-                var $form = $(this);
-                var $btn = $form.find('input[type="submit"]');
-
-                if ($form.data("enviando")) {
-                    // Ya se envió una vez: bloquea cualquier envío adicional
-                    return false;
-                }
-
-                $form.data("enviando", true);
-                $btn.prop("disabled", true);
-                $btn.val("Guardando...");
-
-                return true; // deja que el submit normal continúe
-            });
 
             $("#apasionado").autocomplete({
                 source: function(request, response) {
@@ -99,12 +42,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return false;
                 },
                 select: function(event, ui) {
-                    // Guardamos el id en el campo oculto
                     $("#apasionado_id").val(ui.item.value);
-                    // Opcional: mantener el texto tal como está en el input
                     $("#apasionado").val(ui.item.label);
-                    return false; // Evita que jQuery UI reemplace el texto con value predeterminado
+                    return false;
                 }
+            });
+
+            $("form").on("submit", function(e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $btn = $form.find('input[type="submit"]');
+                var $mensaje = $("#mensaje-envio");
+
+                // Evita doble envío
+                if ($form.data("enviando")) {
+                    return false;
+                }
+                $form.data("enviando", true);
+                $btn.prop("disabled", true);
+                $btn.val("Guardando...");
+
+                var data = {
+                    marca_modelo: $form.find('[name="marca_modelo"]').val(),
+                    producto: $form.find('[name="producto"]').val(),
+                    sucursal: $form.find('[name="sucursal"]').val(),
+                    apasionado: $form.find('[name="apasionado"]').val(),
+                    estatus: $form.find('[name="estatus"]').val(),
+                    anotaciones_vendedor: $form.find('[name="anotaciones_vendedor"]').val()
+                };
+
+                // Se manda como text/plain para evitar el preflight CORS
+                // que Google Apps Script no maneja bien con application/json.
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        marca_modelo: data.marca_modelo,
+                        producto: data.producto,
+                        sucursal: data.sucursal,
+                        colaborador: data.apasionado,
+                        estatus: data.estatus,
+                        anotaciones: data.anotaciones_vendedor || ""
+                    })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(respuesta) {
+                    if (respuesta && respuesta.ok) {
+                        $mensaje.text("Producto registrado correctamente.").show();
+                        $form[0].reset();
+                        $("#apasionado_id").val("");
+                    } else {
+                        $mensaje.text("Error: " + (respuesta && respuesta.error ? respuesta.error : "Respuesta inválida")).show();
+                    }
+                })
+                .catch(function(err) {
+                    $mensaje.text("Error al enviar datos a Google Sheets: " + err).show();
+                })
+                .finally(function() {
+                    $form.data("enviando", false);
+                    $btn.prop("disabled", false);
+                    $btn.val("Guardar Producto");
+                });
             });
         });
 
@@ -116,10 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <nav>
     <h1 id="nombre">Bitácora de almacén</h1>
     
-    <!-- Checkbox PRIMERO (importante para el CSS) -->
     <input type="checkbox" id="check">
     
-    <!-- Menú Hamburguesa -->
     <label class="bar" for="check">
         <span class="top"></span>
         <span class="middle"></span>
@@ -145,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Home
             </a>
         </li>
-        
 
         <li>
             <a href="prod-neg.php" style="display:flex;align-items:center;gap:12px;">
@@ -161,9 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <h1>Productos Negados</h1><br>
 
-        <?php if ($mensaje): ?>
-            <p><?= htmlspecialchars($mensaje) ?></p>
-        <?php endif; ?>
+        <p id="mensaje-envio" style="display:none;"></p>
 
         <br>
 
@@ -199,8 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </select><br><br>
 
             <label>Nombre del colaborador:</label>
-<input type="text" name="apasionado" id="apasionado" required>
-<input type="hidden" name="apasionado_id" id="apasionado_id"><br><br>
+            <input type="text" name="apasionado" id="apasionado" required>
+            <input type="hidden" name="apasionado_id" id="apasionado_id"><br><br>
 
             <label>Observaciones (opcional):</label><br>
             <textarea name="anotaciones_vendedor" rows="4"></textarea><br><br>

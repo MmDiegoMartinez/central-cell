@@ -380,77 +380,160 @@ input[type="submit"]:active {
   }
 }
 
-/* DÍA DE MUERTOS */
-.petalo {
+/* ═══════════════════════════════════════════════
+   DÍA DE MUERTOS — Calaca que saluda (~4 s)
+   (reemplaza TODO el CSS anterior de muertos / .petalo / .calaverita)
+═══════════════════════════════════════════════ */
+#muertos {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;                       /* detrás del menú y del formulario */
+}
+#muertos.oculto { display: none; }
+
+.calaca {
   position: absolute;
-  top: -30px;
-  width: 6px;
-  height: 20px;
-  background: linear-gradient(to bottom, #ffe89a 0%, #ffb347 30%, #ff8c00 70%, #d97000 100%);
-  border-radius: 50% 50% 45% 45% / 20% 20% 80% 80%;
-  opacity: 0.85;
-  filter: drop-shadow(0 1px 3px rgba(209, 112, 0, 0.4));
-  animation: petalo linear forwards;
+  right: 8px;
+  bottom: -4px;
+  animation: calaca-entrar 4s both;
   will-change: transform;
-  transform-origin: center top;
+}
+.calaca svg {
+  display: block;
+  height: clamp(240px, 46vh, 350px);
+  width: auto;
+  overflow: visible;
+  animation: calaca-pasitos .2s ease-in-out 3;
+}
+/* En celular el formulario ocupa todo el ancho y taparía a la calaca (solo se verían las piernas).
+   Por eso se oculta en pantallas chicas. Para mostrarla también ahí, borra este bloque. */
+@media (max-width: 600px) {
+  .calaca { display: none; }
+}
+
+/* Línea de tiempo (4 s): entra 0–.55 · levanta el brazo .55–1.05 · saluda 1.05–3.05 · baja y sale 3.05–4 */
+@keyframes calaca-entrar {
+  0%   { transform: translateX(115%); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  14%  { transform: translateX(0);    animation-timing-function: linear; }
+  84%  { transform: translateX(0);    animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  100% { transform: translateX(115%); }
+}
+@keyframes calaca-pasitos {                 /* saltitos al entrar */
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* origen de giro = la articulación (0,0 de cada grupo) */
+.c-brazo-izq, .c-ant-izq, .c-mano-izq,
+.c-brazo-der, .c-ant-der, .c-mano-der { transform-origin: 0 0; animation-duration: 4s; animation-fill-mode: both; animation-timing-function: ease-in-out; }
+.c-torso    { transform-origin: 100px 160px; animation: c-torso 4s ease-in-out both; }
+.c-cabeza   { transform-origin: 100px 56px;  animation: c-cabeza 4s ease-in-out both; }
+.c-mandibula { animation: c-risa .28s ease-in-out 1.05s 8 alternate both; }
+
+.c-brazo-izq { animation-name: c-hombro-izq; }
+.c-ant-izq   { animation-name: c-codo-izq; }
+.c-mano-izq  { animation-name: c-muneca-izq; }
+.c-brazo-der { animation-name: c-hombro-der; }
+.c-ant-der   { animation-name: c-codo-der; }
+
+/* brazo izquierdo (de pantalla): se levanta y saluda */
+@keyframes c-hombro-izq {
+  0%, 14% { transform: rotate(5deg); }
+  26%, 76% { transform: rotate(96deg); }
+  88%, 100% { transform: rotate(5deg); }
+}
+@keyframes c-codo-izq {
+  0%, 14% { transform: rotate(8deg); }
+  26% { transform: rotate(76deg); }
+  31% { transform: rotate(92deg); }  37% { transform: rotate(62deg); }
+  43% { transform: rotate(92deg); }  49% { transform: rotate(62deg); }
+  55% { transform: rotate(92deg); }  61% { transform: rotate(62deg); }
+  67% { transform: rotate(92deg); }  73% { transform: rotate(70deg); }
+  76% { transform: rotate(76deg); }
+  88%, 100% { transform: rotate(8deg); }
+}
+@keyframes c-muneca-izq {                   /* la mano va un poco retrasada: seguimiento natural */
+  0%, 26% { transform: rotate(0deg); }
+  34% { transform: rotate(14deg); }  40% { transform: rotate(-14deg); }
+  46% { transform: rotate(14deg); }  52% { transform: rotate(-14deg); }
+  58% { transform: rotate(14deg); }  64% { transform: rotate(-14deg); }
+  70% { transform: rotate(10deg); }
+  78%, 100% { transform: rotate(0deg); }
+}
+/* brazo derecho: reposo con leve contrapeso */
+@keyframes c-hombro-der { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(-9deg); } }
+@keyframes c-codo-der   { 0%, 100% { transform: rotate(-9deg); } }
+
+@keyframes c-torso {
+  0%, 14% { transform: rotate(0deg); }
+  26% { transform: rotate(-2deg); }
+  38% { transform: rotate(1.6deg); }  50% { transform: rotate(-1.6deg); }
+  62% { transform: rotate(1.6deg); }  74% { transform: rotate(-1deg); }
+  88%, 100% { transform: rotate(0deg); }
+}
+@keyframes c-cabeza {
+  0%, 14% { transform: rotate(0deg); }
+  26% { transform: rotate(-5deg); }   40% { transform: rotate(-8deg); }
+  55% { transform: rotate(-4deg); }   70% { transform: rotate(-7deg); }
+  78% { transform: rotate(-3deg); }   90%, 100% { transform: rotate(0deg); }
+}
+@keyframes c-risa { from { transform: translateY(0); } to { transform: translateY(1.6px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  #muertos { display: none; }
+}
+
+
+/* DÍA DE MUERTOS — pétalos de cempasúchil */
+.petalo {
+    position: absolute;
+    top: -30px;
+    width: 6px;
+    height: 20px;
+    background: linear-gradient(to bottom, #ffe89a 0%, #ffb347 30%, #ff8c00 70%, #d97000 100%);
+    border-radius: 50% 50% 45% 45% / 20% 20% 80% 80%;
+    opacity: 0.85;
+    filter: drop-shadow(0 1px 3px rgba(209, 112, 0, 0.4));
+    animation: petalo linear forwards;
+    will-change: transform;
+    transform-origin: center top;
 }
 
 .petalo:nth-child(3n) {
-  width: 8px;
-  height: 25px;
-  background: linear-gradient(to bottom, #fff4c4 0%, #ffa500 25%, #ff7518 65%, #c96500 100%);
-  filter: drop-shadow(0 2px 5px rgba(255, 140, 0, 0.5));
+    width: 8px;
+    height: 25px;
+    background: linear-gradient(to bottom, #fff4c4 0%, #ffa500 25%, #ff7518 65%, #c96500 100%);
+    filter: drop-shadow(0 2px 5px rgba(255, 140, 0, 0.5));
 }
 
 .petalo:nth-child(5n) {
-  width: 5px;
-  height: 16px;
-  background: linear-gradient(to bottom, #ffd970 0%, #ff9500 35%, #e8630a 75%, #b85500 100%);
-  opacity: 0.7;
-  filter: blur(0.3px) drop-shadow(0 1px 2px rgba(201, 101, 0, 0.3));
+    width: 5px;
+    height: 16px;
+    background: linear-gradient(to bottom, #ffd970 0%, #ff9500 35%, #e8630a 75%, #b85500 100%);
+    opacity: 0.7;
+    filter: blur(0.3px) drop-shadow(0 1px 2px rgba(201, 101, 0, 0.3));
 }
 
 .petalo:nth-child(7n) {
-  width: 9px;
-  height: 28px;
-  background: linear-gradient(to bottom, #ffdb6e 0%, #ff9f00 20%, #ff6600 60%, #cc5200 100%);
-  filter: drop-shadow(0 3px 6px rgba(255, 117, 24, 0.6));
+    width: 9px;
+    height: 28px;
+    background: linear-gradient(to bottom, #ffdb6e 0%, #ff9f00 20%, #ff6600 60%, #cc5200 100%);
+    filter: drop-shadow(0 3px 6px rgba(255, 117, 24, 0.6));
 }
 
 @keyframes petalo {
-  0% {
-    transform: translateY(0) translateX(0) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
-    opacity: 0;
-  }
-  5% {
-    opacity: 0.85;
-  }
-  15% {
-    transform: translateY(15vh) translateX(-15px) rotateZ(45deg) rotateX(90deg) rotateY(30deg);
-  }
-  30% {
-    transform: translateY(30vh) translateX(10px) rotateZ(120deg) rotateX(180deg) rotateY(90deg);
-  }
-  45% {
-    transform: translateY(45vh) translateX(-25px) rotateZ(200deg) rotateX(270deg) rotateY(150deg);
-  }
-  60% {
-    transform: translateY(60vh) translateX(20px) rotateZ(280deg) rotateX(360deg) rotateY(210deg);
-  }
-  75% {
-    transform: translateY(75vh) translateX(-18px) rotateZ(350deg) rotateX(450deg) rotateY(270deg);
-    opacity: 0.65;
-  }
-  90% {
-    transform: translateY(90vh) translateX(12px) rotateZ(420deg) rotateX(540deg) rotateY(330deg);
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateY(105vh) translateX(-8px) rotateZ(480deg) rotateX(630deg) rotateY(380deg);
-    opacity: 0;
-  }
+    0%   { transform: translateY(0) translateX(0) rotateZ(0deg) rotateX(0deg) rotateY(0deg); opacity: 0; }
+    5%   { opacity: 0.85; }
+    15%  { transform: translateY(15vh) translateX(-15px) rotateZ(45deg) rotateX(90deg) rotateY(30deg); }
+    30%  { transform: translateY(30vh) translateX(10px) rotateZ(120deg) rotateX(180deg) rotateY(90deg); }
+    45%  { transform: translateY(45vh) translateX(-25px) rotateZ(200deg) rotateX(270deg) rotateY(150deg); }
+    60%  { transform: translateY(60vh) translateX(20px) rotateZ(280deg) rotateX(360deg) rotateY(210deg); }
+    75%  { transform: translateY(75vh) translateX(-18px) rotateZ(350deg) rotateX(450deg) rotateY(270deg); opacity: 0.65; }
+    90%  { transform: translateY(90vh) translateX(12px) rotateZ(420deg) rotateX(540deg) rotateY(330deg); opacity: 0.4; }
+    100% { transform: translateY(105vh) translateX(-8px) rotateZ(480deg) rotateX(630deg) rotateY(380deg); opacity: 0; }
 }
-
 /* INDEPENDENCIA */
 .confeti {
   position: absolute;

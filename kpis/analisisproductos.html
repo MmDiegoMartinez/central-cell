@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Sistema de Análisis de Inventario - INNOVACION MOVIL & TECNOLOGIA MOVIL</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -377,6 +381,9 @@
         .badge-media { background: var(--warn);    color: white; }
         .badge-baja  { background: var(--success); color: white; }
 
+        /* Columna de existencias por almacén resaltada (petición del usuario) */
+        .col-existencias { background: #FFFFD7 !important; }
+
         /* ── DOWNLOAD ── */
         .download-section {
             text-align: center;
@@ -448,8 +455,8 @@
 
             <div class="file-card" id="card3">
                 <span class="check-icon material-symbols-outlined">check_circle</span>
-                <h3><span class="material-symbols-outlined">shopping_cart</span> Archivo 3: COMPRAS</h3>
-                <p>Historial de compras (Hoja 2)</p>
+                <h3><span class="material-symbols-outlined">shopping_cart</span> Archivo 3: COMPRAS (OPCIONAL)</h3>
+                <p>Historial de compras (Hoja 2) — opcional</p>
                 <div class="file-input-wrapper">
                     <input type="file" id="fileCompras" accept=".xlsx,.xls,.csv">
                     <label for="fileCompras" class="file-btn">Seleccionar Archivo</label>
@@ -542,6 +549,54 @@ function calcularDiasDesdeCompra(fecha) {
 }
 
 // ========================================
+// FIX (FECHA DE ÚLTIMA COMPRA):
+// El bug original: cuando la fecha de la columna E llegaba como TEXTO (por
+// ejemplo un CSV, o una celda formateada como texto tipo "2024-01-15"), el
+// código hacía `new Date(fechaRaw)`. JavaScript interpreta un texto en
+// formato ISO como MEDIANOCHE EN UTC. Al mostrarla después con
+// getDate()/getMonth()/getFullYear() -que leen en la zona horaria LOCAL del
+// navegador (México = UTC-6)-, esa medianoche UTC cae en las 18:00 del día
+// ANTERIOR. Por eso siempre se veía un día antes de la fecha real.
+// El caso numérico (número de serie de Excel) ya estaba bien, porque se
+// reconstruye directo con año/mes/día locales, sin pasar nunca por UTC.
+// SOLUCIÓN: nunca dejar que Date() interprete texto como UTC. Se extraen los
+// componentes año/mes/día "a mano" con regex y se construye la fecha
+// SIEMPRE en hora local, sea cual sea el formato de origen.
+// ========================================
+function parseFechaCompra(fechaRaw) {
+    if (fechaRaw === null || fechaRaw === undefined || fechaRaw === '') return null;
+
+    // Caso 1: número de serie de Excel (el más común) — ya estaba correcto
+    if (typeof fechaRaw === 'number') {
+        const p = XLSX.SSF.parse_date_code(fechaRaw);
+        if (!p) return null;
+        return new Date(p.y, p.m - 1, p.d);
+    }
+
+    // Caso 2: ya viene como objeto Date (por si la fuente cambia)
+    if (fechaRaw instanceof Date) {
+        // Se reconstruye con los componentes UTC para no arrastrar el
+        // desfase de zona horaria que pueda traer el objeto original.
+        return new Date(fechaRaw.getUTCFullYear(), fechaRaw.getUTCMonth(), fechaRaw.getUTCDate());
+    }
+
+    // Caso 3: texto (CSV o celda formateada como texto)
+    const texto = String(fechaRaw).trim();
+
+    // Formato ISO: YYYY-MM-DD (con o sin hora al final)
+    let m = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+    // Formato DD/MM/YYYY o DD-MM-YYYY
+    m = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
+    // Último recurso (no debería usarse con los formatos de arriba cubiertos)
+    const fallback = new Date(texto);
+    return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+// ========================================
 // FILE UPLOADS
 // ========================================
 fileExistencias.addEventListener('change', e => handleFileUpload(e, 1, 'existencias'));
@@ -576,9 +631,9 @@ function handleFileUpload(event, cardNumber, tipo) {
 }
 
 function checkAllFilesLoaded() {
-    if (workbookExistencias && workbookVentas && workbookCompras && !yaFueProcesado) {
+    if (workbookExistencias && workbookVentas && !yaFueProcesado) {
         processBtn.disabled = false;
-        showMessage('<span class="material-symbols-outlined">check_circle</span> Todos los archivos cargados. ¡Listo para procesar!', 'success');
+        showMessage('<span class="material-symbols-outlined">check_circle</span> ' + (workbookCompras ? 'Todos los archivos cargados. ¡Listo para procesar!' : 'Existencias y ventas cargadas. Compras es opcional. ¡Listo para procesar!'), 'success');
     }
 }
 
@@ -617,10 +672,16 @@ async function procesarArchivos() {
         actualizarProgreso(10, 'Ventas listas', `${ventas.length} transacciones`);
         await sleep(30);
 
-        actualizarProgreso(12, 'Leyendo compras...', 'Hoja 2 + cruce con proveedores');
-        await sleep(30);
-        const { compras } = procesarCompras();
-        actualizarProgreso(15, 'Compras listas', `${compras.length} entradas encontradas`);
+        // COMPRAS ES OPCIONAL: si no se cargó el archivo, las columnas de compra quedan en blanco
+        let compras = [];
+        if (workbookCompras) {
+            actualizarProgreso(12, 'Leyendo compras...', 'Hoja 2 + cruce con proveedores');
+            await sleep(30);
+            compras = procesarCompras().compras;
+            actualizarProgreso(15, 'Compras listas', `${compras.length} entradas encontradas`);
+        } else {
+            actualizarProgreso(15, 'Compras omitidas', 'Archivo de compras no cargado (opcional)');
+        }
         await sleep(30);
 
         // FIX 2: Fases 15-95% = análisis producto a producto (progreso REAL)
@@ -634,7 +695,7 @@ async function procesarArchivos() {
 
         actualizarProgreso(98, 'Preparando descarga...', 'Construyendo archivo Excel');
         await sleep(30);
-        generarDescargaSegura(resultadoFinal);
+        await generarDescargaSegura(resultadoFinal);
 
         actualizarProgreso(100, '<span class="material-symbols-outlined">check_circle</span> Completado', `${resultadoFinal.length} productos analizados`);
         await sleep(600);
@@ -659,9 +720,9 @@ async function procesarArchivos() {
 
 // ========================================
 // PROCESAR EXISTENCIAS
-// Col A(0)=Almacen, C(2)=ProdConcat, H(7)=Existencia,
-// F(5)=Marca, G(6)=Modelo, M(12)=BarcodeId,
-// N(13)=Clasificacion, Q(16)=PrecioPublico
+// Col A(0)=Almacen, C(2)=ProdConcat, F(5)=Marca, G(6)=Modelo,
+// H(7)=Existencia, M(12)=BarcodeId, N(13)=Clasificacion,
+// O(14)=TipoProducto (NUEVO), Q(16)=PrecioPublico
 // ========================================
 function procesarExistencias() {
     const sheet = workbookExistencias.Sheets[workbookExistencias.SheetNames[0]];
@@ -679,6 +740,7 @@ function procesarExistencias() {
         const existencia    = parseFloat(row[7])  || 0;
         const barcodeId     = String(row[12] || "").trim();
         const clasificacion = String(row[13] || "").trim();
+        const tipoProducto  = String(row[14] || "").trim(); // NUEVO: columna O = TipoProducto
         const precioPublico = parseFloat(row[16]) || 0;
 
         const partes       = clasificacion.split('>');
@@ -689,7 +751,7 @@ function procesarExistencias() {
         if (departamento !== 'INNOVACION MOVIL' && departamento !== 'TECNOLOGIA MOVIL') continue;
         if (!prodConcat) continue;
 
-        resultado.push({ almacen, prodConcat, existencia, barcodeId, departamento, categoria, tipo, precioPublico, marca, modelo });
+        resultado.push({ almacen, prodConcat, existencia, barcodeId, departamento, categoria, tipo, tipoProducto, precioPublico, marca, modelo });
     }
     console.log(`Existencias: ${resultado.length}`);
     return resultado;
@@ -777,16 +839,9 @@ function procesarCompras() {
         const clave     = `${almacenH2.toUpperCase()}||${noMovH2.toUpperCase()}`;
         const proveedor = proveedorMap.get(clave) || '';
 
-        const fechaRaw = row[4];
-        let fecha = null;
-        if (fechaRaw) {
-            if (typeof fechaRaw === 'number') {
-                const p = XLSX.SSF.parse_date_code(fechaRaw);
-                fecha = new Date(p.y, p.m - 1, p.d);
-            } else {
-                fecha = new Date(fechaRaw);
-            }
-        }
+        // FIX FECHA: se usa parseFechaCompra() en lugar de new Date(fechaRaw)
+        // directo, para evitar el corrimiento de un día por interpretación UTC.
+        const fecha = parseFechaCompra(row[4]);
 
         resultado.push({
             producto,
@@ -817,7 +872,7 @@ async function generarAnalisis(existencias, ventas, compras) {
     // exByProdAlmacen:     "prod||almacen" → { suma existencia, barcodeId, marca, modelo, precioPublico }
     const exByProd        = new Map();  // producto → primer registro (para meta)
     const exStockPA       = new Map();  // "prod||almacen" → stock acumulado
-    const exMeta          = new Map();  // producto → { codigo, marca, modelo, precioPublico, dep, cat, tipo }
+    const exMeta          = new Map();  // producto → { codigo, marca, modelo, precioPublico, dep, cat, tipo, tipoProducto }
 
     for (const e of existencias) {
         const k = `${e.prodConcat}||${e.almacen}`;
@@ -831,15 +886,17 @@ async function generarAnalisis(existencias, ventas, compras) {
                 precioPublico: e.precioPublico,
                 departamento: e.departamento,
                 categoria: e.categoria,
-                tipo: e.tipo
+                tipo: e.tipo,
+                tipoProducto: e.tipoProducto
             });
         } else {
             // actualizar precio máximo y completar campos vacíos
             const m = exMeta.get(e.prodConcat);
             if (e.precioPublico > m.precioPublico) m.precioPublico = e.precioPublico;
-            if (!m.codigo && e.barcodeId) m.codigo = e.barcodeId;
-            if (!m.marca  && e.marca)     m.marca   = e.marca;
-            if (!m.modelo && e.modelo)    m.modelo  = e.modelo;
+            if (!m.codigo && e.barcodeId)         m.codigo       = e.barcodeId;
+            if (!m.marca  && e.marca)             m.marca        = e.marca;
+            if (!m.modelo && e.modelo)            m.modelo       = e.modelo;
+            if (!m.tipoProducto && e.tipoProducto) m.tipoProducto = e.tipoProducto;
         }
     }
 
@@ -916,6 +973,7 @@ async function generarAnalisis(existencias, ventas, compras) {
             departamento,
             categoria,
             tipo,
+            tipo_producto: eMeta?.tipoProducto || '', // NUEVO: columna TipoProducto (col. O de existencias)
             precioPublico: eMeta?.precioPublico || '',
         };
 
@@ -1033,25 +1091,49 @@ function generarSugerenciasReabasto(almacenes, datos) {
 
 // ========================================
 // DESCARGA SEGURA
+// FIX (COLOR DE COLUMNAS): la librería "xlsx" (SheetJS community) que se
+// usaba para escribir el archivo NO soporta estilos/colores de celda al
+// exportar (eso es exclusivo de su versión Pro). Por eso se agregó ExcelJS
+// (sí soporta relleno de celdas) SOLO para generar el archivo de descarga;
+// la lectura de los 3 archivos subidos sigue usando "xlsx" sin cambios.
 // ========================================
-function generarDescargaSegura(datos) {
+async function generarDescargaSegura(datos) {
     try {
-        const wb  = XLSX.utils.book_new();
-        const ws  = XLSX.utils.json_to_sheet(datos);
         const cols = Object.keys(datos[0]);
-        ws['!cols'] = cols.map(c => {
-            if (c === 'observaciones') return { wch: 60 };
-            if (c === 'producto')      return { wch: 28 };
-            if (c === 'proveedor')     return { wch: 22 };
-            if (c === 'marca' || c === 'modelo') return { wch: 18 };
-            return { wch: 15 };
-        });
-        XLSX.utils.book_append_sheet(wb, ws, 'Análisis de Inventario');
 
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const blob  = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const hoy   = new Date();
+        const workbook  = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Análisis de Inventario');
+
+        worksheet.columns = cols.map(c => {
+            let width = 15;
+            if (c === 'observaciones')            width = 60;
+            else if (c === 'producto')            width = 28;
+            else if (c === 'proveedor')           width = 22;
+            else if (c === 'marca' || c === 'modelo') width = 18;
+            return { header: c, key: c, width };
+        });
+
+        datos.forEach(fila => worksheet.addRow(fila));
+        worksheet.getRow(1).font = { bold: true };
+
+        // NUEVO: colorear en amarillo (#FFFFD7) TODA la columna
+        // "<Nombre de Almacén> - Existencias" (encabezado + datos)
+        const RELLENO_EXISTENCIAS = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFD7' } };
+        cols.forEach((col, idx) => {
+            if (col.endsWith(' - Existencias')) {
+                const columna = worksheet.getColumn(idx + 1);
+                columna.eachCell({ includeEmpty: true }, celda => {
+                    celda.fill = RELLENO_EXISTENCIAS;
+                    if (celda.value === 0) celda.font = { color: { argb: 'FFFF0000' } };
+                });
+            }
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const hoy    = new Date();
         const nombre = `Analisis_Inventario_${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}.xlsx`;
+
         downloadBtn.href      = URL.createObjectURL(blob);
         downloadBtn.download  = nombre;
         downloadBtn.innerHTML = '<span class="material-symbols-outlined">download</span> Descargar Excel';
@@ -1077,12 +1159,15 @@ function mostrarResultados(datos) {
     `;
 
     const cols  = Object.keys(datos[0]);
-    const parts = ['<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>'];
+    const esColExistencias = c => c.endsWith(' - Existencias');
+
+    const parts = ['<table><thead><tr>' + cols.map(c => `<th class="${esColExistencias(c) ? 'col-existencias' : ''}">${c}</th>`).join('') + '</tr></thead><tbody>'];
 
     datos.slice(0, 100).forEach(row => {
         parts.push(`<tr class="prioridad-${row.prioridad.toLowerCase()}">`);
         cols.forEach(col => {
             let val = row[col];
+            const claseExistencia = esColExistencias(col) ? ' col-existencias' : '';
             if (col === 'prioridad') {
                 parts.push(`<td><span class="badge badge-${val.toLowerCase()}">${val}</span></td>`);
             } else if (col === 'observaciones') {
@@ -1091,10 +1176,12 @@ function mostrarResultados(datos) {
                     .replaceAll('📊', '<span class="material-symbols-outlined" style="color:var(--primary-600);">analytics</span>')
                     .replaceAll('🔄', '<span class="material-symbols-outlined" style="color:var(--accent);">sync</span>');
                 parts.push(`<td class="observacion-cell">${valConIconos}</td>`);
+            } else if (esColExistencias(col) && val === 0) {
+                parts.push(`<td class="${claseExistencia.trim()}"><span style="color:#FF0000;">0</span></td>`);
             } else if (typeof val === 'number' && val !== 0) {
-                parts.push(`<td>${Number.isInteger(val) ? val : val.toFixed(2)}</td>`);
+                parts.push(`<td class="${claseExistencia.trim()}">${Number.isInteger(val) ? val : val.toFixed(2)}</td>`);
             } else {
-                parts.push(`<td>${val !== '' && val !== null && val !== undefined ? val : '-'}</td>`);
+                parts.push(`<td class="${claseExistencia.trim()}">${val !== '' && val !== null && val !== undefined ? val : '-'}</td>`);
             }
         });
         parts.push('</tr>');

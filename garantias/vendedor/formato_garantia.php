@@ -11,20 +11,38 @@ if ($id > 0) {
     exit;
 }
 
+$id_venta = intval($_GET['id_venta'] ?? 0);
+if ($id_venta > 0) {
+    generarPDFVentaTelefono($id_venta);
+    exit;
+}
+
 $mensaje  = '';
 $tipo_msg = '';
 $nuevo_id = 0;
+$nuevo_id_venta = 0;
 
 $sucursales = obtenerSucursales();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $nuevo_id = guardarGarantiaTelefono($_POST);
-        $mensaje  = ' Garantía registrada correctamente. El PDF se está descargando...';
-        $tipo_msg = 'ok';
-    } catch (Exception $e) {
-        $mensaje  = ' Error: ' . htmlspecialchars($e->getMessage());
-        $tipo_msg = 'error';
+    if (($_POST['accion'] ?? '') === 'venta') {
+        try {
+            $nuevo_id_venta = guardarVentaTelefono($_POST);
+            $mensaje  = ' Venta registrada correctamente. El PDF se está descargando...';
+            $tipo_msg = 'ok';
+        } catch (Exception $e) {
+            $mensaje  = ' Error: ' . htmlspecialchars($e->getMessage());
+            $tipo_msg = 'error';
+        }
+    } else {
+        try {
+            $nuevo_id = guardarGarantiaTelefono($_POST);
+            $mensaje  = ' Garantía registrada correctamente. El PDF se está descargando...';
+            $tipo_msg = 'ok';
+        } catch (Exception $e) {
+            $mensaje  = ' Error: ' . htmlspecialchars($e->getMessage());
+            $tipo_msg = 'error';
+        }
     }
 }
 ?>
@@ -111,6 +129,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     font-family: sans-serif;
     margin-top: -10px;
 }
+
+/* ── Switch Venta / Garantía ── */
+.switch-toggle {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+.switch-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.switch-track {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #123468;
+    border-radius: 24px;
+    transition: .2s;
+}
+.switch-knob {
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+}
 </style>
 </head>
 
@@ -144,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Overlay de carga -->
 <div id="overlay-carga">
     <div class="spinner"></div>
-    <div class="texto-carga" id="texto-carga">Guardando garantía...</div>
+    <div class="texto-carga" id="texto-carga">Guardando...</div>
     <div class="barra-wrap"><div class="barra-fill" id="barra-fill"></div></div>
     <div class="subtexto" id="subtexto">Por favor espera</div>
 </div>
@@ -158,6 +207,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p class="msg-<?= $tipo_msg ?>"><?= $mensaje ?></p>
 <?php endif; ?>
 
+<!-- ═══ SWITCH Venta / Garantía ═══ -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+    <span id="lbl-venta" style="font-weight:600;">Venta</span>
+    <label class="switch-toggle">
+        <input type="checkbox" id="switch-modo">
+        <span class="switch-track"></span>
+        <span class="switch-knob" id="switch-knob"></span>
+    </label>
+    <span id="lbl-garantia" style="font-weight:600;opacity:.5;">Garantía</span>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FORMULARIO NUEVO: VENTA (visible por defecto)
+═══════════════════════════════════════════ -->
+<form method="POST" id="form-venta">
+    <input type="hidden" name="accion" value="venta">
+
+    <label>Sucursal:</label>
+    <select name="sucursal" required>
+        <option value="">Seleccione</option>
+        <?php foreach($sucursales as $s): ?>
+        <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre']) ?></option>
+        <?php endforeach; ?>
+    </select>
+    <br><br>
+
+    <label>PLOWS:</label>
+    <input type="text" name="plows" maxlength="11" required onblur="validarPlows(this)">
+    <br><br>
+
+    <label>IMEI:</label>
+    <input type="text" name="imei" maxlength="50" required>
+    <br><br>
+
+    <label>Tipo de venta:</label>
+    <div style="display:flex; gap:20px; margin-bottom:20px;">
+        <label style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" name="tipo_venta" value="contado" required> Contado
+        </label>
+        <label style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" name="tipo_venta" value="credito" required> PayJoy / Crédito
+        </label>
+    </div>
+
+    <input type="submit" value="Guardar venta">
+</form>
+
+<!-- ═══════════════════════════════════════════
+     FORMULARIO ACTUAL: GARANTÍA (oculto por defecto)
+     — Contenido interno SIN NINGÚN CAMBIO —
+═══════════════════════════════════════════ -->
+<div id="wrap-form-garantia" style="display:none;">
 <form method="POST" id="form-garantia">
 
     <label>PLOWS:</label>
@@ -215,13 +316,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <input type="submit" id="btn-guardar" value="Guardar ">
 </form>
+</div>
 
 </div>
 </div>
 
 <script>
 /* ═══════════════════════════════════════════
+   SWITCH VENTA / GARANTÍA
+═══════════════════════════════════════════ */
+(function() {
+    const sw          = document.getElementById('switch-modo');
+    const knob         = document.getElementById('switch-knob');
+    const lblVenta      = document.getElementById('lbl-venta');
+    const lblGarantia   = document.getElementById('lbl-garantia');
+    const formVenta     = document.getElementById('form-venta');
+    const wrapGarantia  = document.getElementById('wrap-form-garantia');
+
+    function actualizarSwitch() {
+        if (sw.checked) {
+            // Modo Garantía
+            knob.style.transform   = 'translateX(22px)';
+            lblVenta.style.opacity    = '.5';
+            lblGarantia.style.opacity = '1';
+            formVenta.style.display    = 'none';
+            wrapGarantia.style.display = 'block';
+        } else {
+            // Modo Venta (default)
+            knob.style.transform   = 'translateX(0)';
+            lblVenta.style.opacity    = '1';
+            lblGarantia.style.opacity = '.5';
+            formVenta.style.display    = 'block';
+            wrapGarantia.style.display = 'none';
+        }
+    }
+
+    sw.addEventListener('change', actualizarSwitch);
+    actualizarSwitch();
+})();
+
+/* ═══════════════════════════════════════════
    AUTOCOMPLETE con primer resultado automático
+   (solo aplica al formulario de Garantía)
 ═══════════════════════════════════════════ */
 $(function(){
     function autocompleteVendedor(inputId, hiddenId) {
@@ -240,17 +376,15 @@ $(function(){
                 });
             },
             minLength: 1,
-            // Subrayar/resaltar el primer ítem al abrir el menú
             open: function() {
                 $(this).autocomplete("widget")
                     .find(".ui-menu-item-wrapper").first()
                     .addClass("ui-state-active");
             },
-            // Al navegar con flechas: mostrar solo el label (nombre), nunca el value (id)
             focus: function(e, ui) {
                 $("#" + inputId).val(ui.item.label);
                 $("#" + hiddenId).val(ui.item.value);
-                return false;   // evita que jQuery UI ponga el value en el input
+                return false;
             },
             select: function(e, ui) {
                 $("#" + inputId).val(ui.item.label);
@@ -266,7 +400,6 @@ $(function(){
             }
         });
 
-        // Enter sin ítem activo explícito → tomar el primero
         $("#" + inputId).on('keydown', function(e) {
             if (e.key === 'Enter') {
                 var activo = $("#" + inputId).autocomplete("widget").find(".ui-state-active");
@@ -280,7 +413,6 @@ $(function(){
             }
         });
 
-        // Blur sin selección → autocompletar con el primero
         $("#" + inputId).on('blur', function() {
             var txt = $(this).val().trim();
             if (txt === '') { $("#" + hiddenId).val(''); primerResultado = null; return; }
@@ -297,7 +429,7 @@ $(function(){
 });
 
 /* ═══════════════════════════════════════════
-   VALIDACIONES
+   VALIDACIONES (compartidas por ambos formularios)
 ═══════════════════════════════════════════ */
 function validarPlows(input) {
     let v = input.value.toUpperCase();
@@ -313,22 +445,25 @@ function capitalizarNombre(input) {
 
 const telInput    = document.getElementById('numero_contacto');
 const errorTelMsg = document.getElementById('errorTelefono');
-telInput.addEventListener('input', function() {
-    this.value = this.value.replace(/\D/g, '').slice(0, 10);
-    const ok = this.value.length === 0 || this.value.length === 10;
-    this.style.borderColor    = ok ? '' : '#e74c3c';
-    errorTelMsg.style.display = ok ? 'none' : 'block';
-});
-telInput.addEventListener('blur', function() {
-    if (this.value.length > 0 && this.value.length !== 10) {
-        this.focus();
-        this.style.borderColor    = '#e74c3c';
-        errorTelMsg.style.display = 'block';
-    }
-});
+if (telInput) {
+    telInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+        const ok = this.value.length === 0 || this.value.length === 10;
+        this.style.borderColor    = ok ? '' : '#e74c3c';
+        errorTelMsg.style.display = ok ? 'none' : 'block';
+    });
+    telInput.addEventListener('blur', function() {
+        if (this.value.length > 0 && this.value.length !== 10) {
+            this.focus();
+            this.style.borderColor    = '#e74c3c';
+            errorTelMsg.style.display = 'block';
+        }
+    });
+}
 
 /* ═══════════════════════════════════════════
-   DESCARGA AUTOMÁTICA del PDF con barra de carga
+   DESCARGA AUTOMÁTICA del PDF de GARANTÍA
+   (sin cambios respecto al original)
 ═══════════════════════════════════════════ */
 <?php if ($nuevo_id > 0): ?>
 window.addEventListener('DOMContentLoaded', async function () {
@@ -340,7 +475,6 @@ window.addEventListener('DOMContentLoaded', async function () {
 
     overlay.classList.add('activo');
 
-    // Barra animada MIENTRAS el fetch trabaja (no termina sola)
     const pasos = [
         { pct: 15, txt: 'Generando PDF...',      sub: 'Preparando el documento',  delay: 400  },
         { pct: 35, txt: 'Generando PDF...',       sub: 'Armando secciones',        delay: 800  },
@@ -349,10 +483,8 @@ window.addEventListener('DOMContentLoaded', async function () {
         { pct: 85, txt: 'Preparando descarga...', sub: 'Casi listo...',            delay: 2600 },
     ];
 
-    // Avanza hasta 85% con timeouts, pero NUNCA llega al 100% sola
     pasos.forEach(p => {
         setTimeout(() => {
-            // Solo avanza si aún no terminó el fetch (barra < 90%)
             const actual = parseFloat(barraEl.style.width) || 0;
             if (actual < 90) {
                 barraEl.style.width = p.pct + '%';
@@ -363,26 +495,89 @@ window.addEventListener('DOMContentLoaded', async function () {
     });
 
     try {
-        // Fetch real — espera a que el servidor termine de generar el PDF
         const resp = await fetch('?id=<?= $nuevo_id ?>', { method: 'GET' });
-
         if (!resp.ok) throw new Error('Error al generar el PDF');
 
         const blob = await resp.blob();
 
-        // ✅ El PDF llegó completo — ahora sí al 100%
         txtEl.textContent   = 'Descargando...';
         subEl.textContent   = 'Tu PDF está listo';
         barraEl.style.width = '100%';
 
-        // Pequeña pausa para que el usuario vea el 100%
         await new Promise(r => setTimeout(r, 400));
 
-        // Descarga real desde el blob (ya está en memoria)
         const url = URL.createObjectURL(blob);
         const a   = document.createElement('a');
         a.href     = url;
         a.download = 'Garantia-<?= str_pad($nuevo_id, 5, '0', STR_PAD_LEFT) ?>.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        txtEl.textContent = '¡Listo!';
+        subEl.textContent = 'PDF descargado correctamente';
+
+        setTimeout(() => overlay.classList.remove('activo'), 1000);
+
+    } catch (err) {
+        txtEl.textContent   = 'Error al generar el PDF';
+        subEl.textContent   = err.message;
+        barraEl.style.width = '100%';
+        barraEl.style.background = '#e74c3c';
+        setTimeout(() => overlay.classList.remove('activo'), 2500);
+    }
+});
+<?php endif; ?>
+
+/* ═══════════════════════════════════════════
+   DESCARGA AUTOMÁTICA del PDF de VENTA (nuevo)
+═══════════════════════════════════════════ */
+<?php if ($nuevo_id_venta > 0): ?>
+window.addEventListener('DOMContentLoaded', async function () {
+
+    const overlay = document.getElementById('overlay-carga');
+    const txtEl   = document.getElementById('texto-carga');
+    const barraEl = document.getElementById('barra-fill');
+    const subEl   = document.getElementById('subtexto');
+
+    overlay.classList.add('activo');
+
+    const pasos = [
+        { pct: 15, txt: 'Generando PDF...',      sub: 'Preparando el documento',  delay: 400  },
+        { pct: 35, txt: 'Generando PDF...',       sub: 'Armando secciones',        delay: 800  },
+        { pct: 55, txt: 'Generando PDF...',       sub: 'Aplicando formato',        delay: 1200 },
+        { pct: 72, txt: 'Preparando descarga...', sub: 'Revisando datos',          delay: 1800 },
+        { pct: 85, txt: 'Preparando descarga...', sub: 'Casi listo...',            delay: 2600 },
+    ];
+
+    pasos.forEach(p => {
+        setTimeout(() => {
+            const actual = parseFloat(barraEl.style.width) || 0;
+            if (actual < 90) {
+                barraEl.style.width = p.pct + '%';
+                txtEl.textContent   = p.txt;
+                subEl.textContent   = p.sub;
+            }
+        }, p.delay);
+    });
+
+    try {
+        const resp = await fetch('?id_venta=<?= $nuevo_id_venta ?>', { method: 'GET' });
+        if (!resp.ok) throw new Error('Error al generar el PDF');
+
+        const blob = await resp.blob();
+
+        txtEl.textContent   = 'Descargando...';
+        subEl.textContent   = 'Tu PDF está listo';
+        barraEl.style.width = '100%';
+
+        await new Promise(r => setTimeout(r, 400));
+
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = 'Venta-<?= str_pad($nuevo_id_venta, 5, '0', STR_PAD_LEFT) ?>.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
